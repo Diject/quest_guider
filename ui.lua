@@ -45,7 +45,12 @@ local mapMenu = {
     tooltipDescription = "qGuider_map_tooltipDescription",
 }
 
-local containerMenuId = "qGuider_containerMenu"
+local containerMenu = {
+    id = "qGuider_container",
+    buttonBlock = "qGuider_container_btnBlock",
+    closeBtn = "qGuider_container_closeBtn",
+}
+
 
 local mcp_mapExpansion = tes3.hasCodePatchFeature(tes3.codePatchFeature.mapExpansionForTamrielRebuilt)
 
@@ -688,11 +693,21 @@ end
 
 ---@param label string
 function this.drawContainer(label)
-    local element = tes3ui.createMenu{ id = containerMenuId, dragFrame = true, }
+    local element = tes3ui.createMenu{ id = containerMenu.id, dragFrame = true, }
     element.text = label
-    local header = element:findChild("PartDragMenu_title_tint")
-    if not header then return end
-    local closeButton = header:createButton{text = "X"}
+    local frame = element:findChild("PartDragMenu_drag_frame")
+    if not frame then return end
+    local buttonBlock = frame:createBlock{ id = containerMenu.buttonBlock }
+    buttonBlock.autoHeight = true
+    buttonBlock.autoWidth = true
+    buttonBlock.flowDirection = tes3.flowDirection.leftToRight
+    buttonBlock.widthProportional = 1
+    buttonBlock.borderTop = 2
+    buttonBlock.borderBottom = 1
+    local closeButton = buttonBlock:createButton{ id = containerMenu.closeBtn, text = "Close"}
+    closeButton.absolutePosAlignX = 1
+    closeButton.paddingBottom = 0
+    closeButton.paddingTop = 0
     closeButton:register(tes3.uiEvent.mouseClick, function (e)
         element:destroy()
     end)
