@@ -1,12 +1,8 @@
+local dataHandler = include("diject.quest_guider.dataHandler")
+
 local markers = require("diject.world_map_markers.interop")
----@type questDataGenerator.quests
-local questData = json.loadfile("mods\\diject\\quest_guider\\Data\\quests")
+
 local questLib = include("diject.quest_guider.quest")
----@type questDataGenerator.questByTopicText
-local questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
----@type questDataGenerator.questObjectPositions
-local objectPositions = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjectPositions")
-local objectsInCell = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjectInCell")
 
 local ui = include("diject.quest_guider.ui")
 
@@ -26,10 +22,10 @@ local function registerTooltip()
                 local str = element.text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
                 if element.name == "MenuBook_hypertext" then
                     if isDescription then
-                        if questByText[str] then
-                            local questId = questByText[str][1].quest
-                            local questIndex = questByText[str][1].index
-                            local quest = questData[questId]
+                        if dataHandler.questByText[str] then
+                            local questId = dataHandler.questByText[str][1].quest
+                            local questIndex = dataHandler.questByText[str][1].index
+                            local quest = dataHandler.quests[questId]
                             if quest then
                                 local rect = page:createRect{}
                                 page:reorderChildren(element, rect, 1)
@@ -63,8 +59,16 @@ local function registerTooltip()
                                     ui.drawMapMenu(el, questId, questIndex, quest)
                                     ui.centreToCursor(el)
                                 end)
+
+                                local testLabl = rect:createLabel{ text = "test" }
+                                testLabl:register(tes3.uiEvent.mouseClick, function (ei)
+                                    local el = ui.drawContainer("Test")
+                                    ui.drawQuestsMenu(el)
+                                    ui.centreToCursor(el)
+                                end)
+
                                 page:getTopLevelMenu():updateLayout()
-                                infoRect.width = math.max(1, page.width - (trackingLabel.width + reqLabel.width + 15))
+                                infoRect.width = math.max(1, page.width - (trackingLabel.width + reqLabel.width + testLabl.width + 15))
                                 infoLabel:register(tes3.uiEvent.help, function (ei)
                                     local tooltip = tes3ui.createTooltipMenu()
                                     ui.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
@@ -104,4 +108,12 @@ local function uiActivatedCallback(e)
         end)
     end
 end
-event.register(tes3.event.uiActivated, uiActivatedCallback, {filter = "MenuJournal"})
+
+
+
+--- @param e initializedEventData
+local function initializedCallback(e)
+    if not dataHandler.init() then return end
+    event.register(tes3.event.uiActivated, uiActivatedCallback, {filter = "MenuJournal"})
+end
+event.register(tes3.event.initialized, initializedCallback)

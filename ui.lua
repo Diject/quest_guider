@@ -715,4 +715,64 @@ function this.drawContainer(label)
     return element
 end
 
+
+---TODO
+---@param parent tes3uiElement
+---@return tes3uiElement|nil
+function this.drawQuestsMenu(parent)
+    if not parent then return end
+
+    local playerQuestData = questLib.getPlayerQuestData()
+
+    if not playerQuestData then return end
+
+    local mainBlock = parent:createBlock{ id = "qGuider_quests_block" }
+    mainBlock.flowDirection = tes3.flowDirection.leftToRight
+    mainBlock.autoHeight = true
+    mainBlock.autoWidth = true
+
+    local infoBlock = mainBlock:createBlock{ id = "qGuider_quests_infoBlock" }
+    infoBlock.flowDirection = tes3.flowDirection.topToBottom
+    infoBlock.autoHeight = true
+    infoBlock.maxHeight = 600
+    infoBlock.width = 500
+
+    local listBlock = mainBlock:createBlock{ id = "qGuider_quests_listBlock" }
+    listBlock.flowDirection = tes3.flowDirection.topToBottom
+    listBlock.autoHeight = true
+    listBlock.autoWidth = true
+
+    local filterBlock = listBlock:createBlock{ id = "qGuider_quests_filterBlock" }
+    filterBlock.flowDirection = tes3.flowDirection.topToBottom
+    filterBlock.autoHeight = true
+    filterBlock.autoWidth = true
+
+    local filterTextInput = filterBlock:createTextInput{ id = "qGuider_quests_filterTextInput" }
+    filterTextInput.width = 200
+    filterTextInput.autoHeight = true
+
+    local questPane = listBlock:createVerticalScrollPane{ id = "qGuider_quests_questPane" }
+    questPane.heightProportional = nil
+    questPane.widthProportional = nil
+    questPane.height = 580
+    questPane.width = 200
+
+    table.sort(playerQuestData, function (a, b)
+        return (a.name or " ") > (b.name or " ")
+    end)
+
+    for _, qData in ipairs(playerQuestData) do
+        local border = questPane:createThinBorder{}
+        border.autoWidth = true
+        border.autoHeight = true
+
+        local questName = qData.name or string.format(" id \"%s\"", qData.id)
+        local label = border:createLabel{ id = "qGuider_quests_questLabel", text = questName }
+    end
+
+    updateTopLevelMenu(mainBlock)
+
+    return mainBlock
+end
+
 return this

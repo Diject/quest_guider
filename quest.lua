@@ -4,11 +4,7 @@ local tableLib = include("diject.quest_guider.utils.table")
 local types = include("diject.quest_guider.types")
 local descriptionLines = include("diject.quest_guider.descriptionLines")
 
----@type questDataGenerator.quests
-local questData = json.loadfile("mods\\diject\\quest_guider\\Data\\quests")
-
----@type questDataGenerator.questObjectPositions
-local objectPositions = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjectPositions")
+local dataHandler = include("diject.quest_guider.dataHandler")
 
 local this = {}
 
@@ -20,11 +16,11 @@ function this.getPlayerQuestIndex(quest)
 end
 
 function this.getQuestData(questId)
-    return questData[questId:lower()]
+    return dataHandler.quests[questId:lower()]
 end
 
 function this.getObjectPositionData(objectId)
-    return objectPositions[objectId:lower()]
+    return dataHandler.positions[objectId:lower()]
 end
 
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
@@ -121,8 +117,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                     environment.variableObj = faction
                     goto done
                 end
-                if questData[variable] then
-                    environment.variableQuestName = questData[variable].name or "???"
+                if dataHandler.quests[variable] then
+                    environment.variableQuestName = dataHandler.quests[variable].name or "???"
                 end
                 ::done::
             end
@@ -186,6 +182,48 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
     return out
 end
 
+
+---@class questGuider.quest.getPlayerQuestData.returnArr
+---@field id string
+---@field name string|nil
+---@field activeStage integer|nil
+---@field isFinished boolean|nil
+---@field isReachable boolean|nil
+
+---@alias questGuider.quest.getPlayerQuestData.return questGuider.quest.getPlayerQuestData.returnArr[]
+
+---@return questGuider.quest.getPlayerQuestData.return
+function this.getPlayerQuestData()
+    local out = {}
+
+    local dialogueData = tes3.dataHandler.nonDynamicData.dialogues
+
+    for _, dialogue in pairs(dialogueData) do
+        if dialogue.type ~= tes3.dialogueType.journal then goto continue end
+
+        local dialogueId = dialogue.id:lower()
+        local storageData = dataHandler.quests[dialogueId]
+
+        if not storageData then goto continue end
+
+        ---@type questGuider.quest.getPlayerQuestData.returnArr
+        local diaOutData = {} ---@diagnostic disable-line: missing-fields
+
+        diaOutData.id = dialogueId
+        diaOutData.name = storageData.name
+        diaOutData.activeStage = dialogue.journalIndex
+        -- diaOutData.isFinished = dialogue.journalIndex and storageData[tostring(dialogue.journalIndex)].finished or nil
+
+        -- TODO
+        diaOutData.isReachable = math.random() > 0.25 and true or false
+
+        table.insert(out, diaOutData)
+
+        ::continue::
+    end
+
+    return out
+end
 
 
 return this
