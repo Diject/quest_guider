@@ -1,6 +1,8 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 
+local dataHandler = include("diject.quest_guider.dataHandler")
+
 local questLib = include("diject.quest_guider.quest")
 -- local markers = require("diject.world_map_markers.interop")
 local cellLib = require("diject.quest_guider.cell")
@@ -51,6 +53,12 @@ local containerMenu = {
     closeBtn = "qGuider_container_closeBtn",
 }
 
+local journalMenu = {
+    requirementBlock = "qGuider_journal_reqBlock",
+    questNameLabel = "qGuider_journal_qNameLabel",
+    questNameBlock = "qGuider_journal_qNameBlock",
+}
+
 
 local mcp_mapExpansion = tes3.hasCodePatchFeature(tes3.codePatchFeature.mapExpansionForTamrielRebuilt)
 
@@ -71,14 +79,6 @@ local defaultColor = {0.792, 0.647, 0.376}
 local lightDefault = {0.892, 0.747, 0.476}
 local lightGreenColor = {0.5, 1, 0.5}
 local lightBlue = {0.5, 0.5, 1}
-
-local markerImage = {
-    0,0,0,0,  255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,  0,0,0,0,
-    255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,
-    255,0,255,1,  255,0,255,0.5,  0,0,0,0,  255,0,255,0.5,  255,0,255,1,
-    255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,
-    0,0,0,0,  255,0,255,0.5,  255,0,255,1,  255,0,255,0.5,  0,0,0,0,
-}
 
 local markerColors = {
     -- {255, 0, 0},
@@ -107,6 +107,34 @@ local markerColors = {
     {255, 191, 255},
 }
 
+
+local this = {}
+
+this.colors = {
+    default = {0.792, 0.647, 0.376},
+    lightDefault = {0.892, 0.747, 0.476},
+    lightGreen = {0.5, 1, 0.5},
+    disabled = {0.25, 0.25, 0.25}
+}
+
+function this.init()
+    this.colors.default = tes3ui.getPalette(tes3.palette.normalColor)
+    this.colors.lightDefault = tes3ui.getPalette(tes3.palette.notifyColor)
+    this.colors.disabled = tes3ui.getPalette(tes3.palette.journalFinishedQuestOverColor)
+end
+
+
+---@class questGuider.ui.markerImage
+---@field path string
+---@field shiftX integer|nil
+---@field shiftY integer|nil
+
+---@type table<string, questGuider.ui.markerImage>
+this.markers = {
+    quest = {path = "textures\\diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4},
+}
+
+
 ---@param color integer[]
 ---@return integer[]
 local function colorByteToFloat(color)
@@ -117,29 +145,18 @@ local function colorByteToFloat(color)
     return out
 end
 
----@param color integer[]
----@return number[]
-local function getMarkerPixels(color)
-    local markerIm = tableLib.copy(markerImage)
-    for i = 1, #markerImage, 4 do
-        if markerIm[i] == 255 then
-            markerIm[i] = color[1]
-            markerIm[i + 1] = color[2]
-            markerIm[i + 2] = color[3]
-        end
-    end
-    return markerIm
-end
 
-local this = {}
-
-local function updateTopLevelMenu(mainBlock)
+local function updateContainerMenu(mainBlock)
     local topMenu = mainBlock:getTopLevelMenu()
     topMenu:updateLayout()
 
-    if not topMenu.autoHeight and not topMenu.autoWidth then
-        topMenu.height = mainBlock.height
-        topMenu.width = mainBlock.width
+    if topMenu.name == "qGuider_container" then
+        topMenu.height = mainBlock.height + 74
+        topMenu.width = mainBlock.width + 24
+        topMenu.maxWidth = topMenu.width
+        topMenu.maxHeight = topMenu.height
+        topMenu.minWidth = topMenu.width
+        topMenu.minHeight = topMenu.height
         topMenu:updateLayout()
     end
 end
@@ -202,7 +219,7 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
         currentIndexLabel.borderTop = 10
     end
 
-    updateTopLevelMenu(mainBlock)
+    updateContainerMenu(mainBlock)
 end
 
 
@@ -252,14 +269,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqIndexBlock.autoHeight = true
     reqIndexBlock.autoWidth = true
     reqIndexBlock.borderLeft = 10
-    -- parent:getTopLevelMenu():updateLayout()
-    -- reqIndexBlock.absolutePosAlignX = 0.5
 
     local indexTabBlock = mainBlock:createBlock{ id = requirementsMenu.indexTabBlock }
     indexTabBlock.autoHeight = true
     indexTabBlock.autoWidth = true
-    -- parent:getTopLevelMenu():updateLayout()
-    -- indexTabBlock.absolutePosAlignX = 0.5
     indexTabBlock.flowDirection = tes3.flowDirection.leftToRight
     indexTabBlock.visible = false
 
@@ -290,8 +303,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         reqBlock:destroyChildren()
         reqIndexBlock:destroyChildren()
         indexTabBlock:destroyChildren()
-        selLabel.color = defaultColor
-        lstLabel.color = defaultColor
+        selLabel.color = this.colors.disabled
+        lstLabel.color = this.colors.disabled
     end
 
     ---@param topicIndex integer
@@ -336,6 +349,11 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
             nextIndexValueLabel:register(tes3.uiEvent.mouseClick, function (e)
 
+                for _, tb in pairs(nextIndTabs) do
+                    tb.color = this.colors.disabled
+                end
+                e.source.color = this.colors.lightGreen
+
                 indexTabBlock:destroyChildren()
 
                 indexTabBlock:createLabel{ id = requirementsMenu.text, text = "Requirements:" }.borderRight = 10
@@ -364,26 +382,26 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                             for _, req in pairs(requirementData) do
                                 local reqLabel = reqBlock:createLabel{ id = requirementsMenu.requirementLabel, text = req.str }
                                 reqLabel.borderTop = 4
-                                reqLabel.color = lightDefault
+                                reqLabel.color = this.colors.lightDefault
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
                             end
                         else
                             local reqLabel = reqBlock:createLabel{ id = requirementsMenu.requirementLabel, text = "???" }
-                            reqLabel.color = lightDefault
+                            reqLabel.color = this.colors.lightDefault
                             reqLabel.borderTop = 4
                         end
 
                         for _, tb in pairs(tabs) do
-                            tb.color = lightDefault
+                            tb.color = this.colors.disabled
                         end
-                        tab.color = lightGreenColor
+                        tab.color = this.colors.lightGreen
 
                         local callback = reqBlock:getLuaData("callback")
                         if callback then
                             callback(reqBlock, requirementData)
                         else
-                            updateTopLevelMenu(mainBlock)
+                            updateContainerMenu(mainBlock)
                         end
 
                     end)
@@ -393,7 +411,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                     tabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
                     reqIndexMainBlock.visible = true
                     nextIndexLabel.visible = true
-                    -- tabs[1].color = lightGreenColor
+                    -- tabs[1].color = this.colors.lightGreen
 
                     if #tabs == 1 then
                         tabs[1].visible = false
@@ -407,32 +425,31 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
         if #nextIndTabs > 0 then
             nextIndTabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
-            nextIndTabs[1].color = lightGreenColor
+            -- nextIndTabs[1].color = this.colors.lightGreen
         end
     end
 
     selLabel:register(tes3.uiEvent.mouseClick, function (e)
         resetDynamicToDefault()
-        selLabel.color = lightGreenColor
+        selLabel.color = this.colors.lightGreen
         drawTopicInfo(index)
     end)
 
     lstLabel:register(tes3.uiEvent.mouseClick, function (e)
         resetDynamicToDefault()
-        lstLabel.color = lightGreenColor
+        lstLabel.color = this.colors.lightGreen
         drawTopicInfo(playerCurrentIndex)
     end)
 
     selLabel:triggerEvent(tes3.uiEvent.mouseClick)
+    updateContainerMenu(mainBlock)
 end
 
 
 
 ---@class questGuider.ui.createMarker.params
 ---@field pane tes3uiElement
----@field path string
----@field width number
----@field height number
+---@field markerData questGuider.ui.markerImage
 ---@field x number
 ---@field y number
 ---@field color number[]|nil
@@ -445,16 +462,22 @@ end
 ---@return number|nil alignY
 local function createMarker(params)
     if not params.pane then return end
+    if not params.markerData or not params.markerData.path then return end
 
-    local image = params.pane:createImage{id = mapMenu.marker, path = params.path}
+    local image = params.pane:createImage{id = mapMenu.marker, path = params.markerData.path}
+
+    if not image then return end
+
+    local imageShiftX = params.markerData.shiftX and params.markerData.shiftX / 512 or -image.width / 1024
+    local imageShiftY = params.markerData.shiftY and -params.markerData.shiftY /512 or image.height / 1024
 
     local alignX = (worldWidthMinPart + params.x) / worldWidth
     local alignY = -(params.y - worldHeightMaxPart) / worldHeight
 
     image.autoHeight = true
     image.autoWidth = true
-    image.absolutePosAlignX = alignX
-    image.absolutePosAlignY = alignY
+    image.absolutePosAlignX = math.max(0, math.min(1, alignX + imageShiftX))
+    image.absolutePosAlignY = math.max(0, math.min(1, alignY + imageShiftY))
     image.color = params.color or {1, 1, 1}
 
     image:setLuaData("records", {params})
@@ -583,6 +606,25 @@ function this.drawMapMenu(parent, questId, index, questData)
 
         local markersData = {}
 
+        local markers = {}
+
+        ---@param e tes3uiEventData
+        local function mouseOver(e)
+            for _, marker in pairs(markers) do
+                local owner = marker:getLuaData("owner")
+                if owner and owner ~= e.source then
+                    marker.visible = false
+                end
+            end
+        end
+
+        ---@param e tes3uiEventData
+        local function mouseLeave(e)
+            for _, marker in pairs(markers) do
+                marker.visible = true
+            end
+        end
+
         for _, child in pairs(reqBl.children) do
             if child.name ~= requirementsMenu.requirementLabel then goto continue0 end
 
@@ -625,7 +667,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                         end
                     end
 
-                    table.insert(markersData, {x = x, y = y, color = color, objId = objId})
+                    table.insert(markersData, {x = x, y = y, color = color, objId = objId, element = child})
                     ::continue2::
                 end
 
@@ -636,6 +678,9 @@ function this.drawMapMenu(parent, questId, index, questData)
                 child.color = colorByteToFloat(color)
                 colorIndex = colorIndex == #markerColors and 1 or colorIndex + 1
             end
+
+            child:register(tes3.uiEvent.mouseOver, mouseOver)
+            child:register(tes3.uiEvent.mouseLeave, mouseLeave)
 
             ::continue0::
         end
@@ -654,13 +699,17 @@ function this.drawMapMenu(parent, questId, index, questData)
             local minMaxAlignY = {1, 0}
 
             for _, data in pairs(markersData) do
-                local im, alignX, alignY = createMarker{pane = mapMarkersBlock, path = "textures\\qmarker.tga", height = 8, width = 8,
+                local im, alignX, alignY = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
                     x = data.x, y = data.y, color = colorByteToFloat(data.color)}
 
-                minMaxAlignX[1] = math.min(minMaxAlignX[1], alignX)
-                minMaxAlignX[2] = math.max(minMaxAlignX[2], alignX)
-                minMaxAlignY[1] = math.min(minMaxAlignY[1], alignY)
-                minMaxAlignY[2] = math.max(minMaxAlignY[2], alignY)
+                if im then
+                    im:setLuaData("owner", data.element)
+                    table.insert(markers, im)
+                    minMaxAlignX[1] = math.min(minMaxAlignX[1], alignX)
+                    minMaxAlignX[2] = math.max(minMaxAlignX[2], alignX)
+                    minMaxAlignY[1] = math.min(minMaxAlignY[1], alignY)
+                    minMaxAlignY[2] = math.max(minMaxAlignY[2], alignY)
+                end
             end
 
             local maxScale = math.min(1 / (minMaxAlignX[2] - minMaxAlignX[1]), 1 / (minMaxAlignY[2] - minMaxAlignY[1]))
@@ -680,7 +729,7 @@ function this.drawMapMenu(parent, questId, index, questData)
 
         ::continue::
 
-        updateTopLevelMenu(mainBlock)
+        updateContainerMenu(mainBlock)
     end
 
     drawMarkers(innMenuReqBlock)
@@ -770,9 +819,116 @@ function this.drawQuestsMenu(parent)
         local label = border:createLabel{ id = "qGuider_quests_questLabel", text = questName }
     end
 
-    updateTopLevelMenu(mainBlock)
+    updateContainerMenu(mainBlock)
 
     return mainBlock
+end
+
+function this.updateJournalMenu()
+    local menu = tes3ui.findMenu("MenuJournal")
+    if not menu then return end
+
+    if menu:findChild(journalMenu.requirementBlock) then
+        return
+    end
+
+    for _, pageName in pairs({"MenuBook_page_1", "MenuBook_page_2"}) do
+        local page = menu:findChild(pageName)
+
+        if not page then goto continue end
+
+        local isDescription = false
+        for i, element in pairs(page.children) do
+
+            if element.type == tes3.uiElementType.text then
+                element.height = 4
+            end
+            if element.name ~= "MenuBook_hypertext" then goto continue end
+
+            if not isDescription then
+                element.borderAllSides = -1
+                isDescription = not isDescription
+                goto continue
+            end
+
+            local str = element.text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
+
+            if not dataHandler.questByText[str] then goto continue end
+
+            local questId = dataHandler.questByText[str][1].quest
+            local questIndex = dataHandler.questByText[str][1].index
+            local quest = dataHandler.quests[questId]
+
+            if not quest then goto continue end
+
+            local rect = page:createRect{ id = journalMenu.requirementBlock }
+            page:reorderChildren(element, rect, 1)
+            rect.flowDirection = tes3.flowDirection.leftToRight
+            rect.autoHeight = true
+            rect.autoWidth = true
+            rect.alpha = 0
+
+            local infoRect = rect:createRect{ id = journalMenu.questNameBlock }
+            infoRect.alpha = 0
+            infoRect.autoHeight = true
+            infoRect.autoWidth = false
+            infoRect.borderRight = 5
+
+            local infoLabel = infoRect:createLabel{ id = journalMenu.questNameLabel, text = "("..tostring(questIndex)..") "..(quest.name or "") }
+            infoLabel.color = this.colors.lightGreen
+            infoLabel.alpha = 1
+
+            infoLabel:register(tes3.uiEvent.help, function (ei)
+                local tooltip = tes3ui.createTooltipMenu()
+                this.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
+            end)
+            infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                local el = this.drawContainer("Info")
+                this.drawQuestInfoMenu(el, questId, questIndex, quest)
+                this.centreToCursor(el)
+            end)
+
+            local reqLabelText = "req"
+            local reqLabel = rect:createLabel{ text = reqLabelText }
+            reqLabel.color = {1,1,0.8}
+            reqLabel.borderRight = 5
+
+            reqLabel:register(tes3.uiEvent.help, function (ei)
+                local tooltip = tes3ui.createTooltipMenu()
+                this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest)
+            end)
+            reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                local el = this.drawContainer("Requirements")
+                this.drawQuestRequirementsMenu(el, questId, questIndex, quest)
+                this.centreToCursor(el)
+            end)
+
+            local mapLabelText = "map"
+            local mapLabel = rect:createLabel{ text = mapLabelText }
+            mapLabel.color = {1,1,0.8}
+
+            mapLabel:register(tes3.uiEvent.help, function (ei)
+                local tooltip = tes3ui.createTooltipMenu()
+                this.drawMapMenu(tooltip, questId, questIndex, quest)
+            end)
+            mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                local el = this.drawContainer("Map")
+                this.drawMapMenu(el, questId, questIndex, quest)
+                this.centreToCursor(el)
+            end)
+
+            local mapLabelWidth = tes3ui.textLayout.getTextExtent{ text = mapLabelText, font = mapLabel.font, }
+            local reqLabelWidth = tes3ui.textLayout.getTextExtent{ text = reqLabelText, font = reqLabel.font, }
+
+            infoRect.width = math.max(1, page.width - (mapLabelWidth + reqLabelWidth + 15))
+
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    menu:updateLayout()
 end
 
 return this
