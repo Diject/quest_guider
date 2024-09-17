@@ -57,6 +57,8 @@ local journalMenu = {
     requirementBlock = "qGuider_journal_reqBlock",
     questNameLabel = "qGuider_journal_qNameLabel",
     questNameBlock = "qGuider_journal_qNameBlock",
+    requirementsIcon = "qGuider_journal_reqIcon",
+    mapIcon = "qGuider_journal_MapIcon",
 }
 
 
@@ -74,11 +76,6 @@ local worldWidthMinPart = -minCellGridX * 8192
 local worldHeightMaxPart = (maxCellGridY + 1) * 8192
 local worldWidth = (-minCellGridX + maxCellGridX) * 8192
 local worldHeight = (-minCellGridY + maxCellGridY) * 8192
-
-local defaultColor = {0.792, 0.647, 0.376}
-local lightDefault = {0.892, 0.747, 0.476}
-local lightGreenColor = {0.5, 1, 0.5}
-local lightBlue = {0.5, 0.5, 1}
 
 local markerColors = {
     -- {255, 0, 0},
@@ -151,6 +148,10 @@ local function updateContainerMenu(mainBlock)
     topMenu:updateLayout()
 
     if topMenu.name == "qGuider_container" then
+        topMenu.maxWidth = nil
+        topMenu.maxHeight = nil
+        topMenu.minWidth = nil
+        topMenu.minHeight = nil
         topMenu.height = mainBlock.height + 74
         topMenu.width = mainBlock.width + 24
         topMenu.maxWidth = topMenu.width
@@ -253,8 +254,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     selectedCurrentBlock:createLabel{ id = requirementsMenu.text, text = "Stage:" }.borderRight = 20
     local selLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.selectedLabel, text = string.format("Selected (%s)", topicIndexStr) }
     local lstLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.currentLabel, text = string.format("Current (%s)", playerCurrentIndexStr) }
-    -- parent:getTopLevelMenu():updateLayout()
-    -- selectedCurrentBlock.absolutePosAlignX = 0.5
     lstLabel.borderLeft = 20
 
     local reqIndexMainBlock = mainBlock:createBlock{ id = requirementsMenu.requirementIndexMainBlock }
@@ -611,8 +610,8 @@ function this.drawMapMenu(parent, questId, index, questData)
         ---@param e tes3uiEventData
         local function mouseOver(e)
             for _, marker in pairs(markers) do
-                local owner = marker:getLuaData("owner")
-                if owner and owner ~= e.source then
+                local color = marker.color
+                if color and e.source.color and (color[1] ~= e.source.color[1] or color[2] ~= e.source.color[2] or color[3] ~= e.source.color[3]) then
                     marker.visible = false
                 end
             end
@@ -637,6 +636,8 @@ function this.drawMapMenu(parent, questId, index, questData)
             local foundObjectsInChildren = 0
             for _, objId in pairs(reqData.objects) do
 
+                local obj = tes3.getObject(objId)
+                local objName = obj and obj.name
                 local objPosData = questLib.getObjectPositionData(objId)
 
                 if not objPosData then goto continue1 end
@@ -654,10 +655,13 @@ function this.drawMapMenu(parent, questId, index, questData)
                     local x = pos.position[1]
                     local y = pos.position[2]
 
+                    local cellPath
+
                     if pos.name then
                         local cell = tes3.getCell{id = pos.name}
                         if cell then
-                            local exCellPos = cellLib.findExitPos(cell)
+                            local exCellPos
+                            exCellPos, cellPath = cellLib.findExitPos(cell)
                             if exCellPos then
                                 x = exCellPos.x
                                 y = exCellPos.y
@@ -667,7 +671,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                         end
                     end
 
-                    table.insert(markersData, {x = x, y = y, color = color, objId = objId, element = child})
+                    table.insert(markersData, { x = x, y = y, color = color, objId = objId, objName = objName, cellPath = cellPath })
                     ::continue2::
                 end
 
@@ -677,10 +681,10 @@ function this.drawMapMenu(parent, questId, index, questData)
             if foundObjectsInChildren > 0 then
                 child.color = colorByteToFloat(color)
                 colorIndex = colorIndex == #markerColors and 1 or colorIndex + 1
-            end
 
-            child:register(tes3.uiEvent.mouseOver, mouseOver)
-            child:register(tes3.uiEvent.mouseLeave, mouseLeave)
+                child:register(tes3.uiEvent.mouseOver, mouseOver)
+                child:register(tes3.uiEvent.mouseLeave, mouseLeave)
+            end
 
             ::continue0::
         end
@@ -699,11 +703,21 @@ function this.drawMapMenu(parent, questId, index, questData)
             local minMaxAlignY = {1, 0}
 
             for _, data in pairs(markersData) do
+
+                local descr
+                if data.cellPath then
+                    for i = #data.cellPath, 1, -1 do
+                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i]) or string.format("\"%s\"", data.cellPath[i])
+                    end
+                end
+
                 local im, alignX, alignY = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
-                    x = data.x, y = data.y, color = colorByteToFloat(data.color)}
+                    x = data.x, y = data.y, color = colorByteToFloat(data.color),
+                    name = data.objName,
+                    description = descr,
+                }
 
                 if im then
-                    im:setLuaData("owner", data.element)
                     table.insert(markers, im)
                     minMaxAlignX[1] = math.min(minMaxAlignX[1], alignX)
                     minMaxAlignX[2] = math.max(minMaxAlignX[2], alignX)
@@ -888,9 +902,9 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            local reqLabelText = "req"
-            local reqLabel = rect:createLabel{ text = reqLabelText }
-            reqLabel.color = {1,1,0.8}
+            local reqLabel = rect:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
+            reqLabel.imageScaleX = 0.5
+            reqLabel.imageScaleY = 0.5
             reqLabel.borderRight = 5
 
             reqLabel:register(tes3.uiEvent.help, function (ei)
@@ -903,9 +917,9 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            local mapLabelText = "map"
-            local mapLabel = rect:createLabel{ text = mapLabelText }
-            mapLabel.color = {1,1,0.8}
+            local mapLabel = rect:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
+            mapLabel.imageScaleX = 0.5
+            mapLabel.imageScaleY = 0.5
 
             mapLabel:register(tes3.uiEvent.help, function (ei)
                 local tooltip = tes3ui.createTooltipMenu()
@@ -917,10 +931,7 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            local mapLabelWidth = tes3ui.textLayout.getTextExtent{ text = mapLabelText, font = mapLabel.font, }
-            local reqLabelWidth = tes3ui.textLayout.getTextExtent{ text = reqLabelText, font = reqLabel.font, }
-
-            infoRect.width = math.max(1, page.width - (mapLabelWidth + reqLabelWidth + 15))
+            infoRect.width = math.max(1, page.width - (16 + 16 + 10))
 
             ::continue::
         end
