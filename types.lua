@@ -79,7 +79,6 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 ---| "this.requirementType.NPCShouldAttackPlayer"
 ---| "this.requirementType.NPCIsWerewolf"
 ---| "this.requirementType.PlayerWerewolfKills"
-
 ---| "this.requirementType.ValueFLTV"
 ---| "this.requirementType.ValueINTVLong"
 ---| "this.requirementType.ValueINTVShort"
@@ -91,7 +90,6 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 ---| "this.requirementType.NotActorClass"
 ---| "this.requirementType.NotActorRace"
 ---| "this.requirementType.NotActorCell"
-
 ---| "this.requirementType.Custom"
 ---| "this.requirementType.CustomValue"
 ---| "this.requirementType.CustomDisposition"
@@ -110,9 +108,7 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 ---| "this.requirementType.CustomActorFaction"
 ---| "this.requirementType.CustomActorGender"
 ---| "this.requirementType.CustomActorRank"
-
 ---| "this.requirementType.CustomScript"
-
 ---| "this.requirementType.CustomGameHour"
 ---| "this.requirementType.CustomAIPackageDone"
 ---| "this.requirementType.CustomAngle"
