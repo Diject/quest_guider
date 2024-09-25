@@ -4,8 +4,9 @@ local tableLib = include("diject.quest_guider.utils.table")
 local dataHandler = include("diject.quest_guider.dataHandler")
 
 local questLib = include("diject.quest_guider.quest")
--- local markers = require("diject.world_map_markers.interop")
-local cellLib = require("diject.quest_guider.cell")
+local cellLib = include("diject.quest_guider.cell")
+local trackingLib = include("diject.quest_guider.tracking")
+
 
 local infoMenu = {
     block = "qGuider_info_block",
@@ -77,32 +78,7 @@ local worldHeightMaxPart = (maxCellGridY + 1) * 8192
 local worldWidth = (-minCellGridX + maxCellGridX) * 8192
 local worldHeight = (-minCellGridY + maxCellGridY) * 8192
 
-local markerColors = {
-    -- {255, 0, 0},
-    -- {0, 0, 255},
-    -- {0, 255, 0},
-    {255, 255, 0},
-    {0, 255, 255},
-    {255, 0, 255},
-    {255, 63, 63},
-    {63, 63, 255},
-    {63, 255, 63},
-    {255, 255, 63},
-    {63, 255, 255},
-    {255, 63, 255},
-    {255, 127, 127},
-    {127, 127, 255},
-    -- {127, 255, 127},
-    {255, 255, 127},
-    {127, 255, 255},
-    {255, 127, 255},
-    {255, 191, 191},
-    {191, 191, 255},
-    {191, 255, 191},
-    {255, 255, 191},
-    {191, 255, 255},
-    {255, 191, 255},
-}
+local markerColors = include("diject.quest_guider.Types.color")
 
 
 local this = {}
@@ -131,16 +107,6 @@ this.markers = {
     quest = {path = "textures\\diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4},
 }
 
-
----@param color integer[]
----@return integer[]
-local function colorByteToFloat(color)
-    local out = {}
-    for _, val in ipairs(color) do
-        table.insert(out, val / 255)
-    end
-    return out
-end
 
 
 local function updateContainerMenu(mainBlock)
@@ -633,6 +599,8 @@ function this.drawMapMenu(parent, questId, index, questData)
 
             local color = markerColors[colorIndex]
 
+            local objectIds = {}
+
             local foundObjectsInChildren = 0
             for _, objId in pairs(reqData.objects) do
 
@@ -650,6 +618,8 @@ function this.drawMapMenu(parent, questId, index, questData)
                 else
                     colorOfObject[objId] = color
                 end
+
+                objectIds[objId] = true
 
                 for _, pos in pairs(objPosData) do
                     local x = pos.position[1]
@@ -679,11 +649,21 @@ function this.drawMapMenu(parent, questId, index, questData)
             end
 
             if foundObjectsInChildren > 0 then
-                child.color = colorByteToFloat(color)
+                child.color = color
                 colorIndex = colorIndex == #markerColors and 1 or colorIndex + 1
 
                 child:register(tes3.uiEvent.mouseOver, mouseOver)
                 child:register(tes3.uiEvent.mouseLeave, mouseLeave)
+
+                ---@param e tes3uiEventData
+                local function mouseClick(e)
+                    for objId, _ in pairs(objectIds) do
+                        trackingLib.addMarker{objectId = objId, color = color, questId = questId, questStage = index}
+                    end
+                    trackingLib.updateMarkers()
+                end
+
+                child:register(tes3.uiEvent.mouseClick, mouseClick)
             end
 
             ::continue0::
@@ -706,13 +686,14 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 local descr
                 if data.cellPath then
-                    for i = #data.cellPath, 1, -1 do
-                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i]) or string.format("\"%s\"", data.cellPath[i])
+                    for i = #data.cellPath - 1, 1, -1 do
+                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i].cell.editorName) or string.format("\"%s\"",
+                            data.cellPath[i].cell.editorName)
                     end
                 end
 
                 local im, alignX, alignY = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
-                    x = data.x, y = data.y, color = colorByteToFloat(data.color),
+                    x = data.x, y = data.y, color = data.color,
                     name = data.objName,
                     description = descr,
                 }
