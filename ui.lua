@@ -62,6 +62,15 @@ local journalMenu = {
     mapIcon = "qGuider_journal_MapIcon",
 }
 
+local mapAddon = {
+    showHideBtn = "qGuider_mapAddon_showHideBtn",
+    removeAllBtn = "qGuider_mapAddon_removeAllBtn",
+    scrollPane = "qGuider_mapAddon_scrollPane",
+    trackingBlock = "qGuider_mapAddon_trackingBlock",
+    questNameLabel = "qGuider_mapAddon_questNameLabel",
+    questObjLabel = "qGuider_mapAddon_questObjLabel",
+}
+
 
 local mcp_mapExpansion = tes3.hasCodePatchFeature(tes3.codePatchFeature.mapExpansionForTamrielRebuilt)
 
@@ -660,7 +669,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                     for objId, _ in pairs(objectIds) do
                         trackingLib.addMarker{objectId = objId, color = color, questId = questId, questStage = index}
                     end
-                    trackingLib.updateMarkers()
+                    trackingLib.updateMarkers(true)
                 end
 
                 child:register(tes3.uiEvent.mouseClick, mouseClick)
@@ -856,20 +865,18 @@ function this.updateJournalMenu()
 
             if not quest then goto continue end
 
-            local rect = page:createRect{ id = journalMenu.requirementBlock }
-            page:reorderChildren(element, rect, 1)
-            rect.flowDirection = tes3.flowDirection.leftToRight
-            rect.autoHeight = true
-            rect.autoWidth = true
-            rect.alpha = 0
+            local block = page:createBlock{ id = journalMenu.requirementBlock }
+            page:reorderChildren(element, block, 1)
+            block.flowDirection = tes3.flowDirection.leftToRight
+            block.autoHeight = true
+            block.autoWidth = true
 
-            local infoRect = rect:createRect{ id = journalMenu.questNameBlock }
-            infoRect.alpha = 0
-            infoRect.autoHeight = true
-            infoRect.autoWidth = false
-            infoRect.borderRight = 5
+            local infoBlock = block:createBlock{ id = journalMenu.questNameBlock }
+            infoBlock.autoHeight = true
+            infoBlock.autoWidth = false
+            infoBlock.borderRight = 5
 
-            local infoLabel = infoRect:createLabel{ id = journalMenu.questNameLabel, text = "("..tostring(questIndex)..") "..(quest.name or "") }
+            local infoLabel = infoBlock:createLabel{ id = journalMenu.questNameLabel, text = "("..tostring(questIndex)..") "..(quest.name or "") }
             infoLabel.color = this.colors.lightGreen
             infoLabel.alpha = 1
 
@@ -883,7 +890,7 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            local reqLabel = rect:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
+            local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
             reqLabel.imageScaleX = 0.5
             reqLabel.imageScaleY = 0.5
             reqLabel.borderRight = 5
@@ -898,7 +905,7 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            local mapLabel = rect:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
+            local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
             mapLabel.imageScaleX = 0.5
             mapLabel.imageScaleY = 0.5
 
@@ -912,7 +919,7 @@ function this.updateJournalMenu()
                 this.centreToCursor(el)
             end)
 
-            infoRect.width = math.max(1, page.width - (16 + 16 + 10))
+            infoBlock.width = math.max(1, page.width - (16 + 16 + 10))
 
             ::continue::
         end
@@ -921,6 +928,144 @@ function this.updateJournalMenu()
     end
 
     menu:updateLayout()
+end
+
+function this.updateMapMenu()
+    if not trackingLib.isInit() then return end
+
+    local menu = tes3ui.findMenu("MenuMap")
+    if not menu then return end
+
+    local menuWorld = menu:findChild("MenuMap_world")
+    local menuLocal = menu:findChild("MenuMap_local")
+    if not menuWorld or not menuLocal then return end
+
+    local dragMenu = menu:findChild("PartDragMenu_main")
+    if not dragMenu then return end
+
+    local flowDirection = dragMenu.flowDirection
+
+    local btnBlock = dragMenu:createBlock{}
+    btnBlock.autoHeight = true
+    btnBlock.autoWidth = true
+    btnBlock.absolutePosAlignX = 0
+    btnBlock.absolutePosAlignY = 1
+    btnBlock.flowDirection = tes3.flowDirection.leftToRight
+
+    local trackedBtn = btnBlock:createButton{ id = mapAddon.showHideBtn, text = ">" }
+
+    local removeAllBtn = btnBlock:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
+    removeAllBtn.visible = false
+
+    local questPane = dragMenu:createVerticalScrollPane{ id = mapAddon.scrollPane }
+    questPane.heightProportional = 1
+    questPane.widthProportional = 0.75
+    questPane.flowDirection = tes3.flowDirection.topToBottom
+    questPane.visible = false
+    questPane.widget.scrollbarVisible = true
+
+    dragMenu:reorderChildren(dragMenu.children[1], questPane, -1)
+
+    ---@param parent tes3uiElement
+    local function createTrackingBlock(parent, questId, trackingData)
+        local questData = dataHandler.quests[questId]
+        if not questData then return end
+
+        local block = parent:createBlock{ id = mapAddon.trackingBlock }
+        block.autoHeight = true
+        block.widthProportional = 1
+        block.flowDirection = tes3.flowDirection.topToBottom
+        block.borderBottom = 16
+
+        local qNameLabel = block:createLabel{ id = mapAddon.questNameLabel, text = questData.name or "???" }
+        qNameLabel.widthProportional = 1
+        qNameLabel.wrapText = true
+        qNameLabel.borderLeft = 10
+
+        for objId, _ in pairs(trackingData.objects) do
+            local object = tes3.getObject(objId)
+            if not object then goto continue end
+            local objectMarkerData = trackingLib.markerByObjectId[objId]
+            if not objectMarkerData then goto continue end
+
+            local markerColor = table.copy(objectMarkerData.color)
+
+            local qDescrLabel = block:createLabel{ id = mapAddon.questObjLabel, text = object.name }
+            qDescrLabel.widthProportional = 1
+            qDescrLabel.wrapText = true
+            qDescrLabel.borderLeft = 20
+            qDescrLabel.color = markerColor
+
+            qDescrLabel:register(tes3.uiEvent.mouseOver, function (e)
+                local color = {1, 1, 1}
+                qDescrLabel.color = color
+
+                trackingLib.changeObjectMarkerColor(objId, color)
+                trackingLib.updateMarkers(false, true)
+                qDescrLabel:getTopLevelMenu():updateLayout()
+            end)
+
+            qDescrLabel:register(tes3.uiEvent.mouseLeave, function (e)
+                qDescrLabel.color = markerColor
+                trackingLib.changeObjectMarkerColor(objId, markerColor)
+                trackingLib.updateMarkers(false, true)
+                qDescrLabel:getTopLevelMenu():updateLayout()
+            end)
+
+            qDescrLabel:register(tes3.uiEvent.mouseClick, function (e)
+                tes3.messageBox{
+                    message = "Remove the marker?",
+                    buttons = { "Yes", "No" },
+                    showInDialog = false,
+                    callback = function (e1)
+                        if e1.button == 0 then
+                            trackingLib.removeMarker{ objectId = objId }
+                            trackingLib.updateMarkers(true)
+                            qDescrLabel:getTopLevelMenu():updateLayout()
+                        end
+                    end,
+                }
+            end)
+
+            ::continue::
+        end
+    end
+
+    local function fillQuestPande()
+        questPane:destroyChildren()
+        for questId, trackingData in pairs(trackingLib.trackedObjectsByQuestId) do
+            createTrackingBlock(questPane, questId, trackingData)
+        end
+        menu:updateLayout()
+    end
+
+    trackedBtn:register(tes3.uiEvent.mouseClick, function (e)
+        questPane.visible = not questPane.visible
+        trackedBtn.text = questPane.visible and "<" or ">"
+
+        if questPane.visible then
+            removeAllBtn.visible = true
+            menuLocal.widthProportional = 2 - questPane.widthProportional
+            menuWorld.widthProportional = 2 - questPane.widthProportional
+            dragMenu.flowDirection = tes3.flowDirection.leftToRight
+        else
+            removeAllBtn.visible = false
+            menuLocal.widthProportional = 1
+            menuWorld.widthProportional = 1
+            dragMenu.flowDirection = flowDirection
+        end
+
+        menu:updateLayout()
+    end)
+
+    removeAllBtn:register(tes3.uiEvent.mouseClick, function (e)
+        trackingLib.removeMarkers()
+        trackingLib.updateMarkers(true)
+    end)
+
+    trackingLib.callbackToUpdateMapMenu = fillQuestPande
+
+    fillQuestPande()
 end
 
 return this

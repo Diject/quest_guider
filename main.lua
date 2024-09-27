@@ -19,6 +19,14 @@ local function uiActivatedCallback(e)
     end
 end
 
+--- @param e uiActivatedEventData
+local function uiActivatedCallback1(e)
+    if e.newlyCreated then
+        ui.updateMapMenu()
+    end
+end
+event.register(tes3.event.uiActivated, uiActivatedCallback1, {filter = "MenuMap"})
+
 --- @param e loadEventData
 local function loadCallback(e)
     storage.reset()
@@ -27,8 +35,10 @@ end
 
 --- @param e loadedEventData
 local function loadedCallback(e)
-    storage.initPlayerStorage()
-    tracking.init()
+    if not storage.isPlayerStorageReady() then
+        storage.initPlayerStorage()
+    end
+    tracking.isInit()
 end
 
 --- @param e initializedEventData

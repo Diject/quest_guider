@@ -27,8 +27,8 @@ this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", 
 this.storageData = {}
 
 ---@class questGuider.tracking.markerRecord
----@field questId string
----@field questStage integer
+---@field quests table<string, {id : string, index : integer}>
+---@field color number[]
 ---@field localMarkerId string|nil
 ---@field localDoorMarkerId string|nil
 ---@field worldMarkerId string|nil
@@ -37,9 +37,11 @@ this.storageData = {}
 ---@type table<string, questGuider.tracking.markerRecord>
 this.markerByObjectId = {}
 
----@type table<string, {objects : table<string, boolean>, color : number[]}>
+---@type table<string, {objects : table<string, string[]>, color : number[]}>
 this.trackedObjectsByQuestId = {}
 
+
+this.callbackToUpdateMapMenu = nil
 
 local initialized = false
 
@@ -47,6 +49,9 @@ local initialized = false
 function this.init()
     initialized = false
     if not markerLib then return false end
+    if not storage.isPlayerStorageReady() then
+        storage.initPlayerStorage()
+    end
     if not storage.player then return false end
 
     if not storage.player[storageLabel] then
@@ -65,8 +70,22 @@ end
 
 function this.reset()
     initialized = false
+    this.callbackToUpdateMapMenu = nil
     this.markerByObjectId = {}
     this.trackedObjectsByQuestId = {}
+end
+
+function this.isInit()
+    if not initialized then
+        return this.init()
+    end
+    return true
+end
+
+local function runCallbacks()
+    if this.callbackToUpdateMapMenu then
+        this.callbackToUpdateMapMenu()
+    end
 end
 
 ---@class questGuider.tracking.addMarker
@@ -94,16 +113,6 @@ function this.addMarker(params)
 
     if not questData then return end
 
-    local objectOldTrackingData = this.markerByObjectId[objectId]
-    if objectOldTrackingData then
-        if objectOldTrackingData.localMarkerId then
-            markerLib.removeRecord(objectOldTrackingData.localMarkerId)
-        end
-        if objectOldTrackingData.worldMarkerId then
-            markerLib.removeRecord(objectOldTrackingData.worldMarkerId)
-        end
-    end
-
     local qTrackingInfo
     if this.trackedObjectsByQuestId[params.questId] then
         qTrackingInfo = this.trackedObjectsByQuestId[params.questId]
@@ -113,58 +122,79 @@ function this.addMarker(params)
         this.storageData.colorId = colorId < #colors and colorId + 1 or 1
     end
 
-    local localMarkerId = markerLib.addRecord{
+    local objectTrackingData = this.markerByObjectId[objectId]
+    if not objectTrackingData then
+
+        local color = table.copy(qTrackingInfo.color)
+
+        local objNum = table.size(qTrackingInfo.objects)
+        color[1] = math.clamp(color[1] + (objNum % 3 == 0 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
+        color[2] = math.clamp(color[2] + (objNum % 3 == 1 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
+        color[3] = math.clamp(color[3] + (objNum % 3 == 2 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
+
+        objectTrackingData = { quests = {}, color = color } ---@diagnostic disable-line: missing-fields
+    end
+
+    objectTrackingData.localMarkerId = objectTrackingData.localMarkerId or markerLib.addRecord{
         path = this.localMarkerImageInfo.path,
-        color = qTrackingInfo.color,
+        color = objectTrackingData.color,
         textureShiftX = this.localMarkerImageInfo.shiftX,
         textureShiftY = this.localMarkerImageInfo.shiftY,
         scale = this.localMarkerImageInfo.scale,
         name = object.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
-    local worldMarkerId = markerLib.addRecord{
+    objectTrackingData.worldMarkerId = objectTrackingData.worldMarkerId or markerLib.addRecord{
         path = this.worldMarkerImageInfo.path,
-        color = qTrackingInfo.color,
+        color = objectTrackingData.color,
         textureShiftX = this.worldMarkerImageInfo.shiftX,
         textureShiftY = this.worldMarkerImageInfo.shiftY,
         scale = this.worldMarkerImageInfo.scale,
         name = object.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
-    local localDoorMarkerId
 
-    if not localMarkerId and not worldMarkerId then return end
+    if not objectTrackingData.localMarkerId and not objectTrackingData.worldMarkerId then return end
+
+    if not objectTrackingData.quests then objectTrackingData.quests = {} end
+    objectTrackingData.quests[params.questId] = { id = params.questId, index = params.questStage }
+
+    local objects = {}
+    objects[objectId] = true
 
     for _, positionData in pairs(objectPositions) do
-        if localMarkerId then
+
+        if objectTrackingData.localMarkerId then
+
             if positionData.type == 1 then
                 markerLib.addLocalMarker{
-                    id = localMarkerId,
-                    -- cellName = positionData.grid == nil and positionData.name or nil,
-                    -- x = positionData.position[1],
-                    -- y = positionData.position[2],
-                    -- z = positionData.position[3],
+                    id = objectTrackingData.localMarkerId,
                     objectId = objectId,
                 }
+
             elseif positionData.type == 2 then
+                objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    id = localMarkerId,
+                    id = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
                     itemId = objectId,
                 }
+
             elseif positionData.type == 4 then
+                objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    id = localMarkerId,
+                    id = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
                 }
             end
+
         end
 
         if positionData.grid then
 
-            if worldMarkerId then
+            if objectTrackingData.worldMarkerId then
                 markerLib.addWorldMarker{
-                    id = worldMarkerId,
+                    id = objectTrackingData.worldMarkerId,
                     x = positionData.position[1],
                     y = positionData.position[2],
                 }
@@ -176,18 +206,18 @@ function this.addMarker(params)
 
                 local exitPos, path = cellLib.findExitPos(cell)
 
-                if exitPos and worldMarkerId then
+                if exitPos and objectTrackingData.worldMarkerId then
                     markerLib.addWorldMarker{
-                        id = worldMarkerId,
+                        id = objectTrackingData.worldMarkerId,
                         x = exitPos.x,
                         y = exitPos.y,
                     }
                 end
 
                 if path then
-                    localDoorMarkerId = markerLib.addRecord{
+                    objectTrackingData.localDoorMarkerId = objectTrackingData.localDoorMarkerId or markerLib.addRecord{
                         path = this.localDoorMarkerImageInfo.path,
-                        color = qTrackingInfo.color,
+                        color = objectTrackingData.color,
                         textureShiftX = this.localDoorMarkerImageInfo.shiftX,
                         textureShiftY = this.localDoorMarkerImageInfo.shiftY,
                         scale = this.localDoorMarkerImageInfo.scale,
@@ -195,12 +225,12 @@ function this.addMarker(params)
                         description = string.format("Quest: \"%s\"", questData.name or "")
                     }
 
-                    if localDoorMarkerId then
+                    if objectTrackingData.localDoorMarkerId then
                         for i = #path, 1, -1 do
                             local node = path[i]
                             local markerPos = node.marker.position
                             markerLib.addLocalMarker{
-                                id = localDoorMarkerId,
+                                id = objectTrackingData.localDoorMarkerId,
                                 cellName = node.cell.isInterior == true and node.cell.name or nil,
                                 x = markerPos.x,
                                 y = markerPos.y,
@@ -213,21 +243,126 @@ function this.addMarker(params)
         end
     end
 
-    this.markerByObjectId[objectId] = {
-        questId = params.questId,
-        questStage = params.questStage,
-        localMarkerId = localMarkerId,
-        localDoorMarkerId = localDoorMarkerId,
-        worldMarkerId = worldMarkerId,
-    }
+    for objId, _ in pairs(objects) do
+        this.markerByObjectId[objId] = objectTrackingData
+    end
+
+    qTrackingInfo.objects[objectId] = table.keys(objects)
 
     this.trackedObjectsByQuestId[params.questId] = qTrackingInfo
     return true
 end
 
-function this.updateMarkers()
-    markerLib.updateLocalMarkers()
+---@class questGuider.tracking.removeMarker
+---@field questId string|nil should be lowercase
+---@field objectId string|nil should be lowercase
+
+---@param params questGuider.tracking.removeMarker
+function this.removeMarker(params)
+    if not params.questId and not params.objectId then return end
+
+    local function removeMarkersFromObject(id)
+        local objData = this.markerByObjectId[id]
+        if not objData then return end
+
+        if objData.worldMarkerId then
+            markerLib.removeRecord(objData.worldMarkerId)
+        end
+
+        if objData.localMarkerId then
+            markerLib.removeRecord(objData.localMarkerId)
+        end
+
+        if objData.localDoorMarkerId then
+            markerLib.removeRecord(objData.localDoorMarkerId)
+        end
+
+        this.markerByObjectId[id] = nil
+    end
+
+    local function removeFromObject(objectId)
+        local data = this.markerByObjectId[objectId]
+        if data then
+            for qId, dt in pairs(data.quests or {}) do
+                local questTrackedData = this.trackedObjectsByQuestId[dt.id]
+                if questTrackedData then
+                    removeMarkersFromObject(objectId)
+                    for _, objId in pairs(questTrackedData.objects[objectId] or {}) do
+                        this.markerByObjectId[objId] = nil
+                    end
+                    questTrackedData.objects[objectId] = nil
+
+                    if table.size(questTrackedData.objects) == 0 then
+                        this.trackedObjectsByQuestId[dt.id] = nil
+                    end
+                end
+            end
+        end
+    end
+
+    if params.questId then
+        local questTrackedData = this.trackedObjectsByQuestId[params.questId]
+        if questTrackedData then
+            for _, parentObjId in pairs(table.keys(questTrackedData.objects)) do
+                removeFromObject(parentObjId)
+            end
+        end
+        this.trackedObjectsByQuestId[params.questId] = nil
+    end
+
+    if params.objectId then
+        removeFromObject(params.objectId)
+    end
+
+end
+
+function this.removeMarkers()
+    local questIds = table.keys(this.trackedObjectsByQuestId)
+
+    for _, qId in pairs(questIds) do
+        this.removeMarker{ questId = qId }
+    end
+end
+
+---@param trackedObjectId string
+---@return boolean|nil
+function this.changeObjectMarkerColor(trackedObjectId, color)
+    local data = this.markerByObjectId[trackedObjectId]
+    if not data then return end
+
+    if data.localMarkerId then
+        local record = markerLib.getRecord(data.localMarkerId)
+        if record then
+            record.color = table.copy(color)
+        end
+    end
+
+    if data.worldMarkerId then
+        local record = markerLib.getRecord(data.worldMarkerId)
+        if record then
+            record.color = table.copy(color)
+        end
+    end
+
+    if data.localDoorMarkerId then
+        local record = markerLib.getRecord(data.localDoorMarkerId)
+        if record then
+            record.color = table.copy(color)
+        end
+    end
+
+    return true
+end
+
+
+function this.updateMarkers(callbacks, recreate)
+    if callbacks then
+        runCallbacks()
+    end
+    markerLib.updateLocalMarkers(recreate)
     markerLib.updateWorldMarkers()
 end
+
+
 
 return this
