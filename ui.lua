@@ -960,7 +960,6 @@ function this.updateMapMenu()
     local questPane = dragMenu:createVerticalScrollPane{ id = mapAddon.scrollPane }
     questPane.heightProportional = 1
     questPane.widthProportional = 0.75
-    questPane.flowDirection = tes3.flowDirection.topToBottom
     questPane.visible = false
     questPane.widget.scrollbarVisible = true
 
@@ -1031,12 +1030,13 @@ function this.updateMapMenu()
         end
     end
 
-    local function fillQuestPande()
-        questPane:destroyChildren()
+    local function fillQuestPane()
+        questPane:getContentElement():destroyChildren()
         for questId, trackingData in pairs(trackingLib.trackedObjectsByQuestId) do
             createTrackingBlock(questPane, questId, trackingData)
         end
         menu:updateLayout()
+        questPane.widget:contentsChanged()
     end
 
     trackedBtn:register(tes3.uiEvent.mouseClick, function (e)
@@ -1056,6 +1056,7 @@ function this.updateMapMenu()
         end
 
         menu:updateLayout()
+        questPane.widget:contentsChanged()
     end)
 
     removeAllBtn:register(tes3.uiEvent.mouseClick, function (e)
@@ -1063,9 +1064,9 @@ function this.updateMapMenu()
         trackingLib.updateMarkers(true)
     end)
 
-    trackingLib.callbackToUpdateMapMenu = fillQuestPande
+    trackingLib.callbackToUpdateMapMenu = fillQuestPane
 
-    fillQuestPande()
+    fillQuestPane()
 end
 
 return this
