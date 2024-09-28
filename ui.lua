@@ -939,7 +939,7 @@ function this.updateJournalMenu()
             local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
             reqLabel.imageScaleX = 0.5
             reqLabel.imageScaleY = 0.5
-            reqLabel.borderRight = 5
+            reqLabel.borderRight = 2
 
             reqLabel:register(tes3.uiEvent.help, function (ei)
                 local tooltip = tes3ui.createTooltipMenu()
