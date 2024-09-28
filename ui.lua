@@ -139,10 +139,18 @@ local function updateContainerMenu(mainBlock)
 end
 
 ---@param element tes3uiElement
-function this.centreToCursor(element)
+function this.centerToCursor(element)
+    local width, height = tes3.getViewportSize()
+    local scale = tes3ui.getViewportScale()
+    width = width / scale
+    height = height / scale
+    local halfWidth = width / 2
+    local halfHeight = height / 2
     local curPos = tes3.getCursorPosition()
-    element.positionX = curPos.x - element.width / 2
-    element.positionY = curPos.y
+
+    element.positionX = math.clamp(curPos.x - element.width / 2, -halfWidth, halfWidth - element.width)
+    element.positionY = math.clamp(curPos.y + 10, -halfHeight + element.height, halfHeight)
+
     element:getTopLevelMenu():updateLayout()
 end
 
@@ -888,7 +896,7 @@ function this.updateJournalMenu()
             infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
                 local el = this.drawContainer("Info")
                 this.drawQuestInfoMenu(el, questId, questIndex, quest)
-                this.centreToCursor(el)
+                this.centerToCursor(el)
             end)
 
             local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
@@ -903,7 +911,7 @@ function this.updateJournalMenu()
             reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
                 local el = this.drawContainer("Requirements")
                 this.drawQuestRequirementsMenu(el, questId, questIndex, quest)
-                this.centreToCursor(el)
+                this.centerToCursor(el)
             end)
 
             local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
@@ -917,7 +925,7 @@ function this.updateJournalMenu()
             mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
                 local el = this.drawContainer("Map")
                 this.drawMapMenu(el, questId, questIndex, quest)
-                this.centreToCursor(el)
+                this.centerToCursor(el)
             end)
 
             infoBlock.width = math.max(1, page.width - (16 + 16 + 10))
