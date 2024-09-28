@@ -138,6 +138,28 @@ local function updateContainerMenu(mainBlock)
     end
 end
 
+local function isColorsEqual(color1, color2)
+    if not color1 or not color2 then return end
+    return color1[1] == color2[1] and color1[2] == color2[2] and color1[3] == color2[3]
+end
+
+---@param element tes3uiElement
+---@param color number[]|nil
+local function makeLabelSelectable(element, color)
+    local originalColor
+    element:registerBefore(tes3.uiEvent.mouseOver, function (e)
+        if not isColorsEqual(element.color, {1, 1, 1}) then
+            originalColor = table.copy(element.color)
+            element.color = color or {1, 1, 1}
+            element:getTopLevelMenu():updateLayout()
+        end
+    end)
+    element:registerBefore(tes3.uiEvent.mouseLeave, function (e)
+        element.color = originalColor or element.color
+        element:getTopLevelMenu():updateLayout()
+    end)
+end
+
 ---@param element tes3uiElement
 function this.centerToCursor(element)
     local width, height = tes3.getViewportSize()
@@ -240,6 +262,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local lstLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.currentLabel, text = string.format("Current (%s)", playerCurrentIndexStr) }
     lstLabel.borderLeft = 20
 
+    makeLabelSelectable(selLabel)
+    makeLabelSelectable(lstLabel)
+
     local reqIndexMainBlock = mainBlock:createBlock{ id = requirementsMenu.requirementIndexMainBlock }
     reqIndexMainBlock.autoHeight = true
     reqIndexMainBlock.autoWidth = true
@@ -333,6 +358,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             local nextIndexValueLabel = reqIndexBlock:createLabel{ id = requirementsMenu.nextIndexValueLabel, text = "-"..indStr.."-" }
             table.insert(nextIndTabs, nextIndexValueLabel)
 
+            makeLabelSelectable(nextIndexValueLabel)
+
             nextIndexValueLabel:register(tes3.uiEvent.mouseClick, function (e)
 
                 for _, tb in pairs(nextIndTabs) do
@@ -358,6 +385,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     local tab = indexTabBlock:createLabel{ id = requirementsMenu.indexTab, text = "-"..tostring(i).."-" }
                     table.insert(tabs, tab)
+
+                    makeLabelSelectable(tab)
+
                     local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock)
                     tab:setLuaData("requirementData", requirementData)
 
@@ -371,11 +401,15 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 reqLabel.color = this.colors.lightDefault
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
+
+                                makeLabelSelectable(reqLabel)
                             end
                         else
                             local reqLabel = reqBlock:createLabel{ id = requirementsMenu.requirementLabel, text = "???" }
                             reqLabel.color = this.colors.lightDefault
                             reqLabel.borderTop = 4
+
+                            makeLabelSelectable(reqLabel)
                         end
 
                         for _, tb in pairs(tabs) do
