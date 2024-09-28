@@ -63,6 +63,7 @@ local journalMenu = {
 }
 
 local mapAddon = {
+    buttonBlock = "qGuider_mapAddon_buttonBlock",
     showHideBtn = "qGuider_mapAddon_showHideBtn",
     removeAllBtn = "qGuider_mapAddon_removeAllBtn",
     scrollPane = "qGuider_mapAddon_scrollPane",
@@ -945,7 +946,7 @@ function this.updateMapMenu()
 
     local flowDirection = dragMenu.flowDirection
 
-    local btnBlock = dragMenu:createBlock{}
+    local btnBlock = dragMenu:createBlock{ id = mapAddon.buttonBlock }
     btnBlock.autoHeight = true
     btnBlock.autoWidth = true
     btnBlock.absolutePosAlignX = 0
