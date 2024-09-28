@@ -283,7 +283,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local function resetDynamicToDefault()
         indexTabBlock.visible = false
+        reqBlock.autoWidth = false
+        reqBlock.width = 400
         reqBlock:destroyChildren()
+        reqBlock.autoWidth = true
         reqIndexBlock:destroyChildren()
         indexTabBlock:destroyChildren()
         selLabel.color = this.colors.disabled
