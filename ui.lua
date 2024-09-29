@@ -322,27 +322,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local function drawTopicInfo(topicIndex)
         if not topicIndex then return end
 
-        -- local tpData = questData[tostring(topicIndex)]
-        -- if not tpData then return end
-
-        -- local nextIndexes = {}
-        -- local foundNextIndex = false
-        -- if tpData.next then
-        --     for _, ind in pairs(tpData.next) do
-        --         nextIndexes[ind] = true
-        --         foundNextIndex = true
-        --     end
-        -- end
-        -- if not foundNextIndex and tpData.nextIndex then
-        --     nextIndexes[tpData.nextIndex] = true
-        -- end
-
-        -- nextIndexes = table.keys(nextIndexes)
-
-        -- if #nextIndexes == 0 then return end
-
-        -- table.sort(nextIndexes)
-
         local nextIndexes = questLib.getNextIndexes(questData, topicIndex)
         if not nextIndexes then return end
 
