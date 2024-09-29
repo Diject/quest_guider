@@ -1,6 +1,5 @@
 local dataHandler = include("diject.quest_guider.dataHandler")
 local config = include("diject.quest_guider.config")
-local markers = require("diject.map_markers.interop")
 local questLib = include("diject.quest_guider.quest")
 local ui = include("diject.quest_guider.ui")
 local log = include("diject.quest_guider.utils.log")
@@ -40,6 +39,39 @@ local function loadedCallback(e)
     tracking.isInit()
 end
 
+--- @param e journalEventData
+local function journalCallback(e)
+    local topic = e.topic
+    if topic.type ~= tes3.dialogueType.journal then return end
+
+    local questId = e.topic.id:lower()
+
+    local shouldUpdate = false
+
+    local questTrackingData = tracking.getQuestData(questId)
+    if questTrackingData then
+        tracking.removeMarker{ questId = questId }
+        shouldUpdate = true
+    end
+
+    local questNextIndexes = questLib.getNextIndexes(questId, e.index)
+
+    if not questNextIndexes or e.info.isQuestFinished then
+        tracking.removeMarker{ questId = questId }
+        tracking.updateMarkers(true)
+    elseif questNextIndexes then
+        for _, indexStr in pairs(questNextIndexes) do
+            tracking.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+        end
+        shouldUpdate = true
+    end
+
+    if shouldUpdate then
+        tracking.updateMarkers(true)
+    end
+end
+
+
 --- @param e initializedEventData
 local function initializedCallback(e)
     if not dataHandler.init() then return end
@@ -48,5 +80,6 @@ local function initializedCallback(e)
     event.register(tes3.event.loaded, loadedCallback)
     event.register(tes3.event.uiActivated, uiJournalActivatedCallback, {filter = "MenuJournal"})
     event.register(tes3.event.uiActivated, uiMapActivatedCallback, {filter = "MenuMap"})
+    event.register(tes3.event.journal, journalCallback)
 end
 event.register(tes3.event.initialized, initializedCallback)

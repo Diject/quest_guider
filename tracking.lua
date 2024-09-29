@@ -32,7 +32,6 @@ this.storageData = {}
 ---@field localMarkerId string|nil
 ---@field localDoorMarkerId string|nil
 ---@field worldMarkerId string|nil
----@field activationLimit integer|nil
 
 ---@type table<string, questGuider.tracking.markerRecord>
 this.markerByObjectId = {}
@@ -93,7 +92,7 @@ end
 ---@field questStage integer
 ---@field objectId string should be lower
 ---@field color number[]|nil
----@field activationLimit integer|nil
+---@field associatedNumber number|nil not used
 
 ---@param params questGuider.tracking.addMarker
 ---@return boolean|nil
@@ -253,6 +252,42 @@ function this.addMarker(params)
     return true
 end
 
+---@class questGuider.tracking.addMarkersForQuest
+---@field questId string should be lowercase
+---@field questIndex integer|string
+
+---@param params questGuider.tracking.addMarkersForQuest
+function this.addMarkersForQuest(params)
+
+    local questData = questLib.getQuestData(params.questId)
+    if not questData then return end
+
+    local indexStr = tostring(params.questIndex)
+    local indexData = questData[indexStr]
+    if not indexData then return end
+
+    for i, reqDataBlock in pairs(indexData.requirements) do
+
+        local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock)
+        if not requirementData then goto continue end
+
+        for _, requirement in ipairs(requirementData) do
+            for _, objId in pairs(requirement.objects) do
+
+                local objPosData = questLib.getObjectPositionData(objId)
+                if not objPosData then goto continue end
+
+                this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex }
+
+                ::continue::
+            end
+        end
+
+        ::continue::
+    end
+end
+
+
 ---@class questGuider.tracking.removeMarker
 ---@field questId string|nil should be lowercase
 ---@field objectId string|nil should be lowercase
@@ -301,13 +336,41 @@ function this.removeMarker(params)
     end
 
     if params.questId then
+
         local questTrackedData = this.trackedObjectsByQuestId[params.questId]
         if questTrackedData then
-            for _, parentObjId in pairs(table.keys(questTrackedData.objects)) do
-                removeFromObject(parentObjId)
+            local protectedMarkerIds = {}
+            local markerIdsToRemove = {}
+            for parentObjId, objId in pairs(table.keys(questTrackedData.objects)) do
+                local objectData = this.markerByObjectId[objId]
+                if not objectData then goto continue end
+
+                objectData.quests[params.questId] = nil
+
+                markerIdsToRemove[objectData.localDoorMarkerId or ""] = true
+                markerIdsToRemove[objectData.localMarkerId or ""] = true
+                markerIdsToRemove[objectData.worldMarkerId or ""] = true
+
+                if table.size(objectData.quests) == 0 then
+                    this.markerByObjectId[objId] = nil
+                else
+                    protectedMarkerIds[objectData.localDoorMarkerId or ""] = true
+                    protectedMarkerIds[objectData.localMarkerId or ""] = true
+                    protectedMarkerIds[objectData.worldMarkerId or ""] = true
+                end
+
+                ::continue::
             end
+
+            markerIdsToRemove[""] = nil
+            for markerId, _ in pairs(markerIdsToRemove) do
+                if not protectedMarkerIds[markerId] then
+                    markerLib.removeRecord(markerId)
+                end
+            end
+
+            this.trackedObjectsByQuestId[params.questId] = nil
         end
-        this.trackedObjectsByQuestId[params.questId] = nil
     end
 
     if params.objectId then
@@ -364,5 +427,14 @@ function this.updateMarkers(callbacks, recreate)
 end
 
 
+---@param questId string should be lowercase
+function this.getQuestData(questId)
+    return this.trackedObjectsByQuestId[questId]
+end
+
+---@param objectId string should be lowercase
+function this.getObjectData(objectId)
+    return this.markerByObjectId[objectId]
+end
 
 return this

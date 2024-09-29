@@ -23,6 +23,39 @@ function this.getObjectPositionData(objectId)
     return dataHandler.positions[objectId:lower()]
 end
 
+---@param questData string|questDataGenerator.questData
+---@param questIndex integer|string
+---@return string[]|nil
+function this.getNextIndexes(questData, questIndex)
+    if not questData then return end
+    if type(questData) == "string" then
+        questData = this.getQuestData(questData)
+    end
+    if not questData then return end
+    local tpData = questData[tostring(questIndex)]
+    if not tpData then return end
+
+    local nextIndexes = {}
+    local foundNextIndex = false
+    if tpData.next then
+        for _, ind in pairs(tpData.next) do
+            nextIndexes[ind] = true
+            foundNextIndex = true
+        end
+    end
+    if not foundNextIndex and tpData.nextIndex then
+        nextIndexes[tpData.nextIndex] = true
+    end
+
+    nextIndexes = table.keys(nextIndexes)
+
+    if #nextIndexes == 0 then return end
+
+    table.sort(nextIndexes)
+
+    return nextIndexes
+end
+
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
 ---@field str string
 ---@field priority number
