@@ -887,7 +887,7 @@ function this.updateJournalMenu()
 
             if not dataHandler.questByText[str] then goto continue end
 
-            local questId = dataHandler.questByText[str][1].quest
+            local questId = dataHandler.questByText[str][1].id
             local questIndex = dataHandler.questByText[str][1].index
             local quest = dataHandler.quests[questId]
 
