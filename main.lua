@@ -9,7 +9,7 @@ local tracking = require("diject.quest_guider.tracking")
 
 
 --- @param e uiActivatedEventData
-local function uiActivatedCallback(e)
+local function uiJournalActivatedCallback(e)
     if e.newlyCreated then
         ui.updateJournalMenu()
 
@@ -20,12 +20,11 @@ local function uiActivatedCallback(e)
 end
 
 --- @param e uiActivatedEventData
-local function uiActivatedCallback1(e)
+local function uiMapActivatedCallback(e)
     if e.newlyCreated then
         ui.updateMapMenu()
     end
 end
-event.register(tes3.event.uiActivated, uiActivatedCallback1, {filter = "MenuMap"})
 
 --- @param e loadEventData
 local function loadCallback(e)
@@ -47,6 +46,7 @@ local function initializedCallback(e)
     ui.init()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
-    event.register(tes3.event.uiActivated, uiActivatedCallback, {filter = "MenuJournal"})
+    event.register(tes3.event.uiActivated, uiJournalActivatedCallback, {filter = "MenuJournal"})
+    event.register(tes3.event.uiActivated, uiMapActivatedCallback, {filter = "MenuMap"})
 end
 event.register(tes3.event.initialized, initializedCallback)
