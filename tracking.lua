@@ -11,6 +11,8 @@ local storageLabel = "tracking"
 
 local this = {}
 
+this.maxPositionsForMarker = 100 -- TODO move to config
+
 ---@class questGuider.tracking.markerImage
 ---@field path string
 ---@field scale number
@@ -106,7 +108,7 @@ function this.addMarker(params)
 
     local objectPositions = questLib.getObjectPositionData(objectId)
 
-    if not objectPositions then return end
+    if not objectPositions or #objectPositions > this.maxPositionsForMarker then return end
 
     local questData = dataHandler.quests[params.questId]
 
@@ -272,7 +274,7 @@ function this.addMarkersForQuest(params)
         if not requirementData then goto continue end
 
         for _, requirement in ipairs(requirementData) do
-            for _, objId in pairs(requirement.objects) do
+            for _, objId in pairs(requirement.objects or {}) do
 
                 local objPosData = questLib.getObjectPositionData(objId)
                 if not objPosData then goto continue end
