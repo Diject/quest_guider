@@ -4,10 +4,6 @@ local this = {}
 
 ---@type questDataGenerator.quests
 this.quests = {}
----@type questDataGenerator.questObjectPositions
-this.positions = {}
----@type table<string, questDataGenerator.questObjectPositions>
-this.positionsInCell = {}
 ---@type questDataGenerator.questByTopicText
 this.questByText = {}
 ---@type questDataGenerator.questTopicInfo[]
@@ -29,8 +25,7 @@ function this.init()
         isReady = true
     else
         this.quests = this.quests or {}
-        this.positions = this.positions or {}
-        this.positionsInCell = this.positionsInCell or {}
+        this.questObjects = this.questObjects or {}
         this.questByText = this.questByText or {}
         this.questByTopicId = this.questByTopicId or {}
     end
