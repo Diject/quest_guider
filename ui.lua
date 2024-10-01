@@ -656,14 +656,14 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 objectIds[objId] = true
 
-                for _, pos in pairs(objPosData) do
-                    local x = pos.position[1]
-                    local y = pos.position[2]
+                for _, posData in pairs(objPosData) do
+                    local x = posData.pos[1]
+                    local y = posData.pos[2]
 
                     local cellPath
 
-                    if pos.name then
-                        local cell = tes3.getCell{id = pos.name}
+                    if posData.name then
+                        local cell = tes3.getCell{id = posData.name}
                         if cell then
                             local exCellPos
                             exCellPos, cellPath = cellLib.findExitPos(cell)
@@ -881,13 +881,13 @@ function this.updateJournalMenu()
                 goto continue
             end
 
-            local questInfo = this.getQuestInfoByJournalText(element.text)
+            local questInfo = questLib.getQuestInfoByJournalText(element.text)
 
-            if questInfo then goto continue end
+            if not questInfo then goto continue end
 
             local questId = questInfo[1].id
             local questIndex = questInfo[1].index
-            local quest = this.getQuestData(questId)
+            local quest = questLib.getQuestData(questId)
 
             if not quest then goto continue end
 
@@ -993,7 +993,7 @@ function this.updateMapMenu()
 
     ---@param parent tes3uiElement
     local function createTrackingBlock(parent, questId, trackingData)
-        local questData = this.getQuestData(questId)
+        local questData = questLib.getQuestData(questId)
         if not questData then return end
 
         local block = parent:createBlock{ id = mapAddon.trackingBlock }
