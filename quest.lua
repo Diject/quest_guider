@@ -15,12 +15,31 @@ function this.getPlayerQuestIndex(quest)
     return tes3.getJournalIndex{ id = quest }
 end
 
+---@param questId string
+---@return { name: string, [string]: questDataGenerator.stageData }|nil
 function this.getQuestData(questId)
     return dataHandler.quests[questId:lower()]
 end
 
+---@param objectId string
+---@return questDataGenerator.objectInfo|nil
 function this.getObjectPositionData(objectId)
-    return dataHandler.positions[objectId:lower()]
+    local objData = dataHandler.questObjects[objectId:lower()]
+    if not objData then return end
+    return objData.positions
+end
+
+---@param objectId string
+---@return questDataGenerator.objectInfo
+function this.getObjectData(objectId)
+    return dataHandler.questObjects[objectId:lower()]
+end
+
+---@param text string
+---@return questDataGenerator.questTopicInfo[]|nil
+function this.getQuestInfoByJournalText(text)
+    local str = text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
+    return dataHandler.questByText[str]
 end
 
 ---@param questData string|questDataGenerator.questData

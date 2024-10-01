@@ -110,7 +110,7 @@ function this.addMarker(params)
 
     if not objectPositions or #objectPositions > this.maxPositionsForMarker then return end
 
-    local questData = dataHandler.quests[params.questId]
+    local questData = questLib.getQuestData(params.questId)
 
     if not questData then return end
 

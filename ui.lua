@@ -1,8 +1,6 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 
-local dataHandler = include("diject.quest_guider.dataHandler")
-
 local questLib = include("diject.quest_guider.quest")
 local cellLib = include("diject.quest_guider.cell")
 local trackingLib = include("diject.quest_guider.tracking")
@@ -883,13 +881,13 @@ function this.updateJournalMenu()
                 goto continue
             end
 
-            local str = element.text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
+            local questInfo = this.getQuestInfoByJournalText(element.text)
 
-            if not dataHandler.questByText[str] then goto continue end
+            if questInfo then goto continue end
 
-            local questId = dataHandler.questByText[str][1].id
-            local questIndex = dataHandler.questByText[str][1].index
-            local quest = dataHandler.quests[questId]
+            local questId = questInfo[1].id
+            local questIndex = questInfo[1].index
+            local quest = this.getQuestData(questId)
 
             if not quest then goto continue end
 
@@ -995,7 +993,7 @@ function this.updateMapMenu()
 
     ---@param parent tes3uiElement
     local function createTrackingBlock(parent, questId, trackingData)
-        local questData = dataHandler.quests[questId]
+        local questData = this.getQuestData(questId)
         if not questData then return end
 
         local block = parent:createBlock{ id = mapAddon.trackingBlock }

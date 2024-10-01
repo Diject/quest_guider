@@ -12,6 +12,8 @@ this.positionsInCell = {}
 this.questByText = {}
 ---@type questDataGenerator.questTopicInfo[]
 this.questByTopicId = {}
+---@type table<string, questDataGenerator.objectInfo>
+this.questObjects = {}
 
 local isReady = false
 
@@ -19,12 +21,11 @@ local isReady = false
 function this.init()
     isReady = false
     this.quests = json.loadfile("mods\\diject\\quest_guider\\Data\\quests")
-    this.positions = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjectPositions")
-    this.positionsInCell = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjectInCell")
     this.questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
     this.questByTopicId = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicId")
+    this.questObjects = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjects")
 
-    if this.quests and this.positions and this.positionsInCell and this.questByText and this.questByTopicId then
+    if this.quests and this.questObjects and this.questByText and this.questByTopicId then
         isReady = true
     else
         this.quests = this.quests or {}
