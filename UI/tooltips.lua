@@ -11,6 +11,13 @@ local objectTooltipMenu = {
     startsLabel = "qGuider_objectTooltip_startsLabel",
 }
 
+local doorTooltipMenu = {
+    block = "qGuider_doorTooltip_block",
+    startersLabel = "qGuider_doorTooltip_starters",
+    npcsLabel = "qGuider_doorTooltip_npcs",
+    objectsLabel = "qGuider_doorTooltip_objects",
+}
+
 ---@param parent tes3uiElement
 ---@param objectId string
 ---@return boolean|nil
@@ -142,7 +149,7 @@ function this.drawDoorTooltip(parent, reference)
 
     if startsQuestCount <= 0 and questObjectsCount <= 0 then return end
 
-    local block = parent:createBlock{  }
+    local block = parent:createBlock{ id = doorTooltipMenu.block }
     block.flowDirection = tes3.flowDirection.topToBottom
     block.autoHeight = true
     block.autoWidth = true
@@ -175,6 +182,7 @@ function this.drawDoorTooltip(parent, reference)
         local questStr = stringLib.getValueEnumString(questNames, 3, " (%s)")
 
         local label = block:createLabel{
+            id = doorTooltipMenu.startersLabel,
             text = string.format("%d NPC%s%s that can start a quest%s.",
                 startsQuestCount, startsQuestCount == 1 and "" or "s", npcsStr, questStr),
         }
@@ -213,15 +221,21 @@ function this.drawDoorTooltip(parent, reference)
         if npcsCount > 0 then
             local npcsStr = stringLib.getValueEnumString(qNPCsNameTable, 3, " (%s)")
 
-            local label = block:createLabel{ text = string.format("%d quest NPC%s%s.",
-                npcsCount, npcsCount == 1 and "" or "s", npcsStr) }
+            local label = block:createLabel{
+                id = doorTooltipMenu.npcsLabel,
+                text = string.format("%d quest NPC%s%s.",
+                npcsCount, npcsCount == 1 and "" or "s", npcsStr)
+            }
             label.wrapText = true
             label.borderTop = 3
         end
 
         if qObjectsCount > 0 then
-            local label = block:createLabel{ text = string.format("%d different quest object%s%s.",
-                qObjectsCount, qObjectsCount == 1 and "" or "s", qObjestsStr) }
+            local label = block:createLabel{
+                id = doorTooltipMenu.objectsLabel,
+                text = string.format("%d different quest object%s%s.",
+                qObjectsCount, qObjectsCount == 1 and "" or "s", qObjestsStr)
+            }
             label.wrapText = true
             label.borderTop = 3
         end
