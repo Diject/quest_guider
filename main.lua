@@ -5,6 +5,7 @@ local ui = include("diject.quest_guider.ui")
 local log = include("diject.quest_guider.utils.log")
 local storage = include("diject.quest_guider.storage.localStorage")
 local tracking = require("diject.quest_guider.tracking")
+local tooltipUI = require("diject.quest_guider.UI.tooltips")
 
 
 --- @param e uiActivatedEventData
@@ -71,6 +72,22 @@ local function journalCallback(e)
     end
 end
 
+--- @param e uiObjectTooltipEventData
+local function uiObjectTooltipCallback(e)
+    if not e.object and not e.reference then return end
+    log(e)
+    local shouldUpdate = false
+
+    if e.reference and e.object.objectType == tes3.objectType.door then
+        shouldUpdate = shouldUpdate or tooltipUI.drawDoorTooltip(e.tooltip, e.reference)
+    else
+        shouldUpdate = shouldUpdate or tooltipUI.drawObjectTooltip(e.tooltip, e.reference and e.reference.baseObject.id or e.object.id)
+    end
+
+    if shouldUpdate then
+        e.tooltip:getTopLevelMenu():updateLayout()
+    end
+end
 
 --- @param e initializedEventData
 local function initializedCallback(e)
@@ -81,5 +98,6 @@ local function initializedCallback(e)
     event.register(tes3.event.uiActivated, uiJournalActivatedCallback, {filter = "MenuJournal"})
     event.register(tes3.event.uiActivated, uiMapActivatedCallback, {filter = "MenuMap"})
     event.register(tes3.event.journal, journalCallback)
+    event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
 end
 event.register(tes3.event.initialized, initializedCallback)
