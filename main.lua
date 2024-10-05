@@ -75,7 +75,7 @@ end
 --- @param e uiObjectTooltipEventData
 local function uiObjectTooltipCallback(e)
     if not e.object and not e.reference then return end
-    log(e)
+
     local shouldUpdate = false
 
     if e.reference and e.object.objectType == tes3.objectType.door then
