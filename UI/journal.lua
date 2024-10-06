@@ -128,14 +128,14 @@ end
 ---@param color number[]|nil
 local function makeLabelSelectable(element, color)
     local originalColor
-    element:registerBefore(tes3.uiEvent.mouseOver, function (e)
+    element:registerAfter(tes3.uiEvent.mouseOver, function (e)
         if not isColorsEqual(element.color, {1, 1, 1}) then
             originalColor = table.copy(element.color)
             element.color = color or {1, 1, 1}
             element:getTopLevelMenu():updateLayout()
         end
     end)
-    element:registerBefore(tes3.uiEvent.mouseLeave, function (e)
+    element:registerAfter(tes3.uiEvent.mouseLeave, function (e)
         element.color = originalColor or element.color
         element:getTopLevelMenu():updateLayout()
     end)
