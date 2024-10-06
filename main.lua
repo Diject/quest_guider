@@ -1,20 +1,21 @@
 local dataHandler = include("diject.quest_guider.dataHandler")
 local config = include("diject.quest_guider.config")
 local questLib = include("diject.quest_guider.quest")
-local ui = include("diject.quest_guider.ui")
 local log = include("diject.quest_guider.utils.log")
 local storage = include("diject.quest_guider.storage.localStorage")
 local tracking = require("diject.quest_guider.tracking")
 local tooltipUI = require("diject.quest_guider.UI.tooltips")
+local journalUI = require("diject.quest_guider.UI.journal")
+local mapUI = include("diject.quest_guider.UI.map")
 
 
 --- @param e uiActivatedEventData
 local function uiJournalActivatedCallback(e)
     if e.newlyCreated then
-        ui.updateJournalMenu()
+        journalUI.updateJournalMenu()
 
         e.element:registerAfter(tes3.uiEvent.update, function (ei)
-            ui.updateJournalMenu()
+            journalUI.updateJournalMenu()
         end)
     end
 end
@@ -22,7 +23,7 @@ end
 --- @param e uiActivatedEventData
 local function uiMapActivatedCallback(e)
     if e.newlyCreated then
-        ui.updateMapMenu()
+        mapUI.updateMapMenu()
     end
 end
 
@@ -97,7 +98,7 @@ end
 --- @param e initializedEventData
 local function initializedCallback(e)
     if not dataHandler.init() then return end
-    ui.init()
+    journalUI.init()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
     event.register(tes3.event.uiActivated, uiJournalActivatedCallback, {filter = "MenuJournal"})
