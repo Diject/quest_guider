@@ -5,6 +5,7 @@ local colors = include("diject.quest_guider.Types.color")
 local dataHandler = include("diject.quest_guider.dataHandler")
 local cellLib = include("diject.quest_guider.cell")
 local questLib = include("diject.quest_guider.quest")
+local playerQuests = include("diject.quest_guider.playerQuests")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -466,8 +467,12 @@ function this.createQuestGiverMarkers(cell)
         local questNames = {}
 
         for _, questId in pairs(objectData.starts) do
-            local questData = questLib.getQuestData(questId)
+            local questIdLower = questId:lower()
+            local questData = questLib.getQuestData(questIdLower)
             if not questData or not questData.name then goto continue end
+
+            local playerData = playerQuests.getQuestData(questId)
+            if not playerData or playerData.index > 0 then goto continue end
 
             table.insert(questNames, questData.name)
 
