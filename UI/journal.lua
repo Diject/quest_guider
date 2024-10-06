@@ -4,6 +4,7 @@ local tableLib = include("diject.quest_guider.utils.table")
 local questLib = include("diject.quest_guider.quest")
 local cellLib = include("diject.quest_guider.cell")
 local trackingLib = include("diject.quest_guider.tracking")
+local playerQuests = include("diject.quest_guider.playerQuests")
 
 local markerColors = include("diject.quest_guider.Types.color")
 
@@ -219,8 +220,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local topicData = questData[tostring(index)]
     local questName = questData.name or "???"
     local topicIndexStr = tostring(index) or "???"
-    local playerCurrentIndex = questLib.getPlayerQuestIndex(questId)
-    local playerCurrentIndexStr = tostring(playerCurrentIndex) or "???"
+    local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
+    local playerCurrentIndexStr = tostring(playerCurrentIndex or "???")
 
     local mainBlock = parent:createBlock{ id = requirementsMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.topToBottom

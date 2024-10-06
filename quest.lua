@@ -9,12 +9,6 @@ local dataHandler = include("diject.quest_guider.dataHandler")
 local this = {}
 
 
----@param quest tes3dialogue|string
----@return integer|nil
-function this.getPlayerQuestIndex(quest)
-    return tes3.getJournalIndex{ id = quest }
-end
-
 ---@param questId string
 ---@return { name: string, [string]: questDataGenerator.stageData }|nil
 function this.getQuestData(questId)

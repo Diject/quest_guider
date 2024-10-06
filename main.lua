@@ -3,9 +3,10 @@ local config = include("diject.quest_guider.config")
 local questLib = include("diject.quest_guider.quest")
 local log = include("diject.quest_guider.utils.log")
 local storage = include("diject.quest_guider.storage.localStorage")
-local tracking = require("diject.quest_guider.tracking")
-local tooltipUI = require("diject.quest_guider.UI.tooltips")
-local journalUI = require("diject.quest_guider.UI.journal")
+local tracking = include("diject.quest_guider.tracking")
+local playerQuests = include("diject.quest_guider.playerQuests")
+local tooltipUI = include("diject.quest_guider.UI.tooltips")
+local journalUI = include("diject.quest_guider.UI.journal")
 local mapUI = include("diject.quest_guider.UI.map")
 
 
@@ -31,6 +32,7 @@ end
 local function loadCallback(e)
     storage.reset()
     tracking.reset()
+    playerQuests.reset()
 end
 
 --- @param e loadedEventData
@@ -39,6 +41,7 @@ local function loadedCallback(e)
         storage.initPlayerStorage()
     end
     tracking.isInit()
+    playerQuests.init()
 end
 
 --- @param e journalEventData
@@ -47,6 +50,8 @@ local function journalCallback(e)
     if topic.type ~= tes3.dialogueType.journal then return end
 
     local questId = e.topic.id:lower()
+
+    playerQuests.updateIndex(questId, e.index)
 
     local shouldUpdate = false
 
@@ -92,6 +97,7 @@ end
 
 --- @param e cellActivatedEventData
 local function cellActivatedCallback(e)
+    playerQuests.init()
     tracking.createQuestGiverMarkers(e.cell)
 end
 
