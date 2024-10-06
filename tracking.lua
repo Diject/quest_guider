@@ -424,7 +424,7 @@ function this.updateMarkers(callbacks, recreate)
     if callbacks then
         runCallbacks()
     end
-    markerLib.updateLocalMarkers(recreate)
+    markerLib.updateLocalMarkers{ recreate = recreate }
     markerLib.updateWorldMarkers()
 end
 
