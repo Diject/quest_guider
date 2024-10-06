@@ -89,6 +89,11 @@ local function uiObjectTooltipCallback(e)
     end
 end
 
+--- @param e cellActivatedEventData
+local function cellActivatedCallback(e)
+    tracking.createQuestGiverMarkers(e.cell)
+end
+
 --- @param e initializedEventData
 local function initializedCallback(e)
     if not dataHandler.init() then return end
@@ -99,5 +104,6 @@ local function initializedCallback(e)
     event.register(tes3.event.uiActivated, uiMapActivatedCallback, {filter = "MenuMap"})
     event.register(tes3.event.journal, journalCallback)
     event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
+    event.register(tes3.event.cellActivated, cellActivatedCallback)
 end
 event.register(tes3.event.initialized, initializedCallback)

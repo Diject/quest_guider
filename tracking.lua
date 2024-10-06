@@ -1,5 +1,6 @@
 local storage = include("diject.quest_guider.storage.localStorage")
 local markerLib = include("diject.map_markers.interop")
+local stringLib = include("diject.quest_guider.utils.string")
 local colors = include("diject.quest_guider.Types.color")
 local dataHandler = include("diject.quest_guider.dataHandler")
 local cellLib = include("diject.quest_guider.cell")
@@ -25,8 +26,15 @@ this.localMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", 
 this.localDoorMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
 ---@type questGuider.tracking.markerImage
 this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
+---@type questGuider.tracking.markerImage
+this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark8x16.dds", shiftX = -3, shiftY = 10, scale = 0.75 }
 
-this.storageData = {}
+this.storageData = {} -- data of quest map markers
+
+---@type markerLib.markerRecord|nil
+this.questGiverMarkRecord = nil -- record for quest giver markers
+---@type table<string, boolean>
+this.scannedCellsForTemporaryMarkers = {}
 
 ---@class questGuider.tracking.markerRecord
 ---@field quests table<string, {id : string, index : integer}>
@@ -65,6 +73,8 @@ function this.init()
     this.markerByObjectId = this.storageData.markerByObjectId
     this.trackedObjectsByQuestId = this.storageData.trackedObjectsByQuestId
 
+    this.scannedCellsForTemporaryMarkers = {}
+
     initialized = true
     return initialized
 end
@@ -74,6 +84,7 @@ function this.reset()
     this.callbackToUpdateMapMenu = nil
     this.markerByObjectId = {}
     this.trackedObjectsByQuestId = {}
+    this.scannedCellsForTemporaryMarkers = {}
 end
 
 function this.isInit()
@@ -437,6 +448,60 @@ end
 ---@param objectId string should be lowercase
 function this.getObjectData(objectId)
     return this.markerByObjectId[objectId]
+end
+
+
+---@param cell tes3cell
+function this.createQuestGiverMarkers(cell)
+    if this.scannedCellsForTemporaryMarkers[cell.editorName] then return end
+    this.scannedCellsForTemporaryMarkers[cell.editorName] = true
+
+    local added = false
+
+    for ref in cell:iterateReferences{ tes3.objectType.npc, tes3.objectType.creature } do
+        local objectId = ref.baseObject.id
+        local objectData = questLib.getObjectData(objectId)
+        if not objectData or not objectData.starts then goto continue end
+
+        local questNames = {}
+
+        for _, questId in pairs(objectData.starts) do
+            local questData = questLib.getQuestData(questId)
+            if not questData or not questData.name then goto continue end
+
+            table.insert(questNames, questData.name)
+
+            ::continue::
+        end
+
+        if #questNames <= 0 then goto continue end
+
+        local recordId = markerLib.addRecord{
+            path = this.questGiverImageInfo.path,
+            color = tes3ui.getPalette(tes3.palette.normalColor),
+            textureShiftX = this.questGiverImageInfo.shiftX,
+            textureShiftY = this.questGiverImageInfo.shiftY,
+            scale = this.questGiverImageInfo.scale,
+            priority = -100,
+            temporary = true,
+            name = ref.baseObject.name,
+            description = stringLib.getValueEnumString(questNames, 3, "Starts %s")
+        }
+
+        markerLib.addLocalMarker{
+            id = recordId,
+            trackedRef = ref,
+            temporary = true,
+        }
+
+        added = true
+
+        ::continue::
+    end
+
+    if added then
+        markerLib.updateLocalMarkers{  }
+    end
 end
 
 return this
