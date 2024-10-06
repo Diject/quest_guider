@@ -207,8 +207,8 @@ function this.addMarker(params)
             if objectTrackingData.worldMarkerId then
                 markerLib.addWorldMarker{
                     id = objectTrackingData.worldMarkerId,
-                    x = positionData.position[1],
-                    y = positionData.position[2],
+                    x = positionData.pos[1],
+                    y = positionData.pos[2],
                 }
             end
 
