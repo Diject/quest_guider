@@ -41,13 +41,13 @@ function this.drawObjectTooltip(parent, objectId)
         ::continue::
     end
 
-    local startersNames = {}
+    local startsNames = {}
     if objectInfo.starts then
         for _, questId in pairs(objectInfo.starts) do
             local questData = questLib.getQuestData(questId)
             if not questData or not questData.name then goto continue end
 
-            table.insert(startersNames, questData.name)
+            table.insert(startsNames, questData.name)
 
             ::continue::
         end
@@ -56,8 +56,8 @@ function this.drawObjectTooltip(parent, objectId)
 
     local involvedQuestNamesStr = stringLib.getValueEnumString(involvedNames, 3, " (%s)")
     local involvedCount = #involvedNames
-    local startsQuestNamesStr = stringLib.getValueEnumString(startersNames, 3, " (%s)")
-    local startsCount = #startersNames
+    local startsQuestNamesStr = stringLib.getValueEnumString(startsNames, 3, " (%s)")
+    local startsCount = #startsNames
 
     if involvedCount <= 0 and startsCount <= 0 then return end
 
