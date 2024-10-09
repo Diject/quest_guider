@@ -54,9 +54,9 @@ function this.drawObjectTooltip(parent, objectId)
     end
 
 
-    local involvedQuestNamesStr = stringLib.getValueEnumString(involvedNames, 3, " (%s)")
+    local involvedQuestNamesStr = stringLib.getValueEnumString(involvedNames, config.data.tooltip.object.invNamesMax, " (%s)")
     local involvedCount = #involvedNames
-    local startsQuestNamesStr = stringLib.getValueEnumString(startsNames, 3, " (%s)")
+    local startsQuestNamesStr = stringLib.getValueEnumString(startsNames, config.data.tooltip.object.startsNamesMax, " (%s)")
     local startsCount = #startsNames
 
     if involvedCount <= 0 and startsCount <= 0 then return end
@@ -66,7 +66,7 @@ function this.drawObjectTooltip(parent, objectId)
     block.flowDirection = tes3.flowDirection.topToBottom
     block.autoHeight = true
     block.autoWidth = true
-    block.maxWidth = 400
+    block.maxWidth = config.data.tooltip.width
 
     if startsCount > 0 then
         local text = string.format("Starts %d quest%s%s.", startsCount, startsCount == 1 and "" or "s", startsQuestNamesStr)
@@ -102,6 +102,7 @@ function this.drawDoorTooltip(parent, reference)
         return
     end
 
+    local tooltipConfig = config.data.tooltip
     local markerCellName = reference.cell.editorName
     local innerCells = {  }
 
@@ -153,7 +154,7 @@ function this.drawDoorTooltip(parent, reference)
     block.flowDirection = tes3.flowDirection.topToBottom
     block.autoHeight = true
     block.autoWidth = true
-    block.maxWidth = 400
+    block.maxWidth = tooltipConfig.width
 
     if startsQuestCount > 0 then
         local questHTable = {}
@@ -178,8 +179,8 @@ function this.drawDoorTooltip(parent, reference)
             ::continue::
         end
 
-        local npcsStr = stringLib.getValueEnumString(npcNames, 3, " (%s)")
-        local questStr = stringLib.getValueEnumString(questNames, 3, " (%s)")
+        local npcsStr = stringLib.getValueEnumString(npcNames, tooltipConfig.door.starterNames, " (%s)")
+        local questStr = stringLib.getValueEnumString(questNames, tooltipConfig.door.starterQuestNames, " (%s)")
 
         local label = block:createLabel{
             id = doorTooltipMenu.startersLabel,
@@ -215,11 +216,11 @@ function this.drawDoorTooltip(parent, reference)
         end
 
         local qObjectsCount = table.size(qObjectsNameTable)
-        local qObjestsStr = stringLib.getValueEnumString(qObjectsNameTable, 3, " (%s)")
+        local qObjestsStr = stringLib.getValueEnumString(qObjectsNameTable, tooltipConfig.door.objectNames, " (%s)")
 
         local npcsCount = table.size(qNPCsNameTable)
         if npcsCount > 0 then
-            local npcsStr = stringLib.getValueEnumString(qNPCsNameTable, 3, " (%s)")
+            local npcsStr = stringLib.getValueEnumString(qNPCsNameTable, tooltipConfig.door.npcNames, " (%s)")
 
             local label = block:createLabel{
                 id = doorTooltipMenu.npcsLabel,

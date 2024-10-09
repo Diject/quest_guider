@@ -6,6 +6,8 @@ local cellLib = include("diject.quest_guider.cell")
 local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
 
+local config = include("diject.quest_guider.config")
+
 local markerColors = include("diject.quest_guider.Types.color")
 
 local mcp_mapExpansion = tes3.hasCodePatchFeature(tes3.codePatchFeature.mapExpansionForTamrielRebuilt)
@@ -201,7 +203,7 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
         local topicnextIndexesLabel = mainBlock:createLabel{ id = infoMenu.nextIndexes, text = nextIndexesStr }
     end
 
-    local currentIndex = questLib.getPlayerQuestIndex(questId)
+    local currentIndex = playerQuests.getCurrentIndex(questId)
     if currentIndex then
         local currentIndexStr = string.format("Current stage: %d", currentIndex)
         local currentIndexLabel = mainBlock:createLabel{ id = infoMenu.currentIndex, text = currentIndexStr }
@@ -425,7 +427,12 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         drawTopicInfo(playerCurrentIndex)
     end)
 
-    selLabel:triggerEvent(tes3.uiEvent.mouseClick)
+    if config.data.journal.requirements.currentByDefault then
+        lstLabel:triggerEvent(tes3.uiEvent.mouseClick)
+    else
+        selLabel:triggerEvent(tes3.uiEvent.mouseClick)
+    end
+
     updateContainerMenu(mainBlock)
 end
 
@@ -727,7 +734,7 @@ function this.drawMapMenu(parent, questId, index, questData)
             end
 
             local maxScale = math.min(1 / (minMaxAlignX[2] - minMaxAlignX[1]), 1 / (minMaxAlignY[2] - minMaxAlignY[1]))
-            local scale = math.max(1, math.min(4, maxScale))
+            local scale = math.max(1, math.min(config.data.journal.map.maxScale, maxScale))
 
             mapMarkersBlock.width = 512 * scale
             mapMarkersBlock.height = 512 * scale
@@ -839,6 +846,12 @@ function this.drawQuestsMenu(parent)
 end
 
 function this.updateJournalMenu()
+    if not config.data.journal.map.enabled and
+            not config.data.journal.requirements.enable and
+            not config.data.journal.info.enabled then
+        return
+    end
+
     local menu = tes3ui.findMenu("MenuJournal")
     if not menu then return end
 
@@ -881,55 +894,60 @@ function this.updateJournalMenu()
             block.autoHeight = true
             block.autoWidth = true
 
-            local infoBlock = block:createBlock{ id = journalMenu.questNameBlock }
-            infoBlock.autoHeight = true
-            infoBlock.autoWidth = false
-            infoBlock.borderRight = 5
+            if config.data.journal.info.enabled then
+                local infoBlock = block:createBlock{ id = journalMenu.questNameBlock }
+                infoBlock.autoHeight = true
+                infoBlock.autoWidth = false
+                infoBlock.borderRight = 5
+                infoBlock.width = math.max(1, page.width - 42)
 
-            local infoLabel = infoBlock:createLabel{ id = journalMenu.questNameLabel, text = "("..tostring(questIndex)..") "..(quest.name or "") }
-            infoLabel.color = this.colors.lightGreen
-            infoLabel.alpha = 1
+                local infoLabel = infoBlock:createLabel{ id = journalMenu.questNameLabel, text = "("..tostring(questIndex)..") "..(quest.name or "") }
+                infoLabel.color = this.colors.lightGreen
+                infoLabel.alpha = 1
 
-            infoLabel:register(tes3.uiEvent.help, function (ei)
-                local tooltip = tes3ui.createTooltipMenu()
-                this.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
-            end)
-            infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                local el = this.drawContainer("Info")
-                this.drawQuestInfoMenu(el, questId, questIndex, quest)
-                this.centerToCursor(el)
-            end)
+                infoLabel:register(tes3.uiEvent.help, function (ei)
+                    local tooltip = tes3ui.createTooltipMenu()
+                    this.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
+                end)
+                infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                    local el = this.drawContainer("Info")
+                    this.drawQuestInfoMenu(el, questId, questIndex, quest)
+                    this.centerToCursor(el)
+                end)
+            end
 
-            local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
-            reqLabel.imageScaleX = 0.5
-            reqLabel.imageScaleY = 0.5
-            reqLabel.borderRight = 2
+            if config.data.journal.requirements.enable then
+                local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
+                reqLabel.imageScaleX = 0.5
+                reqLabel.imageScaleY = 0.5
+                reqLabel.borderRight = 2
 
-            reqLabel:register(tes3.uiEvent.help, function (ei)
-                local tooltip = tes3ui.createTooltipMenu()
-                this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest)
-            end)
-            reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                local el = this.drawContainer("Requirements")
-                this.drawQuestRequirementsMenu(el, questId, questIndex, quest)
-                this.centerToCursor(el)
-            end)
+                reqLabel:register(tes3.uiEvent.help, function (ei)
+                    local tooltip = tes3ui.createTooltipMenu()
+                    this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest)
+                end)
+                reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                    local el = this.drawContainer("Requirements")
+                    this.drawQuestRequirementsMenu(el, questId, questIndex, quest)
+                    this.centerToCursor(el)
+                end)
+            end
 
-            local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
-            mapLabel.imageScaleX = 0.5
-            mapLabel.imageScaleY = 0.5
+            if config.data.journal.map.enabled then
+                local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
+                mapLabel.imageScaleX = 0.5
+                mapLabel.imageScaleY = 0.5
 
-            mapLabel:register(tes3.uiEvent.help, function (ei)
-                local tooltip = tes3ui.createTooltipMenu()
-                this.drawMapMenu(tooltip, questId, questIndex, quest)
-            end)
-            mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                local el = this.drawContainer("Map")
-                this.drawMapMenu(el, questId, questIndex, quest)
-                this.centerToCursor(el)
-            end)
-
-            infoBlock.width = math.max(1, page.width - (16 + 16 + 10))
+                mapLabel:register(tes3.uiEvent.help, function (ei)
+                    local tooltip = tes3ui.createTooltipMenu()
+                    this.drawMapMenu(tooltip, questId, questIndex, quest)
+                end)
+                mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                    local el = this.drawContainer("Map")
+                    this.drawMapMenu(el, questId, questIndex, quest)
+                    this.centerToCursor(el)
+                end)
+            end
 
             ::continue::
         end

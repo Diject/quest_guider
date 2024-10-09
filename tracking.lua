@@ -6,14 +6,13 @@ local dataHandler = include("diject.quest_guider.dataHandler")
 local cellLib = include("diject.quest_guider.cell")
 local questLib = include("diject.quest_guider.quest")
 local playerQuests = include("diject.quest_guider.playerQuests")
+local config = include("diject.quest_guider.config")
 
 local log = include("diject.quest_guider.utils.log")
 
 local storageLabel = "tracking"
 
 local this = {}
-
-this.maxPositionsForMarker = 100 -- TODO move to config
 
 ---@class questGuider.tracking.markerImage
 ---@field path string
@@ -32,8 +31,6 @@ this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark8x16.d
 
 this.storageData = {} -- data of quest map markers
 
----@type markerLib.markerRecord|nil
-this.questGiverMarkRecord = nil -- record for quest giver markers
 ---@type table<string, boolean>
 this.scannedCellsForTemporaryMarkers = {}
 
@@ -120,7 +117,7 @@ function this.addMarker(params)
 
     local objectPositions = questLib.getObjectPositionData(objectId)
 
-    if not objectPositions or #objectPositions > this.maxPositionsForMarker then return end
+    if not objectPositions or #objectPositions > config.data.tracking.maxPositions then return end
 
     local questData = questLib.getQuestData(params.questId)
 
@@ -490,7 +487,7 @@ function this.createQuestGiverMarkers(cell)
             priority = -100,
             temporary = true,
             name = ref.baseObject.name,
-            description = stringLib.getValueEnumString(questNames, 3, "Starts %s")
+            description = stringLib.getValueEnumString(questNames, config.data.tracking.giver.namesMax, "Starts %s")
         }
 
         markerLib.addLocalMarker{
@@ -506,6 +503,35 @@ function this.createQuestGiverMarkers(cell)
 
     if added then
         markerLib.updateLocalMarkers{  }
+    end
+end
+
+
+---@param questId string should be lowercase
+---@param e journalEventData
+function this.trackQuestFromCallback(questId, e)
+    local shouldUpdate = false
+
+    local questTrackingData = this.getQuestData(questId)
+    if questTrackingData then
+        this.removeMarker{ questId = questId }
+        shouldUpdate = true
+    end
+
+    local questNextIndexes = questLib.getNextIndexes(questId, e.index)
+
+    if not questNextIndexes or e.info.isQuestFinished then
+        this.removeMarker{ questId = questId }
+        this.updateMarkers(true)
+    elseif questNextIndexes then
+        for _, indexStr in pairs(questNextIndexes) do
+            this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+        end
+        shouldUpdate = true
+    end
+
+    if shouldUpdate then
+        this.updateMarkers(true)
     end
 end
 

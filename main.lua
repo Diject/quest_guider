@@ -12,6 +12,8 @@ local mapUI = include("diject.quest_guider.UI.map")
 
 --- @param e uiActivatedEventData
 local function uiJournalActivatedCallback(e)
+    if not dataHandler.isReady() or not config.data.enabled or not config.data.journal.enabled then return end
+
     if e.newlyCreated then
         journalUI.updateJournalMenu()
 
@@ -23,6 +25,8 @@ end
 
 --- @param e uiActivatedEventData
 local function uiMapActivatedCallback(e)
+    if not dataHandler.isReady() or not config.data.enabled or not config.data.map.enabled then return end
+
     if e.newlyCreated then
         mapUI.updateMapMenu()
     end
@@ -46,6 +50,8 @@ end
 
 --- @param e journalEventData
 local function journalCallback(e)
+    if not dataHandler.isReady() or not config.data.enabled then return end
+
     local topic = e.topic
     if topic.type ~= tes3.dialogueType.journal then return end
 
@@ -53,41 +59,26 @@ local function journalCallback(e)
 
     playerQuests.updateIndex(questId, e.index)
 
-    local shouldUpdate = false
-
-    local questTrackingData = tracking.getQuestData(questId)
-    if questTrackingData then
-        tracking.removeMarker{ questId = questId }
-        shouldUpdate = true
-    end
-
-    local questNextIndexes = questLib.getNextIndexes(questId, e.index)
-
-    if not questNextIndexes or e.info.isQuestFinished then
-        tracking.removeMarker{ questId = questId }
-        tracking.updateMarkers(true)
-    elseif questNextIndexes then
-        for _, indexStr in pairs(questNextIndexes) do
-            tracking.addMarkersForQuest{ questId = questId, questIndex = indexStr }
-        end
-        shouldUpdate = true
-    end
-
-    if shouldUpdate then
-        tracking.updateMarkers(true)
+    if config.data.tracking.quest.enabled then
+        tracking.trackQuestFromCallback(questId, e)
     end
 end
 
 --- @param e uiObjectTooltipEventData
 local function uiObjectTooltipCallback(e)
     if not e.object and not e.reference then return end
+    if not dataHandler.isReady() or not config.data.enabled then return end
 
     local shouldUpdate = false
 
     if e.reference and e.object.objectType == tes3.objectType.door then
-        shouldUpdate = shouldUpdate or tooltipUI.drawDoorTooltip(e.tooltip, e.reference)
+        if config.data.tooltip.door.enabled then
+            shouldUpdate = shouldUpdate or tooltipUI.drawDoorTooltip(e.tooltip, e.reference)
+        end
     else
-        shouldUpdate = shouldUpdate or tooltipUI.drawObjectTooltip(e.tooltip, e.reference and e.reference.baseObject.id or e.object.id)
+        if config.data.tooltip.object.enabled then
+            shouldUpdate = shouldUpdate or tooltipUI.drawObjectTooltip(e.tooltip, e.reference and e.reference.baseObject.id or e.object.id)
+        end
     end
 
     if shouldUpdate then
@@ -97,14 +88,15 @@ end
 
 --- @param e cellActivatedEventData
 local function cellActivatedCallback(e)
+    if not dataHandler.isReady() or not config.data.enabled then return end
+
     playerQuests.init()
-    tracking.createQuestGiverMarkers(e.cell)
+    if config.data.tracking.giver.enabled then
+        tracking.createQuestGiverMarkers(e.cell)
+    end
 end
 
---- @param e initializedEventData
-local function initializedCallback(e)
-    if not dataHandler.init() then return end
-    journalUI.init()
+local function initCallbacks()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
     event.register(tes3.event.uiActivated, uiJournalActivatedCallback, {filter = "MenuJournal"})
@@ -112,5 +104,12 @@ local function initializedCallback(e)
     event.register(tes3.event.journal, journalCallback)
     event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
     event.register(tes3.event.cellActivated, cellActivatedCallback)
+end
+
+--- @param e initializedEventData
+local function initializedCallback(e)
+    if not dataHandler.init() then return end
+    journalUI.init()
+    initCallbacks()
 end
 event.register(tes3.event.initialized, initializedCallback)
