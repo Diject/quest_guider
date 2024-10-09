@@ -6,8 +6,6 @@ local this = {}
 this.quests = {}
 ---@type questDataGenerator.questByTopicText
 this.questByText = {}
----@type questDataGenerator.questTopicInfo[]
-this.questByTopicId = {}
 ---@type table<string, questDataGenerator.objectInfo>
 this.questObjects = {}
 
@@ -18,16 +16,14 @@ function this.init()
     isReady = false
     this.quests = json.loadfile("mods\\diject\\quest_guider\\Data\\quests")
     this.questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
-    this.questByTopicId = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicId")
     this.questObjects = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjects")
 
-    if this.quests and this.questObjects and this.questByText and this.questByTopicId then
+    if this.quests and this.questObjects and this.questByText then
         isReady = true
     else
         this.quests = this.quests or {}
         this.questObjects = this.questObjects or {}
         this.questByText = this.questByText or {}
-        this.questByTopicId = this.questByTopicId or {}
     end
 
     return isReady
