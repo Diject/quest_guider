@@ -1,4 +1,5 @@
 local tableLib = include("diject.quest_guider.utils.table")
+local log = include("diject.quest_guider.utils.log")
 
 local storageName = "Quest_Guider_Config"
 
@@ -52,6 +53,9 @@ this.default = {
     init = {
 
     },
+    gameFiles = {
+
+    },
 }
 
 ---@class questGuider.config
@@ -67,6 +71,37 @@ end
 
 function this.save()
     mwse.saveConfig(storageName, this.data)
+end
+
+
+function this.updateGameFileData()
+    this.data.gameFiles = {}
+    for _, gameFile in pairs(tes3.dataHandler.nonDynamicData.activeMods) do
+        if gameFile.playerName == "" then
+            this.data.gameFiles[gameFile.filename] = true
+        end
+    end
+end
+
+function this.isGameFileDataEmpty()
+    return table.size(this.data.gameFiles) == 0
+end
+
+---@return boolean ret returns true if the data changed
+function this.compareGameFileData()
+    local ret = false
+    local compareArray = table.copy(this.data.gameFiles)
+    for _, gameFile in pairs(tes3.dataHandler.nonDynamicData.activeMods) do
+        if gameFile.playerName == "" then
+            compareArray[gameFile.filename] = true
+        end
+    end
+
+    if table.size(compareArray) ~= table.size(this.data.gameFiles) then
+        ret = ret or true
+    end
+
+    return ret
 end
 
 return this
