@@ -41,6 +41,7 @@ this.default = {
         }
     },
     tracking = {
+        hideStarted = true,
         quest = {
             enabled = true,
         },

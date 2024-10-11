@@ -1,4 +1,5 @@
 local questLib = include("diject.quest_guider.quest")
+local playerQuests = include("diject.quest_guider.playerQuests")
 local config = include("diject.quest_guider.config")
 
 local stringLib = include("diject.quest_guider.utils.string")
@@ -36,6 +37,9 @@ function this.drawObjectTooltip(parent, objectId)
         local questData = questLib.getQuestData(questId)
         if not questData or not questData.name then goto continue end
 
+        local playerData = playerQuests.getQuestData(questId)
+        if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
+
         table.insert(involvedNames, questData.name)
 
         ::continue::
@@ -46,6 +50,9 @@ function this.drawObjectTooltip(parent, objectId)
         for _, questId in pairs(objectInfo.starts) do
             local questData = questLib.getQuestData(questId)
             if not questData or not questData.name then goto continue end
+
+            local playerData = playerQuests.getQuestData(questId)
+            if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
 
             table.insert(startsNames, questData.name)
 
@@ -135,12 +142,35 @@ function this.drawDoorTooltip(parent, reference)
             local objId = ref.baseObject.id
             local objData = questLib.getObjectData(objId)
             if objData then
+
                 if objData.starts then
                     startsQuest[objId] = objData.starts
                 end
-                if objData.inWorld < 20 then
-                    questObjects[objId] = objData
+
+                if objData.inWorld < config.data.tracking.maxPositions then
+                    local valid = false
+
+                    if config.data.tracking.hideStarted then
+                        local quests = {}
+                        for _, stage in pairs(objData.stages) do
+                            quests[stage.id] = true
+                        end
+                        for qId, _ in pairs(quests) do
+                            local playerData = playerQuests.getQuestData(qId)
+                            if not playerData or playerData.index <= 0 then
+                                valid = true
+                                break
+                            end
+                        end
+                    else
+                        valid = true
+                    end
+
+                    if valid then
+                        questObjects[objId] = objData
+                    end
                 end
+
             end
         end
     end
@@ -175,6 +205,10 @@ function this.drawDoorTooltip(parent, reference)
         for qId, _ in pairs(questHTable) do
             local questData = questLib.getQuestData(qId)
             if not questData or not questData.name then goto continue end
+
+            local playerData = playerQuests.getQuestData(qId)
+            if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
+
             questNames[questData.name] = questData.name
             ::continue::
         end
