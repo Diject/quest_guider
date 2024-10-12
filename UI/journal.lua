@@ -338,7 +338,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 indexTabBlock:createLabel{ id = requirementsMenu.text, text = "Requirements:" }.borderRight = 10
 
                 local tabs = {}
-                for i, reqDataBlock in pairs(indTopicData.requirements) do
+                for i, reqDataBlock in pairs(indTopicData.requirements or {}) do
 
                     indexTabBlock.visible = true
                     selectedCurrentBlock.visible = showSelectedCurrentBlock
