@@ -277,7 +277,7 @@ function this.addMarkersForQuest(params)
     local indexData = questData[indexStr]
     if not indexData then return end
 
-    for i, reqDataBlock in pairs(indexData.requirements) do
+    for i, reqDataBlock in pairs(indexData.requirements or {}) do
 
         local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock)
         if not requirementData then goto continue end
