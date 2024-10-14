@@ -6,7 +6,7 @@ return {
     NPCHealthPercent = "04",
     PlayerReputation = "05",
     PlayerLevel = "06",
-    PlayerHealthPercent_0 = "07",
+    PlayerHealthPercent = "07",
     PlayerMagicka = "08",
     PlayerFatigue = "09",
     PlayerStrength = "10",
@@ -57,13 +57,13 @@ return {
     PlayerEndurance = "55",
     PlayerPersonality = "56",
     PlayerLuck = "57",
-    PlayerCorpus = "58",
+    PlayerCorprus = "58",
     Weather = "59",
     PlayerIsVampire = "60",
     NPCLevel = "61",
     NPCAttacked = "62",
     NPCTalkedToPlayer = "63",
-    PlayerHealthPercent_1 = "64",
+    PlayerHealth = "64",
     NPCIsTargetingCreature = "65",
     FriendlyHits = "66",
     NPCFight = "67",
@@ -173,4 +173,7 @@ return {
     CustomOnPCSoulGemUse = "PSG",
     CustomOnRepair = "ORP",
     CustomUsedOnMe = "UOM",
+    CustomScriptRunning = "SRN";
+    CustomSayDone = "SYD";
+    CustomHealth = "HLT";
 }
