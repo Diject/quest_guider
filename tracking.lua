@@ -16,14 +16,18 @@ local this = {}
 
 ---@class questGuider.tracking.markerImage
 ---@field path string
+---@field pathAbove string|nil
+---@field pathBelow string|nil
 ---@field scale number
 ---@field shiftX integer
 ---@field shiftY integer
 
 ---@type questGuider.tracking.markerImage
-this.localMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
+this.localMarkerImageInfo = { path = "diject\\quest guider\\circleMarker16x16.dds",
+        pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds", pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 }
 ---@type questGuider.tracking.markerImage
-this.localDoorMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
+this.localDoorMarkerImageInfo = { path = "diject\\quest guider\\circleMarker16x16.dds",
+        pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds", pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 }
 ---@type questGuider.tracking.markerImage
 this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
 ---@type questGuider.tracking.markerImage
@@ -147,6 +151,8 @@ function this.addMarker(params)
 
     objectTrackingData.localMarkerId = objectTrackingData.localMarkerId or markerLib.addRecord{
         path = this.localMarkerImageInfo.path,
+        pathAbove = this.localMarkerImageInfo.pathAbove,
+        pathBelow = this.localMarkerImageInfo.pathBelow,
         color = objectTrackingData.color,
         textureShiftX = this.localMarkerImageInfo.shiftX,
         textureShiftY = this.localMarkerImageInfo.shiftY,
@@ -178,14 +184,14 @@ function this.addMarker(params)
 
             if positionData.type == 1 then
                 markerLib.addLocalMarker{
-                    id = objectTrackingData.localMarkerId,
+                    recordId = objectTrackingData.localMarkerId,
                     objectId = objectId,
                 }
 
             elseif positionData.type == 2 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    id = objectTrackingData.localMarkerId,
+                    recordId = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
                     itemId = objectId,
                 }
@@ -193,7 +199,7 @@ function this.addMarker(params)
             elseif positionData.type == 4 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    id = objectTrackingData.localMarkerId,
+                    recordId = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
                 }
             end
@@ -204,7 +210,7 @@ function this.addMarker(params)
 
             if objectTrackingData.worldMarkerId then
                 markerLib.addWorldMarker{
-                    id = objectTrackingData.worldMarkerId,
+                    recordId = objectTrackingData.worldMarkerId,
                     x = positionData.pos[1],
                     y = positionData.pos[2],
                 }
@@ -218,7 +224,7 @@ function this.addMarker(params)
 
                 if exitPos and objectTrackingData.worldMarkerId then
                     markerLib.addWorldMarker{
-                        id = objectTrackingData.worldMarkerId,
+                        recordId = objectTrackingData.worldMarkerId,
                         x = exitPos.x,
                         y = exitPos.y,
                     }
@@ -227,6 +233,8 @@ function this.addMarker(params)
                 if path then
                     objectTrackingData.localDoorMarkerId = objectTrackingData.localDoorMarkerId or markerLib.addRecord{
                         path = this.localDoorMarkerImageInfo.path,
+                        pathAbove = this.localDoorMarkerImageInfo.pathAbove,
+                        pathBelow = this.localDoorMarkerImageInfo.pathBelow,
                         color = objectTrackingData.color,
                         textureShiftX = this.localDoorMarkerImageInfo.shiftX,
                         textureShiftY = this.localDoorMarkerImageInfo.shiftY,
@@ -240,11 +248,9 @@ function this.addMarker(params)
                             local node = path[i]
                             local markerPos = node.marker.position
                             markerLib.addLocalMarker{
-                                id = objectTrackingData.localDoorMarkerId,
+                                recordId = objectTrackingData.localDoorMarkerId,
                                 cellName = node.cell.isInterior == true and node.cell.name or nil,
-                                x = markerPos.x,
-                                y = markerPos.y,
-                                z = markerPos.z,
+                                position = markerPos,
                             }
                         end
                     end
@@ -429,12 +435,12 @@ function this.changeObjectMarkerColor(trackedObjectId, color)
 end
 
 
-function this.updateMarkers(callbacks, recreate)
+function this.updateMarkers(callbacks)
     if callbacks then
         runCallbacks()
     end
-    markerLib.updateLocalMarkers{ recreate = recreate }
-    markerLib.updateWorldMarkers()
+    markerLib.updateWorldMarkers(true)
+    markerLib.updateLocalMarkers(true)
 end
 
 
@@ -453,8 +459,6 @@ end
 function this.createQuestGiverMarkers(cell)
     if this.scannedCellsForTemporaryMarkers[cell.editorName] then return end
     this.scannedCellsForTemporaryMarkers[cell.editorName] = true
-
-    local added = false
 
     for ref in cell:iterateReferences{ tes3.objectType.npc, tes3.objectType.creature } do
         local objectId = ref.baseObject.id
@@ -482,6 +486,8 @@ function this.createQuestGiverMarkers(cell)
 
         local recordId = markerLib.addRecord{
             path = this.questGiverImageInfo.path,
+            pathAbove = this.questGiverImageInfo.pathAbove,
+            pathBelow = this.questGiverImageInfo.pathBelow,
             color = tes3ui.getPalette(tes3.palette.normalColor),
             textureShiftX = this.questGiverImageInfo.shiftX,
             textureShiftY = this.questGiverImageInfo.shiftY,
@@ -493,18 +499,12 @@ function this.createQuestGiverMarkers(cell)
         }
 
         markerLib.addLocalMarker{
-            id = recordId,
+            recordId = recordId,
             trackedRef = ref,
             temporary = true,
         }
 
-        added = true
-
         ::continue::
-    end
-
-    if added then
-        markerLib.updateLocalMarkers{  }
     end
 end
 
