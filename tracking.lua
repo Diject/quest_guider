@@ -33,6 +33,12 @@ this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", 
 ---@type questGuider.tracking.markerImage
 this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark8x16.dds", shiftX = -3, shiftY = 10, scale = 0.75 }
 
+---@class questGuider.tracking.storageData
+---@field markerByObjectId table<string, questGuider.tracking.markerRecord>?
+---@field trackedObjectsByQuestId table<string, {objects : table<string, string[]>, color : number[]}>?
+---@field colorId integer?
+
+---@type questGuider.tracking.storageData
 this.storageData = {} -- data of quest map markers
 
 ---@type table<string, boolean>
@@ -110,6 +116,7 @@ end
 ---@field associatedNumber number|nil not used
 
 ---@param params questGuider.tracking.addMarker
+---@return boolean|nil
 ---@return boolean|nil
 function this.addMarker(params)
     if not initialized then return end
