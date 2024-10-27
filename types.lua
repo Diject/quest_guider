@@ -178,6 +178,15 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 ---| "this.requirementType.CustomScriptRunning"
 ---| "this.requirementType.CustomSayDone"
 ---| "this.requirementType.CustomHealth"
+---| "this.requirementType.CustomMenuMode"
+---| "this.requirementType.CustomPCKnownWerewolf"
+---| "this.requirementType.CustomPCWerewolf"
+---| "this.requirementType.CustomDay"
+---| "this.requirementType.CustomMonth"
+---| "this.requirementType.CustomYear"
+---| "this.requirementType.CustomPCRace"
+---| "this.requirementType.CustomVampClan"
+---| "this.requirementType.CustomRandom"
 
 this.operator = {}
 

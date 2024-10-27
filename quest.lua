@@ -298,6 +298,11 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                     environment.valueObj = faction
                     goto done
                 end
+                local class = tes3.findClass(value)
+                if class then
+                    environment.valueObj = class
+                    goto done
+                end
                 ::done::
             end
             environment.valueStr = tostring(value)
@@ -339,7 +344,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
             str = str:gsub("#variableQuestName#", environment.variableQuestName)
             str = str:gsub("#objectName#", environment.objectObj and (environment.objectObj.name or "???") or "???")
             str = str:gsub("#notContr#", ((value==0 and operator==48) or (value==1 and operator==49) or (value==1 and operator==52)) and "n't" or "")
-            str = str:gsub("#-notContr#", ((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or "")
+            str = str:gsub("#negNotContr#", ((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or "")
             if environment.operator then
                 str = str:gsub("#operator#", types.operator.name[environment.operator])
             end
@@ -349,7 +354,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                 local f = load("return "..codeStr, nil, nil, environment)
                 local fSuccess, fRet = pcall(f)
                 if not fSuccess then
-                    log("pattern error", pattern, requirement, environment)
+                    log("pattern error", pattern, requirement)
                     fRet = "<error>"
                 end
                 mapped[pattern] = fRet or "???"

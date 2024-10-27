@@ -173,7 +173,16 @@ return {
     CustomOnPCSoulGemUse = "PSG",
     CustomOnRepair = "ORP",
     CustomUsedOnMe = "UOM",
-    CustomScriptRunning = "SRN";
-    CustomSayDone = "SYD";
-    CustomHealth = "HLT";
+    CustomScriptRunning = "SRN",
+    CustomSayDone = "SYD",
+    CustomHealth = "HLT",
+    CustomMenuMode = "MNM",
+    CustomPCKnownWerewolf = "WWK",
+    CustomPCWerewolf = "WWP",
+    CustomDay = "CDY",
+    CustomMonth = "CMT",
+    CustomYear = "CYR",
+    CustomPCRace = "PCR",
+    CustomVampClan = "VPC",
+    CustomRandom = "RND",
 }
