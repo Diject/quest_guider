@@ -36,6 +36,7 @@ local infoMenu = {
 
 local requirementsMenu = {
     block = "qGuider_req_block",
+    scroll = "qGuider_scroll_pane",
     text = "qGuider_req_text",
     headerLabel = "qGuider_req_headerLabel",
     selectedCurrentBlock = "qGuider_req_selectedCurrentBlock",
@@ -106,6 +107,9 @@ this.markers = {
 local function updateContainerMenu(mainBlock)
     local topMenu = mainBlock:getTopLevelMenu()
     topMenu:updateLayout()
+    if mainBlock.widget then
+        mainBlock.widget:contentsChanged()
+    end
 
     if topMenu.name == "qGuider_container" then
         topMenu.maxWidth = nil
@@ -119,6 +123,9 @@ local function updateContainerMenu(mainBlock)
         topMenu.minWidth = topMenu.width
         topMenu.minHeight = topMenu.height
         topMenu:updateLayout()
+        if mainBlock.widget then
+            mainBlock.widget:contentsChanged()
+        end
     end
 end
 
@@ -218,6 +225,7 @@ end
 ---@param questId string
 ---@param index integer|string
 ---@param questData questDataGenerator.questData
+---@return boolean|nil
 function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local topicData = questData[tostring(index)]
     local questName = questData.name or "???"
@@ -227,15 +235,22 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local mainBlock = parent:createBlock{ id = requirementsMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.topToBottom
-    mainBlock.autoHeight = true
-    mainBlock.autoWidth = true
-    mainBlock.maxWidth = 400
+    mainBlock.height = 400
+    mainBlock.width = 400
+    mainBlock.visible = false
 
-    local headerLabel = mainBlock:createLabel{ id = requirementsMenu.headerLabel, text = string.format("(%s) %s", topicIndexStr, questName) }
+    local scrollBlock = mainBlock:createVerticalScrollPane{ id = requirementsMenu.scroll }
+    scrollBlock.heightProportional = 1
+    scrollBlock.widthProportional = 1
+    scrollBlock.widget.scrollbarVisible = true
+
+    local scrollBlockContent = scrollBlock:getContentElement()
+
+    local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel, text = string.format("(%s) %s", topicIndexStr, questName) }
     headerLabel.borderBottom = 2
 
     local showSelectedCurrentBlock = true
-    local selectedCurrentBlock = mainBlock:createBlock{ id = requirementsMenu.selectedCurrentBlock }
+    local selectedCurrentBlock = scrollBlockContent:createBlock{ id = requirementsMenu.selectedCurrentBlock }
     selectedCurrentBlock.autoHeight = true
     selectedCurrentBlock.autoWidth = true
     selectedCurrentBlock.flowDirection = tes3.flowDirection.leftToRight
@@ -249,7 +264,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     makeLabelSelectable(selLabel)
     makeLabelSelectable(lstLabel)
 
-    local reqIndexMainBlock = mainBlock:createBlock{ id = requirementsMenu.requirementIndexMainBlock }
+    local reqIndexMainBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementIndexMainBlock }
     reqIndexMainBlock.autoHeight = true
     reqIndexMainBlock.autoWidth = true
     reqIndexMainBlock.borderBottom = 2
@@ -262,13 +277,13 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqIndexBlock.autoWidth = true
     reqIndexBlock.borderLeft = 10
 
-    local indexTabBlock = mainBlock:createBlock{ id = requirementsMenu.indexTabBlock }
+    local indexTabBlock = scrollBlockContent:createBlock{ id = requirementsMenu.indexTabBlock }
     indexTabBlock.autoHeight = true
     indexTabBlock.autoWidth = true
     indexTabBlock.flowDirection = tes3.flowDirection.leftToRight
     indexTabBlock.visible = false
 
-    local reqBlock = mainBlock:createBlock{ id = requirementsMenu.requirementBlock }
+    local reqBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementBlock }
     reqBlock.autoHeight = true
     reqBlock.autoWidth = true
     reqBlock.borderTop = 12
@@ -281,7 +296,12 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         selLabel.visible = false
         lstLabel.visible = false
         nextIndexLabel.text = "Finished"
-        return
+        nextIndexLabel.color = this.colors.lightGreen
+        nextIndexLabel.visible = true
+        mainBlock.visible = true
+        mainBlock.height = 64
+        updateContainerMenu(mainBlock)
+        return true
     end
 
     if index == playerCurrentIndex then
@@ -434,6 +454,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     end
 
     updateContainerMenu(mainBlock)
+
+    mainBlock.visible = indexTabBlock.visible or nextIndexLabel.visible or selectedCurrentBlock.visible
+
+    return mainBlock.visible
 end
 
 
@@ -574,7 +598,9 @@ function this.drawMapMenu(parent, questId, index, questData)
 
     mapMarkersBlock:getTopLevelMenu():updateLayout()
 
-    this.drawQuestRequirementsMenu(reqBlock, questId, index, questData)
+    if not this.drawQuestRequirementsMenu(reqBlock, questId, index, questData) then
+        return false
+    end
 
     local innMenuReqBlock = reqBlock:findChild(requirementsMenu.requirementBlock)
     if not innMenuReqBlock then
@@ -758,6 +784,8 @@ function this.drawMapMenu(parent, questId, index, questData)
     innMenuReqBlock:setLuaData("callback", function(reqBl)
         drawMarkers(reqBl)
     end)
+
+    return true
 end
 
 
@@ -924,11 +952,16 @@ function this.updateJournalMenu()
 
                 reqLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest)
+                    if not this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest) then
+                        tooltip:destroy()
+                    end
                 end)
                 reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     local el = this.drawContainer("Requirements")
-                    this.drawQuestRequirementsMenu(el, questId, questIndex, quest)
+                    if not this.drawQuestRequirementsMenu(el, questId, questIndex, quest) then
+                        el:destroy() ---@diagnostic disable-line: need-check-nil
+                        return
+                    end
                     this.centerToCursor(el)
                 end)
             end
@@ -940,11 +973,16 @@ function this.updateJournalMenu()
 
                 mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    this.drawMapMenu(tooltip, questId, questIndex, quest)
+                    if not this.drawMapMenu(tooltip, questId, questIndex, quest) then
+                        tooltip:destroy()
+                    end
                 end)
                 mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     local el = this.drawContainer("Map")
-                    this.drawMapMenu(el, questId, questIndex, quest)
+                    if not this.drawMapMenu(el, questId, questIndex, quest) then
+                        el:destroy() ---@diagnostic disable-line: need-check-nil
+                        return
+                    end
                     this.centerToCursor(el)
                 end)
             end
