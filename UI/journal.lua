@@ -664,6 +664,13 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 foundObjectsInChildren = foundObjectsInChildren + 1
 
+                local trackingObj = trackingLib.getObjectData(objId)
+
+                if trackingObj then
+                    color = trackingObj.color
+                    if colorOfObject[objId] then colorOfObject[objId] = color end
+                end
+
                 if colorOfObject[objId] then
                     color = colorOfObject[objId]
                     goto continue1
@@ -713,6 +720,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                         trackingLib.addMarker{objectId = objId, color = color, questId = questId, questStage = index}
                     end
                     trackingLib.updateMarkers(true)
+                    drawMarkers(reqBl)
                 end
 
                 child:register(tes3.uiEvent.mouseClick, mouseClick)
