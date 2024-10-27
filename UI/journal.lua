@@ -623,22 +623,23 @@ function this.drawMapMenu(parent, questId, index, questData)
 
         local markersData = {}
 
+        ---@type { parent : tes3uiElement, marker : tes3uiElement }[]
         local markers = {}
 
         ---@param e tes3uiEventData
         local function mouseOver(e)
-            for _, marker in pairs(markers) do
-                local color = marker.color
-                if color and e.source.color and (color[1] ~= e.source.color[1] or color[2] ~= e.source.color[2] or color[3] ~= e.source.color[3]) then
-                    marker.visible = false
+            local parentEl = e.source
+            for _, markerDt in pairs(markers) do
+                if parentEl ~= markerDt.parent then
+                    markerDt.marker.visible = false
                 end
             end
         end
 
         ---@param e tes3uiEventData
         local function mouseLeave(e)
-            for _, marker in pairs(markers) do
-                marker.visible = true
+            for _, markerDt in pairs(markers) do
+                markerDt.marker.visible = true
             end
         end
 
@@ -700,7 +701,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                         end
                     end
 
-                    table.insert(markersData, { x = x, y = y, color = color, objId = objId, objName = objName, cellPath = cellPath })
+                    table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = objName, cellPath = cellPath })
                     ::continue2::
                 end
 
@@ -759,7 +760,7 @@ function this.drawMapMenu(parent, questId, index, questData)
                 }
 
                 if im then
-                    table.insert(markers, im)
+                    table.insert(markers, {marker = im, parent = data.parent})
                     minMaxAlignX[1] = math.min(minMaxAlignX[1], alignX)
                     minMaxAlignX[2] = math.max(minMaxAlignX[2], alignX)
                     minMaxAlignY[1] = math.min(minMaxAlignY[1], alignY)
