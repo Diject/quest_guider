@@ -339,25 +339,62 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
 
         local reqStrDescrData = descriptionLines[requirement.type]
         if reqStrDescrData then
-            local str = reqStrDescrData.str:gsub("#variable#", environment.variableStr)
-            str = str:gsub("#value#", environment.valueStr)
-            str = str:gsub("#variableQuestName#", environment.variableQuestName)
-            str = str:gsub("#objectName#", environment.objectObj and (environment.objectObj.name or "???") or "???")
-            str = str:gsub("#notContr#", ((value==0 and operator==48) or (value==1 and operator==49) or (value==1 and operator==52)) and "n't" or "")
-            str = str:gsub("#negNotContr#", ((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or "")
-            if environment.operator then
-                str = str:gsub("#operator#", types.operator.name[environment.operator])
+            local str = reqStrDescrData.str
+            local mapped = {}
+            for codeStr in string.gmatch(reqStrDescrData.str, "#(.-)#") do
+                local pattern = "#"..codeStr.."#"
+                if codeStr == "variable" then
+                    mapped[pattern] = environment.variableStr
+                elseif codeStr == "value" then
+                    mapped[pattern] = environment.valueStr
+                elseif codeStr == "varQuestName" then
+                    mapped[pattern] = environment.variableQuestName
+                elseif codeStr == "objectName" then
+                    mapped[pattern] = environment.objectObj and (environment.objectObj.name or "???") or "???"
+                elseif codeStr == "valueName" then
+                    mapped[pattern] = environment.valueObj and (environment.valueObj.name or "???") or "???"
+                elseif codeStr == "varName" then
+                    mapped[pattern] = environment.variableObj and (environment.variableObj.name or "???") or "???"
+                elseif codeStr == "skillName" then
+                    mapped[pattern] = environment.skill and (tes3.skillName[environment.skill] or "???") or "???"
+                elseif codeStr == "attributeName" then
+                    mapped[pattern] = environment.attribute and (tes3.attributeName[environment.attribute] or "???") or "???"
+                elseif codeStr == "weaponType" then
+                    mapped[pattern] = environment.value and (weaponTypeNameById[environment.value] or "???") or "???"
+                elseif codeStr == "magicEffect" then
+                    mapped[pattern] = magicEffectConsts[environment.variable] and tes3.getMagicEffect(magicEffectConsts[environment.variable]).name or environment.variable
+                elseif codeStr == "classVar" then
+                    mapped[pattern] = tes3.findClass(environment.variable) and tes3.findClass(environment.variable).name or environment.variable
+                elseif codeStr == "classVal" then
+                    mapped[pattern] = tes3.findClass(environment.value) and tes3.findClass(environment.value).name or environment.value
+                elseif codeStr == "rankName" then
+                    mapped[pattern] = environment.variableObj and environment.variableObj:getRankName(environment.value) or environment.value
+                elseif codeStr == "operator" then
+                    mapped[pattern] = types.operator.name[environment.operator]
+                elseif codeStr == "notContr" then
+                    mapped[pattern] = ((value==0 and operator==48) or (value==1 and operator==49) or (value==1 and operator==52)) and "n't" or ""
+                elseif codeStr == "negNotContr" then
+                    mapped[pattern] = ((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or ""
+                end
             end
+            for pattern, ret in pairs(mapped) do
+                str = str:gsub(pattern:gsub("%(", "."):gsub("%)", "."), ret)
+            end
+
             local mapped = {}
             for codeStr in string.gmatch(str, "@(.-)@") do
                 local pattern = "@"..codeStr.."@"
-                local f = load("return "..codeStr, nil, nil, environment)
-                local fSuccess, fRet = pcall(f)
-                if not fSuccess then
-                    log("pattern error", pattern, requirement)
-                    fRet = "<error>"
+                local f, err = load("return "..codeStr, nil, nil, environment)
+                if err then
+                    log("pattern error", err, pattern, requirement)
+                else
+                    local fSuccess, fRet = pcall(f)
+                    if not fSuccess then
+                        log("pattern error", pattern, requirement)
+                        fRet = "<error>"
+                    end
+                    mapped[pattern] = fRet or "???"
                 end
-                mapped[pattern] = fRet or "???"
             end
             for pattern, ret in pairs(mapped) do
                 str = str:gsub(pattern:gsub("%(", "."):gsub("%)", "."), ret)
