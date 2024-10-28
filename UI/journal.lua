@@ -231,6 +231,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local questName = questData.name or "???"
     local topicIndexStr = tostring(index) or "???"
     local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
+    local currentTopicData = questData[tostring(playerCurrentIndex)]
     local playerCurrentIndexStr = tostring(playerCurrentIndex or "???")
 
     local mainBlock = parent:createBlock{ id = requirementsMenu.block }
@@ -288,11 +289,11 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqBlock.autoWidth = true
     reqBlock.borderTop = 12
     reqBlock.flowDirection = tes3.flowDirection.topToBottom
-    reqBlock.maxWidth = 400
+    reqBlock.maxWidth = 378
 
 
     if not topicData then return end
-    if topicData.finished then
+    if currentTopicData and currentTopicData.finished and #currentTopicData.next == 0 then
         selLabel.visible = false
         lstLabel.visible = false
         nextIndexLabel.text = "Finished"
@@ -300,6 +301,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         nextIndexLabel.visible = true
         mainBlock.visible = true
         mainBlock.height = 64
+        mainBlock.width = 96
+        scrollBlockContent.childAlignX = 0.5
         updateContainerMenu(mainBlock)
         return true
     end
@@ -313,7 +316,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local function resetDynamicToDefault()
         indexTabBlock.visible = false
         reqBlock.autoWidth = false
-        reqBlock.width = 400
+        reqBlock.width = 378
         reqBlock:destroyChildren()
         reqBlock.autoWidth = true
         reqIndexBlock:destroyChildren()
