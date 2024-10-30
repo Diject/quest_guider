@@ -18,7 +18,7 @@ function this.descriptionLines()
     ---@type table<string, table<string, questDataGenerator.requirementData>>
     local types = {}
 
-    local reqTypeNum = 0
+    local reqNum = 0
     local knownNum = 0
 
     for qId, qStages in pairs(dataHandler.quests) do
@@ -30,7 +30,7 @@ function this.descriptionLines()
 
             for _, reqBlock in pairs(qData.requirements or {}) do
                 for _, req in pairs(reqBlock) do
-                    reqTypeNum = reqTypeNum + 1
+                    reqNum = reqNum + 1
                     if descriptionLines[req.type] then
                         knownNum = knownNum + 1
                     end
@@ -53,9 +53,9 @@ function this.descriptionLines()
             log("Not found:", tp)
         end
     end
-    log("Found requirements:", reqTypeNum)
+    log("Found requirements:", reqNum)
     log("Known requirements:", knownNum)
-    log("Coverage:", knownNum / reqTypeNum)
+    log("Coverage:", knownNum / reqNum)
 
     for type, data in pairs(types) do
         print("")
