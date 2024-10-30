@@ -166,6 +166,18 @@ local magicEffectConsts = {
     ["seffectrestoreattribute"] = 74,
 }
 
+local vampireClan = {
+    [1] = "Aundae",
+    [2] = "Berne",
+    [3] = "Quarra",
+}
+
+local weatherById = {}
+
+for name, id in pairs(tes3.weather) do
+    weatherById[id] = name
+end
+
 ---@param questId string
 ---@return { name: string, [string]: questDataGenerator.stageData }|nil
 function this.getQuestData(questId)
@@ -343,7 +355,9 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
             local mapped = {}
             for codeStr in string.gmatch(reqStrDescrData.str, "#(.-)#") do
                 local pattern = "#"..codeStr.."#"
-                if codeStr == "variable" then
+                if codeStr == "object" then
+                    mapped[pattern] = tostring(environment.object or "???")
+                elseif codeStr == "variable" then
                     mapped[pattern] = environment.variableStr
                 elseif codeStr == "value" then
                     mapped[pattern] = environment.valueStr
@@ -369,6 +383,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                     mapped[pattern] = tes3.findClass(environment.value) and tes3.findClass(environment.value).name or environment.value
                 elseif codeStr == "rankName" then
                     mapped[pattern] = environment.variableObj and environment.variableObj:getRankName(environment.value) or environment.value
+                elseif codeStr == "vampClanVal" then
+                    mapped[pattern] = vampireClan[environment.value] and vampireClan[environment.value] or tostring(environment.value)
+                elseif codeStr == "weatherIdVal" then
+                    mapped[pattern] = weaponTypeNameById[environment.value] and weaponTypeNameById[environment.value] or tostring(environment.value)
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
