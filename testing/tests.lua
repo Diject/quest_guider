@@ -21,30 +21,44 @@ function this.descriptionLines()
     local reqNum = 0
     local knownNum = 0
 
-    for qId, qStages in pairs(dataHandler.quests) do
+    ---@param reqBlock questDataGenerator.requirementData[]
+    local function processReqBlock(reqBlock)
+        for _, req in pairs(reqBlock) do
+            reqNum = reqNum + 1
+            if descriptionLines[req.type] then
+                knownNum = knownNum + 1
+            end
 
+            local reqTypeList = types[req.type]
+            if not reqTypeList then
+                types[req.type] = {}
+                reqTypeList = types[req.type]
+            end
+            reqTypeList[getRequirementDataHash(req)] = req
+        end
+    end
+
+    for qId, qStages in pairs(dataHandler.quests) do
         for _, qData in pairs(qStages) do
             if qId == "name" then
                 goto continue
             end
 
             for _, reqBlock in pairs(qData.requirements or {}) do
-                for _, req in pairs(reqBlock) do
-                    reqNum = reqNum + 1
-                    if descriptionLines[req.type] then
-                        knownNum = knownNum + 1
-                    end
-
-                    local reqTypeList = types[req.type]
-                    if not reqTypeList then
-                        types[req.type] = {}
-                        reqTypeList = types[req.type]
-                    end
-                    reqTypeList[getRequirementDataHash(req)] = req
-                end
+                processReqBlock(reqBlock)
             end
 
             ::continue::
+        end
+    end
+
+    for scriptId, scrData in pairs(dataHandler.localVariablesByQuestId) do
+        for varName, varData in pairs(scrData) do
+            for _, resData in pairs(varData.results) do
+                if resData.requirements then
+                    processReqBlock(resData.requirements)
+                end
+            end
         end
     end
 
