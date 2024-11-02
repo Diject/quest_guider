@@ -52,7 +52,7 @@ function this.descriptionLines()
         end
     end
 
-    for scriptId, scrData in pairs(dataHandler.localVariablesByQuestId) do
+    for scriptId, scrData in pairs(dataHandler.localVariablesByScriptId) do
         for varName, varData in pairs(scrData) do
             for _, resData in pairs(varData.results) do
                 if resData.requirements then
