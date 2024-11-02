@@ -9,7 +9,7 @@ this.questByText = {}
 ---@type table<string, questDataGenerator.objectInfo>
 this.questObjects = {}
 ---@type questDataGenerator.localVariableByQuestId
-this.localVariablesByQuestId = {}
+this.localVariablesByScriptId = {}
 
 local isReady = false
 
@@ -19,15 +19,15 @@ function this.init()
     this.quests = json.loadfile("mods\\diject\\quest_guider\\Data\\quests")
     this.questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
     this.questObjects = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjects")
-    this.localVariablesByQuestId = json.loadfile("mods\\diject\\quest_guider\\Data\\localVariables")
+    this.localVariablesByScriptId = json.loadfile("mods\\diject\\quest_guider\\Data\\localVariables")
 
-    if this.quests and this.questObjects and this.questByText and this.localVariablesByQuestId then
+    if this.quests and this.questObjects and this.questByText and this.localVariablesByScriptId then
         isReady = true
     else
         this.quests = this.quests or {}
         this.questObjects = this.questObjects or {}
         this.questByText = this.questByText or {}
-        this.localVariablesByQuestId = this.localVariablesByQuestId or {}
+        this.localVariablesByScriptId = this.localVariablesByScriptId or {}
     end
 
     return isReady
@@ -42,7 +42,7 @@ function this.reset()
     this.quests = {}
     this.questObjects = {}
     this.questByText = {}
-    this.localVariablesByQuestId = {}
+    this.localVariablesByScriptId = {}
 end
 
 return this
