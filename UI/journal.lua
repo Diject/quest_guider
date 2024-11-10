@@ -5,6 +5,7 @@ local questLib = include("diject.quest_guider.quest")
 local cellLib = include("diject.quest_guider.cell")
 local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
+local types = include("diject.quest_guider.types")
 
 local config = include("diject.quest_guider.config")
 
@@ -51,6 +52,15 @@ local requirementsMenu = {
     requirementIndexBlock = "qGuider_req_requirementIndexBlock",
     nextIndexValueLabel = "qGuider_req_nextIndexValueLabel",
     nextIndexLabel = "qGuider_req_nextIndexLabel",
+    localValueTooltipBlock = "qGuider_req_localValueTooltipBlock",
+}
+
+local scriptLocalsMenu = {
+    block = "qGuider_locals_block",
+    headerLabel = "qGuider_locals_headerLabel",
+    requirementsFullBlock = "qGuider_locals_requirementsFullBlock",
+    requirementsBlock = "qGuider_locals_requirementsBlock",
+    resultLabel = "qGuider_locals_resultLabel"
 }
 
 local mapMenu = {
@@ -84,6 +94,8 @@ this.colors = {
     default = {0.792, 0.647, 0.376},
     lightDefault = {0.892, 0.747, 0.476},
     lightGreen = {0.5, 1, 0.5},
+    lightYellow = {0.8, 0.8, 0.5},
+    lightLightYellow = {0.8, 0.8, 0.3},
     disabled = {0.25, 0.25, 0.25}
 }
 
@@ -104,11 +116,14 @@ this.markers = {
     quest = {path = "textures\\diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4},
 }
 
-local function updateContainerMenu(mainBlock)
+
+---@param mainBlock tes3uiElement
+---@param scrollBlock tes3uiElement|nil
+local function updateContainerMenu(mainBlock, scrollBlock)
     local topMenu = mainBlock:getTopLevelMenu()
     topMenu:updateLayout()
-    if mainBlock.widget then
-        mainBlock.widget:contentsChanged()
+    if scrollBlock and scrollBlock.widget then
+        scrollBlock.widget:contentsChanged()
     end
 
     if topMenu.name == "qGuider_container" then
@@ -123,8 +138,8 @@ local function updateContainerMenu(mainBlock)
         topMenu.minWidth = topMenu.width
         topMenu.minHeight = topMenu.height
         topMenu:updateLayout()
-        if mainBlock.widget then
-            mainBlock.widget:contentsChanged()
+        if scrollBlock and scrollBlock.widget then
+            scrollBlock.widget:contentsChanged()
         end
     end
 end
@@ -222,6 +237,192 @@ end
 
 
 ---@param parent tes3uiElement
+---@param scriptNames table<string, table<string, string>>
+---@return boolean|nil ret return true, if contains a script var from "scriptNames"
+function this.drawScriptLocalsMenu(parent, scriptNames)
+    local ret = false
+
+    local mainBlock = parent:createBlock{ id = scriptLocalsMenu.block }
+    mainBlock.flowDirection = tes3.flowDirection.topToBottom
+    mainBlock.autoHeight = true
+    mainBlock.widthProportional = 1
+    mainBlock.visible = true
+
+    local function isContainsVarName(scrName, varName)
+        local scrData = scriptNames[scrName]
+
+        if not scrData then return false end
+
+        if scrData[varName] then
+            return true
+        end
+
+        local varsToFind = table.copy(scrData)
+        for n, v in pairs(scrData) do
+            if not tonumber(v) then
+                varsToFind[v] = true
+            end
+        end
+
+        local scriptData = questLib.getLocalVariableDataByScriptName(scrName)
+        if not scriptData then return false end
+
+        local function findInResults()
+            local count = table.size(varsToFind)
+
+            for varN, data in pairs(scriptData) do
+                for _, valBlock in pairs(data.results) do
+                    for _, block in pairs(valBlock) do
+                        for _, req in pairs(block) do
+                            for n, _ in pairs(varsToFind) do
+                                if not varsToFind[req.value] and string.find(req.value or "", n) then
+                                    varsToFind[req.value] = true
+                                end
+                                if not varsToFind[req.variable] and string.find(req.variable or "", n) then
+                                    varsToFind[req.variable] = true
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            if count ~= table.size(varsToFind) then findInResults() end
+        end
+
+        findInResults()
+
+        if varsToFind[varName] then return true end
+
+        return false
+    end
+
+    local wasCreated = false
+
+    for scriptName, varTargetData in pairs(scriptNames) do
+
+        local scriptData = questLib.getLocalVariableDataByScriptName(scriptName)
+
+        if not scriptData then goto continue end
+
+        local divider = mainBlock:createDivider{ id = nil }
+        local headerLabel = mainBlock:createLabel{ id = nil, text = string.format("Script \"%s\":", scriptName) }
+        headerLabel.color = this.colors.lightYellow
+
+        for varName, varData in pairs(scriptData) do
+            if not isContainsVarName(scriptName, varName) then
+                goto continue
+            end
+
+            wasCreated = true
+
+            local varLabel = mainBlock:createLabel{ id = nil, text = string.format("Variable \"%s\":", varName) }
+            varLabel.borderLeft = 5
+            varLabel.borderTop = 5
+
+            local varValuesBlock = mainBlock:createBlock{ id = nil }
+            varValuesBlock.borderTop = 4
+            varValuesBlock.borderLeft = 8
+            varValuesBlock.autoHeight = true
+            varValuesBlock.widthProportional = 1
+            varValuesBlock.flowDirection = tes3.flowDirection.leftToRight
+
+            local varReqsBlock = mainBlock:createBlock{ id = scriptLocalsMenu.requirementsFullBlock }
+            varReqsBlock.borderTop = 2
+            varReqsBlock.autoHeight = true
+            varReqsBlock.widthProportional = 1
+            varReqsBlock.flowDirection = tes3.flowDirection.topToBottom
+
+            local varValueLabel = varValuesBlock:createLabel{ id = nil, text = "Value:" }
+            varValueLabel.color = this.colors.lightLightYellow
+            varValueLabel.borderRight = 10
+
+            for valueStr, resData in pairs(varData.results or {}) do
+                local resLabel = varValuesBlock:createLabel{ id = scriptLocalsMenu.resultLabel, text = string.format("- %s -", tostring(valueStr)) }
+                resLabel.borderRight = 6
+                resLabel.color = this.colors.disabled
+
+                makeLabelSelectable(resLabel)
+
+                resLabel:register(tes3.uiEvent.mouseClick, function (e)
+                    for _, child in pairs(varValuesBlock.children) do
+                        if child.name == scriptLocalsMenu.resultLabel then
+                            child.color = this.colors.disabled
+                        end
+                    end
+                    resLabel.color = this.colors.lightGreen
+                    varReqsBlock:destroyChildren()
+
+                    for _, requirements in pairs(resData) do
+
+                        if #varReqsBlock.children > 0 then
+                            local block = varReqsBlock:createBlock{ id = nil }
+                            block.autoHeight = true
+                            block.widthProportional = 1
+                            block.flowDirection = tes3.flowDirection.topToBottom
+                            block.childAlignX = 0.5
+
+                            local label = block:createLabel{ id = nil, text = "or" }
+                        end
+
+                        local requirementData = questLib.getDescriptionDataFromDataBlock(requirements)
+
+                        local reqsBlock = varReqsBlock:createRect{ id = scriptLocalsMenu.requirementsBlock }
+                        reqsBlock.alpha = 0.1
+                        reqsBlock.autoHeight = true
+                        reqsBlock.widthProportional = 1
+                        reqsBlock.flowDirection = tes3.flowDirection.topToBottom
+
+                        if requirementData then
+                            reqsBlock:setLuaData("requirementData", requirementData)
+                            for _, req in pairs(requirementData) do
+                                local reqLabel = reqsBlock:createLabel{ id = requirementsMenu.requirementLabel, text = req.str }
+                                reqLabel.borderTop = 4
+                                reqLabel.color = this.colors.lightDefault
+                                reqLabel.wrapText = true
+                                reqLabel:setLuaData("requirement", req)
+
+                                makeLabelSelectable(reqLabel)
+                            end
+                        else
+                            local reqLabel = reqsBlock:createLabel{ id = requirementsMenu.requirementLabel, text = "???" }
+                            reqLabel.color = this.colors.lightDefault
+                            reqLabel.borderTop = 4
+
+                            makeLabelSelectable(reqLabel)
+                        end
+                    end
+
+                    local parentMain = parent:getTopLevelMenu():findChild(mapMenu.block)
+                    local scroll = parent:getTopLevelMenu():findChild(requirementsMenu.scroll)
+                    if parentMain then
+                        updateContainerMenu(parentMain, scroll)
+                    else
+                        updateContainerMenu(mainBlock, scroll)
+                    end
+                end)
+
+                if ((varTargetData[varName]) and (varTargetData[varName] == valueStr or not tonumber(valueStr))) or
+                        table.find(varTargetData, varName) then
+                    resLabel:triggerEvent(tes3.uiEvent.mouseClick)
+                    ret = true
+                end
+            end
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    if not wasCreated then
+        mainBlock.visible = false
+    end
+
+    return ret
+end
+
+
+---@param parent tes3uiElement
 ---@param questId string
 ---@param index integer|string
 ---@param questData questDataGenerator.questData
@@ -286,10 +487,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local reqBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementBlock }
     reqBlock.autoHeight = true
-    reqBlock.autoWidth = true
+    reqBlock.widthProportional = 1
     reqBlock.borderTop = 12
     reqBlock.flowDirection = tes3.flowDirection.topToBottom
-    reqBlock.maxWidth = 378
 
 
     if not topicData then return end
@@ -303,7 +503,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         mainBlock.height = 64
         mainBlock.width = 96
         scrollBlockContent.childAlignX = 0.5
-        updateContainerMenu(mainBlock)
+        updateContainerMenu(mainBlock, scrollBlock)
         return true
     end
 
@@ -315,10 +515,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local function resetDynamicToDefault()
         indexTabBlock.visible = false
-        reqBlock.autoWidth = false
-        reqBlock.width = 378
         reqBlock:destroyChildren()
-        reqBlock.autoWidth = true
         reqIndexBlock:destroyChildren()
         indexTabBlock:destroyChildren()
         selLabel.color = this.colors.disabled
@@ -382,6 +579,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     tab:register(tes3.uiEvent.mouseClick, function (e)
                         reqBlock:destroyChildren()
+
+                        ---@type table<string, table<string, string>>
+                        local variableScripts = {}
+
                         if requirementData then
                             reqBlock:setLuaData("requirementData", requirementData)
                             for _, req in pairs(requirementData) do
@@ -392,6 +593,32 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 reqLabel:setLuaData("requirement", req)
 
                                 makeLabelSelectable(reqLabel)
+
+                                local reqType = req.data.type
+                                local scriptName = req.data.script
+                                if scriptName and (reqType == types.requirementType.CustomLocal or reqType == types.requirementType.CustomNotLocal) then
+                                    if not variableScripts[scriptName] then
+                                        variableScripts[scriptName] = {[req.data.variable] = req.data.value}
+                                    else
+                                        variableScripts[scriptName][req.data.variable] = req.data.value
+                                    end
+
+                                    reqLabel:register(tes3.uiEvent.help, function (e)
+                                        local tooltip = tes3ui.createTooltipMenu()
+
+                                        local block = tooltip:createBlock{id = requirementsMenu.localValueTooltipBlock}
+                                        block.flowDirection = tes3.flowDirection.topToBottom
+                                        block.autoHeight = true
+                                        block.autoWidth = false
+                                        block.width = 400
+
+                                        if not this.drawScriptLocalsMenu(block, {[scriptName] = {[req.data.variable] = req.data.value}}) then
+                                            tooltip:destroy()
+                                        else
+                                            updateContainerMenu(tooltip)
+                                        end
+                                    end)
+                                end
                             end
                         else
                             local reqLabel = reqBlock:createLabel{ id = requirementsMenu.requirementLabel, text = "???" }
@@ -399,6 +626,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                             reqLabel.borderTop = 4
 
                             makeLabelSelectable(reqLabel)
+                        end
+
+                        if config.data.journal.requirements.scriptValues and table.size(variableScripts) > 0 then
+                            this.drawScriptLocalsMenu(reqBlock, variableScripts)
                         end
 
                         for _, tb in pairs(tabs) do
@@ -410,7 +641,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                         if callback then
                             callback(reqBlock, requirementData)
                         else
-                            updateContainerMenu(mainBlock)
+                            updateContainerMenu(mainBlock, scrollBlock)
                         end
 
                     end)
@@ -456,7 +687,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         selLabel:triggerEvent(tes3.uiEvent.mouseClick)
     end
 
-    updateContainerMenu(mainBlock)
+    updateContainerMenu(mainBlock, scrollBlock)
 
     mainBlock.visible = indexTabBlock.visible or nextIndexLabel.visible or selectedCurrentBlock.visible
 
@@ -515,7 +746,7 @@ local function createMarker(params)
             block.flowDirection = tes3.flowDirection.topToBottom
             block.autoHeight = true
             block.autoWidth = true
-            block.maxWidth = 250
+            block.maxWidth = 350
             block.borderBottom = 3
 
             blockCount = blockCount + 1
@@ -523,8 +754,8 @@ local function createMarker(params)
             if rec.name then
                 local label = block:createLabel{id = mapMenu.tooltipName, text = rec.name}
                 label.autoHeight = true
-                label.autoWidth = true
-                label.maxWidth = 250
+                label.widthProportional = 1
+                label.maxWidth = 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.center
             end
@@ -533,7 +764,7 @@ local function createMarker(params)
                 local label = block:createLabel{id = mapMenu.tooltipDescription, text = rec.description}
                 label.autoHeight = true
                 label.autoWidth = true
-                label.maxWidth = 250
+                label.maxWidth = 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.left
             end
@@ -633,7 +864,9 @@ function this.drawMapMenu(parent, questId, index, questData)
         local function mouseOver(e)
             local parentEl = e.source
             for _, markerDt in pairs(markers) do
-                if parentEl ~= markerDt.parent then
+                if parentEl.color[1] ~= markerDt.parent.color[1] or
+                        parentEl.color[2] ~= markerDt.parent.color[2] or
+                        parentEl.color[3] ~= markerDt.parent.color[3] then
                     markerDt.marker.visible = false
                 end
             end
@@ -646,12 +879,13 @@ function this.drawMapMenu(parent, questId, index, questData)
             end
         end
 
-        for _, child in pairs(reqBl.children) do
-            if child.name ~= requirementsMenu.requirementLabel then goto continue0 end
+        ---@param child tes3uiElement
+        local function processChild(child)
+            if child.name ~= requirementsMenu.requirementLabel and child.name ~= scriptLocalsMenu.requirementLabel then return end
 
             ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
             local reqData = child:getLuaData("requirement")
-            if not reqData or not reqData.objects then goto continue0 end
+            if not reqData or not reqData.objects then return end
 
             local color = markerColors[colorIndex]
 
@@ -729,8 +963,17 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 child:register(tes3.uiEvent.mouseClick, mouseClick)
             end
+        end
 
-            ::continue0::
+        for _, child in pairs(reqBl.children) do
+            processChild(child)
+        end
+
+        local scriptBlock = reqBl:findChild(scriptLocalsMenu.block)
+        if scriptBlock then
+            for children in table.traverse({scriptBlock}, "children") do
+                processChild(children)
+            end
         end
 
         if #markersData == 0 then
@@ -788,7 +1031,8 @@ function this.drawMapMenu(parent, questId, index, questData)
 
         ::continue::
 
-        updateContainerMenu(mainBlock)
+        local scroll = parent:getTopLevelMenu():findChild(requirementsMenu.scroll)
+        updateContainerMenu(mainBlock, scroll)
     end
 
     drawMarkers(innMenuReqBlock)

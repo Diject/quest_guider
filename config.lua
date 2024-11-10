@@ -16,6 +16,7 @@ this.default = {
         requirements = {
             enable = true,
             currentByDefault = false,
+            scriptValues = true,
         },
         map = {
             enabled = true,

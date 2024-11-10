@@ -178,6 +178,11 @@ for name, id in pairs(tes3.weather) do
     weatherById[id] = name
 end
 
+
+local disallowedRequirementTypes = {
+    ["SCR"] = true
+}
+
 ---@param questId string
 ---@return { name: string, [string]: questDataGenerator.stageData }|nil
 function this.getQuestData(questId)
@@ -203,6 +208,12 @@ end
 function this.getQuestInfoByJournalText(text)
     local str = text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
     return dataHandler.questByText[str]
+end
+
+---@param scriptName string
+---@return table<string, questDataGenerator.localVariableData>|nil
+function this.getLocalVariableDataByScriptName(scriptName)
+    return dataHandler.localVariablesByScriptId[scriptName:lower()]
 end
 
 ---@param questData string|questDataGenerator.questData
@@ -242,6 +253,7 @@ end
 ---@field str string
 ---@field priority number
 ---@field objects string[]|nil
+---@field data questDataGenerator.requirementData
 
 ---@alias questGuider.quest.getDescriptionDataFromBlock.return questGuider.quest.getDescriptionDataFromBlock.returnArr[]
 
@@ -257,8 +269,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
 
     for _, requirement in pairs(reqBlock) do
 
+        if disallowedRequirementTypes[requirement.type] then goto continue end
+
         ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
-        local reqOut = {str = "", priority = 0}
+        local reqOut = {str = "", priority = 0, data = requirement}
 
         local object = requirement.object
         local value = requirement.value
@@ -386,13 +400,17 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                 elseif codeStr == "vampClanVal" then
                     mapped[pattern] = vampireClan[environment.value] and vampireClan[environment.value] or tostring(environment.value)
                 elseif codeStr == "weatherIdVal" then
-                    mapped[pattern] = weaponTypeNameById[environment.value] and weaponTypeNameById[environment.value] or tostring(environment.value)
+                    mapped[pattern] = weatherById[environment.value] and weatherById[environment.value] or tostring(environment.value)
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
-                    mapped[pattern] = ((value==0 and operator==48) or (value==1 and operator==49) or (value==1 and operator==52)) and "n't" or ""
+                    mapped[pattern] = (value ~= nil and type(value) == "number") and
+                        (((value==0 and operator==48) or (value==1 and operator==49) or (value==1 and operator==52) or (value==0 and operator==53)) and "n't" or "")
+                        or ""
                 elseif codeStr == "negNotContr" then
-                    mapped[pattern] = ((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or ""
+                    mapped[pattern] = (value ~= nil and type(value) == "number") and
+                        (((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or "")
+                        or ""
                 end
             end
             for pattern, ret in pairs(mapped) do
@@ -428,14 +446,22 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
         end
 
         local objects = {}
-        if environment.objectObj then
-            table.insert(objects, environment.object or "")
+        if environment.objectObj and environment.object then
+            table.insert(objects, environment.object)
         end
-        if environment.variableObj then
-            table.insert(objects, environment.variable or "")
+        if environment.variableObj and environment.variable then
+            table.insert(objects, environment.variable)
         end
-        if environment.valueObj then
-            table.insert(objects, environment.value or "")
+        if environment.valueObj and environment.value then
+            table.insert(objects, environment.value)
+        end
+        if environment.script then
+            local scrData = dataHandler.questObjects[environment.script]
+            if scrData and scrData.links then
+                for _, id in pairs(scrData.links) do
+                    table.insert(objects, id)
+                end
+            end
         end
 
         if #objects > 0 then
@@ -443,6 +469,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
         end
 
         table.insert(out, reqOut)
+
+        ::continue::
     end
 
     table.sort(out, function (a, b)
@@ -482,10 +510,10 @@ function this.getPlayerQuestData()
         diaOutData.id = dialogueId
         diaOutData.name = storageData.name
         diaOutData.activeStage = dialogue.journalIndex
-        -- diaOutData.isFinished = dialogue.journalIndex and storageData[tostring(dialogue.journalIndex)].finished or nil
+        diaOutData.isFinished = dialogue.journalIndex and storageData[tostring(dialogue.journalIndex)].finished or nil
 
         -- TODO
-        diaOutData.isReachable = math.random() > 0.25 and true or false
+        -- diaOutData.isReachable = math.random() > 0.25 and true or false
 
         table.insert(out, diaOutData)
 
@@ -493,6 +521,18 @@ function this.getPlayerQuestData()
     end
 
     return out
+end
+
+
+---@param reqBlock table<integer, questDataGenerator.requirementData>
+---@return boolean
+function this.isContainsLocalVariableRequirement(reqBlock)
+    for _, req in pairs(reqBlock) do
+        if req.type == types.requirementType.CustomLocal then
+            return true
+        end
+    end
+    return false
 end
 
 
