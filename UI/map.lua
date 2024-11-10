@@ -85,14 +85,14 @@ function this.updateMapMenu()
                 local color = {1, 1, 1}
                 qDescrLabel.color = color
 
-                trackingLib.changeObjectMarkerColor(objId, color)
+                trackingLib.changeObjectMarkerColor(objId, color, 100)
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
             end)
 
             qDescrLabel:register(tes3.uiEvent.mouseLeave, function (e)
                 qDescrLabel.color = markerColor
-                trackingLib.changeObjectMarkerColor(objId, markerColor)
+                trackingLib.changeObjectMarkerColor(objId, markerColor, 0)
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
             end)

@@ -412,8 +412,9 @@ function this.removeMarkers()
 end
 
 ---@param trackedObjectId string
+---@param priority number?
 ---@return boolean|nil
-function this.changeObjectMarkerColor(trackedObjectId, color)
+function this.changeObjectMarkerColor(trackedObjectId, color, priority)
     local data = this.markerByObjectId[trackedObjectId]
     if not data then return end
 
@@ -421,6 +422,9 @@ function this.changeObjectMarkerColor(trackedObjectId, color)
         local record = markerLib.getRecord(data.localMarkerId)
         if record then
             record.color = table.copy(color)
+            if priority then
+                record.priority = priority
+            end
         end
     end
 
@@ -428,6 +432,9 @@ function this.changeObjectMarkerColor(trackedObjectId, color)
         local record = markerLib.getRecord(data.worldMarkerId)
         if record then
             record.color = table.copy(color)
+            if priority then
+                record.priority = priority
+            end
         end
     end
 
@@ -435,6 +442,9 @@ function this.changeObjectMarkerColor(trackedObjectId, color)
         local record = markerLib.getRecord(data.localDoorMarkerId)
         if record then
             record.color = table.copy(color)
+            if priority then
+                record.priority = priority
+            end
         end
     end
 
