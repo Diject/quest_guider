@@ -92,6 +92,8 @@ local function cellActivatedCallback(e)
     if not dataHandler.isReady() or not config.data.enabled then return end
 
     playerQuests.init()
+    tracking.isInit()
+
     if config.data.tracking.giver.enabled then
         tracking.createQuestGiverMarkers(e.cell)
     end

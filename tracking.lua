@@ -44,6 +44,9 @@ this.storageData = {} -- data of quest map markers
 ---@type table<string, boolean>
 this.scannedCellsForTemporaryMarkers = {}
 
+---@type table<string, string> recordId by object id
+this.trackedQuestGivers = {}
+
 ---@class questGuider.tracking.markerRecord
 ---@field quests table<string, {id : string, index : integer}>
 ---@field color number[]
@@ -82,6 +85,7 @@ function this.init()
     this.trackedObjectsByQuestId = this.storageData.trackedObjectsByQuestId
 
     this.scannedCellsForTemporaryMarkers = {}
+    this.trackedQuestGivers = {}
 
     initialized = true
     return initialized
@@ -93,6 +97,7 @@ function this.reset()
     this.markerByObjectId = {}
     this.trackedObjectsByQuestId = {}
     this.scannedCellsForTemporaryMarkers = {}
+    this.trackedQuestGivers = {}
 end
 
 function this.isInit()
@@ -478,7 +483,10 @@ function this.createQuestGiverMarkers(cell)
     this.scannedCellsForTemporaryMarkers[cell.editorName] = true
 
     for ref in cell:iterateReferences{ tes3.objectType.npc, tes3.objectType.creature } do
-        local objectId = ref.baseObject.id
+        local objectId = ref.baseObject.id:lower()
+
+        if this.trackedQuestGivers[objectId] then goto continue end
+
         local objectData = questLib.getObjectData(objectId)
         if not objectData or not objectData.starts then goto continue end
 
@@ -520,6 +528,8 @@ function this.createQuestGiverMarkers(cell)
             trackedRef = ref,
             temporary = true,
         }
+
+        this.trackedQuestGivers[objectId] = recordId
 
         ::continue::
     end
