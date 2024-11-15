@@ -353,7 +353,7 @@ function this.registerModConfig()
         createNumberEdit{self = doorGroup, config = {path = "tooltip.door", name = "objectNames"},
             label = "Maximum number of names of objects that are in the location and involved to a quest, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
         createNumberEdit{self = doorGroup, config = {path = "tooltip.door", name = "npcNames"},
-            label = "Maximum number of names of NPCs that are in the location and involved in the quest, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
+            label = "Maximum number of names of NPCs that are in the location and involved to a quest, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
 
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "maxPositions"},
             label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 100}, int = true}
