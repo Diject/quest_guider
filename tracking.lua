@@ -498,7 +498,7 @@ function this.createQuestGiverMarkers(cell)
             if not questData or not questData.name then goto continue end
 
             local playerData = playerQuests.getQuestData(questId)
-            if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then
+            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
                 goto continue
             end
 

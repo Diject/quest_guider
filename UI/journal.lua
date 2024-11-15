@@ -1131,7 +1131,7 @@ end
 
 function this.updateJournalMenu()
     if not config.data.journal.map.enabled and
-            not config.data.journal.requirements.enable and
+            not config.data.journal.requirements.enabled and
             not config.data.journal.info.enabled then
         return
     end
@@ -1200,7 +1200,7 @@ function this.updateJournalMenu()
                 end)
             end
 
-            if config.data.journal.requirements.enable then
+            if config.data.journal.requirements.enabled then
                 local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
                 reqLabel.imageScaleX = 0.5
                 reqLabel.imageScaleY = 0.5

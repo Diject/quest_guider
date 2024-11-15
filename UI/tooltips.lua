@@ -38,7 +38,7 @@ function this.drawObjectTooltip(parent, objectId)
         if not questData or not questData.name then goto continue end
 
         local playerData = playerQuests.getQuestData(questId)
-        if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
+        if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then goto continue end
 
         table.insert(involvedNames, questData.name)
 
@@ -52,7 +52,7 @@ function this.drawObjectTooltip(parent, objectId)
             if not questData or not questData.name then goto continue end
 
             local playerData = playerQuests.getQuestData(questId)
-            if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
+            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then goto continue end
 
             table.insert(startsNames, questData.name)
 
@@ -147,10 +147,10 @@ function this.drawDoorTooltip(parent, reference)
                     startsQuest[objId] = objData.starts
                 end
 
-                if objData.inWorld < config.data.tracking.maxPositions then
+                if objData.inWorld < config.data.tooltip.tracking.maxPositions then
                     local valid = false
 
-                    if config.data.tracking.hideStarted then
+                    if config.data.tracking.giver.hideStarted then
                         local quests = {}
                         for _, stage in pairs(objData.stages) do
                             quests[stage.id] = true
@@ -207,7 +207,7 @@ function this.drawDoorTooltip(parent, reference)
             if not questData or not questData.name then goto continue end
 
             local playerData = playerQuests.getQuestData(qId)
-            if not playerData or (config.data.tracking.hideStarted and playerData.index > 0) then goto continue end
+            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then goto continue end
 
             questNames[questData.name] = questData.name
             ::continue::

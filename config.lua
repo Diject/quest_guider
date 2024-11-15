@@ -7,14 +7,16 @@ local this = {}
 
 ---@class questGuider.config
 this.default = {
-    enabled = true,
+    main = {
+        enabled = true,
+    },
     journal = {
         enabled = true,
         info = {
             enabled = true,
         },
         requirements = {
-            enable = true,
+            enabled = true,
             currentByDefault = false,
             scriptValues = true,
         },
@@ -39,16 +41,19 @@ this.default = {
             starterQuestNames = 3,
             objectNames = 3,
             npcNames = 3,
+        },
+        tracking = {
+            maxPositions = 50,
         }
     },
     tracking = {
-        hideStarted = true,
         quest = {
             enabled = true,
         },
-        maxPositions = 50,
+        maxPositions = 20,
         giver = {
             enabled = true,
+            hideStarted = true,
             namesMax = 3,
         },
     },
@@ -104,6 +109,19 @@ function this.compareGameFileData()
     end
 
     return ret
+end
+
+---@param path string
+---@return any
+function this.getValueByPath(path)
+    return tableLib.getValueByPath(this.data, path)
+end
+
+---@param path string
+---@param newValue any
+---@return boolean success
+function this.setValueByPath(path, newValue)
+    return tableLib.setValueByPath(this.data, path, newValue)
 end
 
 return this

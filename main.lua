@@ -13,7 +13,7 @@ local dataGeneratoUI = include("diject.quest_guider.UI.dataGenerator")
 
 --- @param e uiActivatedEventData
 local function uiJournalActivatedCallback(e)
-    if not dataHandler.isReady() or not config.data.enabled or not config.data.journal.enabled then return end
+    if not dataHandler.isReady() or not config.data.main.enabled or not config.data.journal.enabled then return end
 
     if e.newlyCreated then
         journalUI.updateJournalMenu()
@@ -26,7 +26,7 @@ end
 
 --- @param e uiActivatedEventData
 local function uiMapActivatedCallback(e)
-    if not dataHandler.isReady() or not config.data.enabled or not config.data.map.enabled then return end
+    if not dataHandler.isReady() or not config.data.main.enabled or not config.data.map.enabled then return end
 
     if e.newlyCreated then
         mapUI.updateMapMenu()
@@ -51,7 +51,7 @@ end
 
 --- @param e journalEventData
 local function journalCallback(e)
-    if not dataHandler.isReady() or not config.data.enabled then return end
+    if not dataHandler.isReady() or not config.data.main.enabled then return end
 
     local topic = e.topic
     if topic.type ~= tes3.dialogueType.journal then return end
@@ -68,7 +68,7 @@ end
 --- @param e uiObjectTooltipEventData
 local function uiObjectTooltipCallback(e)
     if not e.object and not e.reference then return end
-    if not dataHandler.isReady() or not config.data.enabled then return end
+    if not dataHandler.isReady() or not config.data.main.enabled then return end
 
     local shouldUpdate = false
 
@@ -89,7 +89,7 @@ end
 
 --- @param e cellActivatedEventData
 local function cellActivatedCallback(e)
-    if not dataHandler.isReady() or not config.data.enabled then return end
+    if not dataHandler.isReady() or not config.data.main.enabled then return end
 
     playerQuests.init()
     tracking.isInit()
@@ -101,7 +101,7 @@ end
 
 --- @param e enterFrameEventData
 local function afterInitCallback(e)
-    if config.data.enabled and config.compareGameFileData() then
+    if config.data.main.enabled and config.compareGameFileData() then
         local isDataEmpty = config.isGameFileDataEmpty()
         dataGeneratoUI.createMenu{ dataChangedMessage = not isDataEmpty, dataNotExistsMessage = isDataEmpty }
     end
@@ -121,8 +121,15 @@ end
 
 --- @param e initializedEventData
 local function initializedCallback(e)
-    if not dataHandler.init() then return end
+    dataHandler.init()
     journalUI.init()
     initCallbacks()
 end
 event.register(tes3.event.initialized, initializedCallback)
+
+--- @param e modConfigReadyEventData
+local function modConfigReadyCallback(e)
+    include("diject.quest_guider.UI.mcm").registerModConfig()
+end
+
+event.register(tes3.event.modConfigReady, modConfigReadyCallback)
