@@ -55,8 +55,8 @@ function this.descriptionLines()
     for scriptId, scrData in pairs(dataHandler.localVariablesByScriptId) do
         for varName, varData in pairs(scrData) do
             for _, resData in pairs(varData.results) do
-                if resData.requirements then
-                    processReqBlock(resData.requirements)
+                for _, resBlock in pairs(resData) do
+                    processReqBlock(resBlock)
                 end
             end
         end
@@ -78,9 +78,11 @@ function this.descriptionLines()
         print("")
         for _, req in pairs(data) do
             local resData = questLib.getDescriptionDataFromDataBlock({req})
-            log(resData[1].str) ---@diagnostic disable-line: need-check-nil
-            print("")
-            log(req)
+            if resData and resData[1] then
+                log(resData[1].str) ---@diagnostic disable-line: need-check-nil
+                print("")
+                log(req)
+            end
         end
     end
 end
