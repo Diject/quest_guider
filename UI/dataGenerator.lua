@@ -1,5 +1,6 @@
 local config = include("diject.quest_guider.config")
 local initializer = include("diject.quest_guider.initializer")
+local dataHandler = include("diject.quest_guider.dataHandler")
 
 local this = {}
 
@@ -86,13 +87,14 @@ function this.createMenu(params)
         tes3ui.showNotifyMenu("Data generation completed")
         config.updateGameFileData()
         config.save()
+        dataHandler.init()
         menu:destroy()
     end)
 
     local disableBtn = buttonBlock:createButton{ id = menuId.disableBtn }
     disableBtn.text = "Disable the mod"
     disableBtn:register(tes3.uiEvent.mouseClick, function (e)
-        config.data.enabled = false
+        config.data.main.enabled = false
         config.save()
         menu:destroy()
     end)
