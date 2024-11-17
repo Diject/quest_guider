@@ -99,4 +99,5 @@ return {
     [types.requirementType.CustomPCSneaking] = { str = "The player is#notContr# sneaking", },
     [types.requirementType.PlayerHealthPercent] = { str = "The player's health fraction is #operator# #value#", },
     [types.requirementType.NPCHealthPercent] = { str = " @objectObj and objectObj.name or \"The actor\"@'s health fraction is #operator# #value#", },
+    [types.requirementType.CustomHitOnMe] = { str = " @objectObj and objectObj.name or \"The actor\"@ was hit by \"#varName#\"", },
 }
