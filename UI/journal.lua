@@ -972,8 +972,13 @@ function this.drawMapMenu(parent, questId, index, questData)
                 end
             end
 
-            local maxScale = math.min(1 / (minMaxAlignX[2] - minMaxAlignX[1]), 1 / (minMaxAlignY[2] - minMaxAlignY[1]))
-            local scale = math.max(1, math.min(config.data.journal.map.maxScale, maxScale))
+            local xDiff = minMaxAlignX[2] - minMaxAlignX[1]
+            local yDiff = minMaxAlignY[2] - minMaxAlignY[1]
+            local xCenter = (minMaxAlignX[1] + minMaxAlignX[2]) / 2
+            local yCenter = (minMaxAlignY[1] + minMaxAlignY[2]) / 2
+            local xScale = mapBlock.width / (xDiff * 1.5 * imageWidth)
+            local yScale = mapBlock.height / (yDiff * 1.5 * imageHeight)
+            local scale = math.max(0.1, math.min(config.data.journal.map.maxScale, xScale, yScale))
 
             mapMarkersBlock.width = imageWidth * scale
             mapMarkersBlock.height = imageHeight * scale
@@ -983,8 +988,8 @@ function this.drawMapMenu(parent, questId, index, questData)
             image.imageScaleX = scale
             image.imageScaleY = scale
 
-            pane.positionX = -(pane.width - mapBlock.width) / 2 + (0.5 - (minMaxAlignX[2] + minMaxAlignX[1]) / 2) * pane.width
-            pane.positionY = (pane.height - mapBlock.height) / 2 - (0.5 - (minMaxAlignY[2] + minMaxAlignY[1]) / 2) * pane.height
+            pane.positionX = math.clamp(-xCenter * pane.width + mapBlock.width / 2, -(pane.width - mapBlock.width), 0)
+            pane.positionY = math.clamp(yCenter * pane.height - mapBlock.height / 2, 0, pane.height - mapBlock.height)
         end
 
         ::continue::
