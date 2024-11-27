@@ -315,6 +315,8 @@ function this.registerModConfig()
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "currentByDefault"},
             label = "Show info about the current quest stage instead of information about the stage to which this entry corresponds"}
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "scriptValues"}, label = "Show info about local variables of involved scripts"}
+
+        createYesNo{self = journalPage, config = {path = "journal", name = "objectNames"}, label = "Maximum number of object names in tooltip or field"}
     end
 
     do

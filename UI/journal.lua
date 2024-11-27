@@ -7,22 +7,13 @@ local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local types = include("diject.quest_guider.types")
 
+local mapMarkerLib = include("diject.map_markers.marker")
+
 local config = include("diject.quest_guider.config")
 
 local markerColors = include("diject.quest_guider.Types.color")
 
 local mcp_mapExpansion = tes3.hasCodePatchFeature(tes3.codePatchFeature.mapExpansionForTamrielRebuilt)
-
-local minCellGridX = mcp_mapExpansion and -51 or -28
-local minCellGridY = mcp_mapExpansion and -64 or -28
-local maxCellGridX = mcp_mapExpansion and 51 or 28
-local maxCellGridY = mcp_mapExpansion and 38 or 28
-local mapGridWidth = mcp_mapExpansion and 103 or 57
-local mapGridHeight = mcp_mapExpansion and 103 or 57
-local worldWidthMinPart = -minCellGridX * 8192
-local worldHeightMaxPart = (maxCellGridY + 1) * 8192
-local worldWidth = (-minCellGridX + maxCellGridX) * 8192
-local worldHeight = (-minCellGridY + maxCellGridY) * 8192
 
 local this = {}
 
@@ -40,6 +31,7 @@ local requirementsMenu = {
     scroll = "qGuider_scroll_pane",
     text = "qGuider_req_text",
     headerLabel = "qGuider_req_headerLabel",
+    finishedLabel = "qGuider_req_finishedLabel",
     selectedCurrentBlock = "qGuider_req_selectedCurrentBlock",
     selectedLabel = "qGuider_req_selectedLabel",
     currentLabel = "qGuider_req_currentLabel",
@@ -429,6 +421,7 @@ end
 ---@return boolean|nil
 function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local topicData = questData[tostring(index)]
+    if not topicData then return end
     local questName = questData.name or "???"
     local topicIndexStr = tostring(index) or "???"
     local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
@@ -450,6 +443,12 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel, text = string.format("(%s) %s", topicIndexStr, questName) }
     headerLabel.borderBottom = 2
+
+    if currentTopicData and currentTopicData.finished then
+        local finishedLabel = scrollBlockContent:createLabel{ id = requirementsMenu.finishedLabel, text = "Finished" }
+        finishedLabel.color = this.colors.lightGreen
+        finishedLabel.widthProportional = 1
+    end
 
     local showSelectedCurrentBlock = true
     local selectedCurrentBlock = scrollBlockContent:createBlock{ id = requirementsMenu.selectedCurrentBlock }
@@ -491,21 +490,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqBlock.borderTop = 12
     reqBlock.flowDirection = tes3.flowDirection.topToBottom
 
-
-    if not topicData then return end
-    if currentTopicData and currentTopicData.finished and #currentTopicData.next == 0 then
-        selLabel.visible = false
-        lstLabel.visible = false
-        nextIndexLabel.text = "Finished"
-        nextIndexLabel.color = this.colors.lightGreen
-        nextIndexLabel.visible = true
-        mainBlock.visible = true
-        mainBlock.height = 64
-        mainBlock.width = 96
-        scrollBlockContent.childAlignX = 0.5
-        updateContainerMenu(mainBlock, scrollBlock)
-        return true
-    end
 
     if index == playerCurrentIndex then
         selectedCurrentBlock.visible = false
@@ -574,7 +558,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     makeLabelSelectable(tab)
 
-                    local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock)
+                    local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock, questId)
                     tab:setLuaData("requirementData", requirementData)
 
                     tab:register(tes3.uiEvent.mouseClick, function (e)
@@ -706,6 +690,32 @@ end
 ---@field description string|nil
 
 ---@param params questGuider.ui.createMarker.params
+---@param pane tes3uiElement
+---@return number x, number y
+local function convertObjectPosToWorldPaneCoordinates(params, pane)
+    local currentZoomX = pane.width /  tes3.dataHandler.nonDynamicData.mapTexture.width
+    local currentZoomY = pane.height / tes3.dataHandler.nonDynamicData.mapTexture.height
+
+    local zoomBar = mapMarkerLib.menu.uiExpZoomBar
+    local xOffset = 4
+    local yOffset = 4
+    if zoomBar then
+        xOffset = 0
+        yOffset = 0
+    else
+        if mcp_mapExpansion then
+            xOffset = 1
+            yOffset = 2
+        end
+    end
+
+    local x = ((-mapMarkerLib.worldBounds.minX + params.x / 8192) * mapMarkerLib.worldBounds.cellResolution + xOffset) * currentZoomX
+    local y = ((-mapMarkerLib.worldBounds.maxY - 1 + params.y / 8192) * mapMarkerLib.worldBounds.cellResolution - yOffset) * currentZoomY
+
+    return x, y
+end
+
+---@param params questGuider.ui.createMarker.params
 ---@return tes3uiElement|nil
 ---@return number|nil alignX
 ---@return number|nil alignY
@@ -717,16 +727,15 @@ local function createMarker(params)
 
     if not image then return end
 
-    local imageShiftX = params.markerData.shiftX and params.markerData.shiftX / 512 or -image.width / 1024
-    local imageShiftY = params.markerData.shiftY and -params.markerData.shiftY /512 or image.height / 1024
+    local x, y = convertObjectPosToWorldPaneCoordinates(params, params.pane)
 
-    local alignX = (worldWidthMinPart + params.x) / worldWidth
-    local alignY = -(params.y - worldHeightMaxPart) / worldHeight
+    local alignX = x / params.pane.width
+    local alignY = -y / params.pane.height
 
     image.autoHeight = true
     image.autoWidth = true
-    image.absolutePosAlignX = math.max(0, math.min(1, alignX + imageShiftX))
-    image.absolutePosAlignY = math.max(0, math.min(1, alignY + imageShiftY))
+    image.absolutePosAlignX = math.max(0, math.min(1, alignX))
+    image.absolutePosAlignY = math.max(0, math.min(1, alignY))
     image.color = params.color or {1, 1, 1}
 
     image:setLuaData("records", {params})
@@ -814,9 +823,12 @@ function this.drawMapMenu(parent, questId, index, questData)
     mapBlock.width = 400
     mapBlock.height = 400
 
+    local imageWidth = tes3.dataHandler.nonDynamicData.mapTexture.width
+    local imageHeight = tes3.dataHandler.nonDynamicData.mapTexture.height
+
     local pane = mapBlock:createBlock{ id = mapMenu.pane }
-    pane.width = 512
-    pane.height = 512
+    pane.width = imageWidth
+    pane.height = imageHeight
     pane.ignoreLayoutX = true
     pane.ignoreLayoutY = true
 
@@ -827,8 +839,8 @@ function this.drawMapMenu(parent, questId, index, questData)
     mapMarkersBlock.childAlignY = 1
     mapMarkersBlock.ignoreLayoutX = true
     mapMarkersBlock.ignoreLayoutY = true
-    mapMarkersBlock.width = 512
-    mapMarkersBlock.height = 512
+    mapMarkersBlock.width = imageWidth
+    mapMarkersBlock.height = imageHeight
 
     mapMarkersBlock:getTopLevelMenu():updateLayout()
 
@@ -954,7 +966,7 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 ---@param e tes3uiEventData
                 local function mouseClick(e)
-                    for objId, _ in pairs(objectIds) do
+                    for objId, _ in pairs(reqData.objects) do
                         trackingLib.addMarker{objectId = objId, color = color, questId = questId, questStage = index}
                     end
                     trackingLib.updateMarkers(true)
@@ -1017,10 +1029,10 @@ function this.drawMapMenu(parent, questId, index, questData)
             local maxScale = math.min(1 / (minMaxAlignX[2] - minMaxAlignX[1]), 1 / (minMaxAlignY[2] - minMaxAlignY[1]))
             local scale = math.max(1, math.min(config.data.journal.map.maxScale, maxScale))
 
-            mapMarkersBlock.width = 512 * scale
-            mapMarkersBlock.height = 512 * scale
-            pane.width = 512 * scale
-            pane.height = 512 * scale
+            mapMarkersBlock.width = imageWidth * scale
+            mapMarkersBlock.height = imageHeight * scale
+            pane.width = imageWidth * scale
+            pane.height = imageHeight * scale
 
             image.imageScaleX = scale
             image.imageScaleY = scale

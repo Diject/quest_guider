@@ -1,5 +1,8 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
+local stringLib = include("diject.quest_guider.utils.string")
+
+local config = include("diject.quest_guider.config")
 
 local types = include("diject.quest_guider.types")
 local descriptionLines = include("diject.quest_guider.descriptionLines")
@@ -180,7 +183,7 @@ end
 
 
 local disallowedRequirementTypes = {
-    ["SCR"] = true
+    -- ["SCR"] = true
 }
 
 ---@param questId string
@@ -252,14 +255,15 @@ end
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
 ---@field str string
 ---@field priority number
----@field objects string[]|nil
+---@field objects table<string, string>|nil
 ---@field data questDataGenerator.requirementData
 
 ---@alias questGuider.quest.getDescriptionDataFromBlock.return questGuider.quest.getDescriptionDataFromBlock.returnArr[]
 
 ---@param reqBlock table<integer, questDataGenerator.requirementData>
+---@param questId string?
 ---@return questGuider.quest.getDescriptionDataFromBlock.return|nil
-function this.getDescriptionDataFromDataBlock(reqBlock)
+function this.getDescriptionDataFromDataBlock(reqBlock, questId)
     if not reqBlock then return end
 
     ---@type questGuider.quest.getDescriptionDataFromBlock.return
@@ -270,6 +274,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
     for _, requirement in pairs(reqBlock) do
 
         if disallowedRequirementTypes[requirement.type] then goto continue end
+
+        if requirement.type == types.requirementType.Journal and requirement.variable == questId then
+            goto continue
+        end
 
         ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
         local reqOut = {str = "", priority = 0, data = requirement}
@@ -411,6 +419,37 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
                     mapped[pattern] = (value ~= nil and type(value) == "number") and
                         (((value==1 and operator==48) or (value==0 and operator==49) or (value==0 and operator==50)) and "n't" or "")
                         or ""
+                elseif codeStr == "scriptObjects" then
+                    local res = ""
+                    if environment.script then
+                        local scrData = dataHandler.questObjects[environment.script]
+                        if scrData and scrData.links then
+                            local objs = {}
+
+                            local haveObject = false
+                            for _, id in pairs(scrData.links) do
+                                local linkData = dataHandler.questObjects[id]
+                                if linkData and (linkData.type == 1 or linkData.type == 2) then
+                                    local obj = tes3.getObject(id)
+                                    if obj and obj.name then
+                                        objs[id] = obj.name
+                                    else
+                                        objs[id] = id
+                                    end
+                                    haveObject = true
+                                end
+                            end
+
+                            if haveObject then
+                                res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
+                            end
+                        end
+                    end
+
+                    if res == "" then
+                        res = "???"
+                    end
+                    mapped[pattern] = res
                 end
             end
             for pattern, ret in pairs(mapped) do
@@ -447,24 +486,27 @@ function this.getDescriptionDataFromDataBlock(reqBlock)
 
         local objects = {}
         if environment.objectObj and environment.object then
-            table.insert(objects, environment.object)
+            objects[environment.object] = environment.object
         end
         if environment.variableObj and environment.variable then
-            table.insert(objects, environment.variable)
+            objects[environment.variable] = environment.variable
         end
         if environment.valueObj and environment.value then
-            table.insert(objects, environment.value)
+            objects[environment.value] = environment.value
         end
         if environment.script then
             local scrData = dataHandler.questObjects[environment.script]
             if scrData and scrData.links then
                 for _, id in pairs(scrData.links) do
-                    table.insert(objects, id)
+                    local linkData = dataHandler.questObjects[id]
+                    if linkData and (linkData.type == 1 or linkData.type == 2) then
+                        objects[id] = id
+                    end
                 end
             end
         end
 
-        if #objects > 0 then
+        if table.size(objects) > 0 then
             reqOut.objects = objects
         end
 

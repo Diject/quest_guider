@@ -196,23 +196,26 @@ function this.addMarker(params)
 
             if positionData.type == 1 then
                 markerLib.addLocalMarker{
-                    recordId = objectTrackingData.localMarkerId,
+                    record = objectTrackingData.localMarkerId,
                     objectId = objectId,
+                    canBeOffscreen = true,
                 }
 
             elseif positionData.type == 2 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    recordId = objectTrackingData.localMarkerId,
+                    record = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
                     itemId = objectId,
+                    canBeOffscreen = true,
                 }
 
             elseif positionData.type == 4 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    recordId = objectTrackingData.localMarkerId,
+                    record = objectTrackingData.localMarkerId,
                     objectId = positionData.id,
+                    canBeOffscreen = true,
                 }
             end
 
@@ -222,7 +225,7 @@ function this.addMarker(params)
 
             if objectTrackingData.worldMarkerId then
                 markerLib.addWorldMarker{
-                    recordId = objectTrackingData.worldMarkerId,
+                    record = objectTrackingData.worldMarkerId,
                     x = positionData.pos[1],
                     y = positionData.pos[2],
                 }
@@ -236,7 +239,7 @@ function this.addMarker(params)
 
                 if exitPos and objectTrackingData.worldMarkerId then
                     markerLib.addWorldMarker{
-                        recordId = objectTrackingData.worldMarkerId,
+                        record = objectTrackingData.worldMarkerId,
                         x = exitPos.x,
                         y = exitPos.y,
                     }
@@ -260,9 +263,11 @@ function this.addMarker(params)
                             local node = path[i]
                             local markerPos = node.marker.position
                             markerLib.addLocalMarker{
-                                recordId = objectTrackingData.localDoorMarkerId,
-                                cellName = node.cell.isInterior == true and node.cell.name or nil,
+                                record = objectTrackingData.localDoorMarkerId,
+                                cell = node.cell.isInterior == true and node.cell.name or nil,
                                 position = markerPos,
+                                canBeOffscreen = true,
+                                replace = true,
                             }
                         end
                     end
@@ -524,9 +529,10 @@ function this.createQuestGiverMarkers(cell)
         }
 
         markerLib.addLocalMarker{
-            recordId = recordId,
+            record = recordId,
             trackedRef = ref,
             temporary = true,
+            canBeOffscreen = true,
         }
 
         this.trackedQuestGivers[objectId] = recordId

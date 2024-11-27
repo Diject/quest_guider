@@ -24,6 +24,7 @@ this.default = {
             enabled = true,
             maxScale = 3,
         },
+        objectNames = 3,
     },
     map = {
         enabled = true,

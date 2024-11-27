@@ -83,7 +83,7 @@ return {
     [types.requirementType.CustomHasItemEquipped] = { str = "@objectObj and objectObj.name or \"The actor\"@ has#notContr# #varName# item equipped", priority = -1001 },
     [types.requirementType.CustomHealth] = { str = "Health of @objectObj and objectObj.name or \"the actor\"@ is #operator# #value#", priority = -1001 },
     [types.requirementType.CustomSoundPlaying] = { str = "\"#variable#\" sound is#notContr# playing", },
-    [types.requirementType.CustomScript] = { str = "\"#variable#\" script", priority = -1500 },
+    [types.requirementType.CustomScript] = { str = "\"#variable#\" script that attached to #scriptObjects#", priority = -1000 },
     [types.requirementType.CustomDay] = { str = "The date is #operator# #value#", },
     [types.requirementType.CustomMonth] = { str = "The month is #operator# #value#", },
     [types.requirementType.CustomYear] = { str = "The year is #operator# #value#", },
