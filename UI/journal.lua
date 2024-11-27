@@ -935,12 +935,13 @@ function this.drawMapMenu(parent, questId, index, questData)
                     local y = posData.pos[2]
 
                     local cellPath
+                    local doorPath
 
                     if posData.name then
                         local cell = tes3.getCell{id = posData.name}
                         if cell then
                             local exCellPos
-                            exCellPos, cellPath = cellLib.findExitPos(cell)
+                            exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
                             if exCellPos then
                                 x = exCellPos.x
                                 y = exCellPos.y
@@ -1005,9 +1006,9 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 local descr
                 if data.cellPath then
-                    for i = #data.cellPath - 1, 1, -1 do
-                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i].cell.editorName) or string.format("\"%s\"",
-                            data.cellPath[i].cell.editorName)
+                    for i = #data.cellPath, 1, -1 do
+                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i].editorName) or string.format("\"%s\"",
+                            data.cellPath[i].editorName)
                     end
                 end
 
