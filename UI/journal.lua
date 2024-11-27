@@ -1,5 +1,6 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
+local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
 
 local questLib = include("diject.quest_guider.quest")
 local cellLib = include("diject.quest_guider.cell")
@@ -740,68 +741,12 @@ local function createMarker(params)
 
     image:setLuaData("records", {params})
 
-    image:register(tes3.uiEvent.help, function (e)
-        if not e.source then return end
-        local luaData = e.source:getLuaData("records")
-        if not luaData then return end
-
-        local tooltip = tes3ui.createTooltipMenu()
-
-        local blockCount = 0
-        for i, rec in pairs(luaData) do
-            if not rec.name and not rec.description then goto continue end
-
-            local block = tooltip:createBlock{id = mapMenu.tooltipBlock}
-            block.flowDirection = tes3.flowDirection.topToBottom
-            block.autoHeight = true
-            block.autoWidth = true
-            block.maxWidth = 350
-            block.borderBottom = 3
-
-            blockCount = blockCount + 1
-
-            if rec.name then
-                local label = block:createLabel{id = mapMenu.tooltipName, text = rec.name}
-                label.autoHeight = true
-                label.widthProportional = 1
-                label.maxWidth = 350
-                label.wrapText = true
-                label.justifyText = tes3.justifyText.center
-            end
-
-            if rec.description then
-                local label = block:createLabel{id = mapMenu.tooltipDescription, text = rec.description}
-                label.autoHeight = true
-                label.autoWidth = true
-                label.maxWidth = 350
-                label.wrapText = true
-                label.justifyText = tes3.justifyText.left
-            end
-
-            ::continue::
-        end
-
-        if blockCount == 0 then
-            tooltip:destroy()
-        else
-            tooltip:getTopLevelMenu():updateLayout()
-        end
-    end)
+    local tooltip = tooltipLib.new{parent = image}
+    tooltip:add{name = params.name, description = params.description}
 
     return image, alignX, alignY
 end
 
----@param markerElement tes3uiElement
----@param recordToAdd questGuider.ui.createMarker.params
-local function addInfoToMarker(markerElement, recordToAdd)
-    if not markerElement or not recordToAdd then return end
-
-    local luaData = markerElement:getLuaData("records")
-    if luaData then
-        table.insert(luaData, recordToAdd)
-        markerElement:setLuaData("records", luaData)
-    end
-end
 
 ---@param parent tes3uiElement
 ---@param questId string
