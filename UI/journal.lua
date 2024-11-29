@@ -1236,8 +1236,6 @@ function this.updateJournalMenu()
 
         ::continue::
     end
-
-    menu:updateLayout()
 end
 
 return this
