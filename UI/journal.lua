@@ -1116,7 +1116,7 @@ function this.updateJournalMenu()
 
         if not page then goto continue end
 
-        local isDescription = false
+        local isDescription = true
         for i, element in pairs(page.children) do
 
             if element.type == tes3.uiElementType.text then
@@ -1124,9 +1124,9 @@ function this.updateJournalMenu()
             end
             if element.name ~= "MenuBook_hypertext" then goto continue end
 
+            isDescription = not isDescription
             if not isDescription then
                 element.borderAllSides = -1
-                isDescription = not isDescription
                 goto continue
             end
 
