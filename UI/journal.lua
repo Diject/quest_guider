@@ -215,7 +215,7 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
     local topicIndexLabel = mainBlock:createLabel{ id = infoMenu.indexId, text = indexStr }
 
     if topicData and topicData.next and #topicData.next > 0 then
-        local nextIndexesStr = "Next stage"..(#topicData.next > 1 and "es" or "")..": "..tableLib.valuesToStr(topicData.next)
+        local nextIndexesStr = "Possible next stage"..(#topicData.next > 1 and "es" or "")..": "..tableLib.valuesToStr(topicData.next)
         local topicnextIndexesLabel = mainBlock:createLabel{ id = infoMenu.nextIndexes, text = nextIndexesStr }
     end
 
@@ -472,7 +472,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqIndexMainBlock.autoWidth = true
     reqIndexMainBlock.borderBottom = 2
     reqIndexMainBlock.flowDirection = tes3.flowDirection.leftToRight
-    local nextIndexLabel = reqIndexMainBlock:createLabel{ id = requirementsMenu.nextIndexLabel, text = "Next stage:" }
+    local nextIndexLabel = reqIndexMainBlock:createLabel{ id = requirementsMenu.nextIndexLabel, text = "Possible next:" }
     nextIndexLabel.visible = false
 
     local reqIndexBlock = reqIndexMainBlock:createBlock{ id = requirementsMenu.requirementIndexBlock }
