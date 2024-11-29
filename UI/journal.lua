@@ -73,6 +73,7 @@ local containerMenu = {
     id = "qGuider_container",
     buttonBlock = "qGuider_container_btnBlock",
     closeBtn = "qGuider_container_closeBtn",
+    trackBtn = "qGuider_container_trackBtn",
 }
 
 local journalMenu = {
@@ -1009,7 +1010,8 @@ end
 
 
 ---@param label string
-function this.drawContainer(label)
+---@param callback fun( menu : tes3uiElement, buttonBlock : tes3uiElement)?
+function this.drawContainer(label, callback)
     local element = tes3ui.createMenu{ id = containerMenu.id, dragFrame = true, }
     element.text = label
     local frame = element:findChild("PartDragMenu_drag_frame")
@@ -1021,15 +1023,18 @@ function this.drawContainer(label)
     buttonBlock.widthProportional = 1
     buttonBlock.borderTop = 2
     buttonBlock.borderBottom = 1
+    buttonBlock.childAlignX = 1
+
+    if callback then
+        callback(element, buttonBlock)
+    end
+
     local closeButton = buttonBlock:createButton{ id = containerMenu.closeBtn, text = "Close"}
-    closeButton.absolutePosAlignX = 1
-    closeButton.paddingBottom = 0
-    closeButton.paddingTop = 0
     closeButton:register(tes3.uiEvent.mouseClick, function (e)
         element:destroy()
     end)
 
-    return element
+    return element, buttonBlock
 end
 
 
@@ -1135,6 +1140,20 @@ function this.updateJournalMenu()
 
             if not quest then goto continue end
 
+            local function createTrackAllButton(menuEl, buttonBlock)
+                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track all" }
+                trackButton:register(tes3.uiEvent.mouseClick, function (e)
+                    trackingLib.trackQuestsFromQuest(questId, questIndex)
+                    local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+                    if innMenuReqBlock then
+                        local drawFunc = innMenuReqBlock:getLuaData("callback")
+                        if drawFunc then
+                            drawFunc(innMenuReqBlock)
+                        end
+                    end
+                end)
+            end
+
             local block = page:createBlock{ id = journalMenu.requirementBlock }
             page:reorderChildren(element, block, 1)
             block.flowDirection = tes3.flowDirection.leftToRight
@@ -1176,7 +1195,10 @@ function this.updateJournalMenu()
                     end
                 end)
                 reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                    local el = this.drawContainer("Requirements")
+                    local el, buttonBlock = this.drawContainer("Requirements", createTrackAllButton)
+
+                    if not el or not buttonBlock then return end
+
                     if not this.drawQuestRequirementsMenu(el, questId, questIndex, quest) then
                         el:destroy() ---@diagnostic disable-line: need-check-nil
                         return
@@ -1197,7 +1219,10 @@ function this.updateJournalMenu()
                     end
                 end)
                 mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                    local el = this.drawContainer("Map")
+                    local el, buttonBlock = this.drawContainer("Map", createTrackAllButton)
+
+                    if not el or not buttonBlock then return end
+
                     if not this.drawMapMenu(el, questId, questIndex, quest) then
                         el:destroy() ---@diagnostic disable-line: need-check-nil
                         return

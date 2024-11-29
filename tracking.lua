@@ -557,7 +557,35 @@ function this.trackQuestFromCallback(questId, e)
 
     if not questNextIndexes or e.info.isQuestFinished then
         this.removeMarker{ questId = questId }
+        shouldUpdate = true
+    elseif questNextIndexes then
+        for _, indexStr in pairs(questNextIndexes) do
+            this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+        end
+        shouldUpdate = true
+    end
+
+    if shouldUpdate then
         this.updateMarkers(true)
+    end
+end
+
+---@param questId string should be lowercase
+---@param index integer
+function this.trackQuestsFromQuest(questId, index)
+    local shouldUpdate = false
+
+    local questTrackingData = this.getQuestData(questId)
+    if questTrackingData then
+        this.removeMarker{ questId = questId }
+        shouldUpdate = true
+    end
+
+    local questNextIndexes = questLib.getNextIndexes(questId, index)
+
+    if not questNextIndexes then
+        this.removeMarker{ questId = questId }
+        shouldUpdate = true
     elseif questNextIndexes then
         for _, indexStr in pairs(questNextIndexes) do
             this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
