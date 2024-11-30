@@ -19,6 +19,7 @@ this.default = {
             enabled = true,
             currentByDefault = false,
             scriptValues = true,
+            pathDescriptions = 5,
         },
         map = {
             enabled = true,

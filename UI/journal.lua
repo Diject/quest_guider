@@ -1,6 +1,7 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
+local stringLib = include("diject.quest_guider.utils.string")
 
 local questLib = include("diject.quest_guider.quest")
 local cellLib = include("diject.quest_guider.cell")
@@ -376,6 +377,20 @@ function this.drawScriptLocalsMenu(parent, scriptNames)
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
 
+                                if req.positionData then
+                                    local tooltip = tooltipLib.new{parent = reqLabel}
+                                    for objId, posDt in pairs(req.positionData) do
+                                        local posDescriptions = {}
+                                        for _, p in pairs(posDt.positions) do
+                                            table.insert(posDescriptions, p.description)
+                                        end
+                                        tooltip:add{
+                                            name = posDt.name,
+                                            description = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions)
+                                        }
+                                    end
+                                end
+
                                 makeLabelSelectable(reqLabel)
                             end
                         else
@@ -577,6 +592,20 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 reqLabel.color = this.colors.lightDefault
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
+
+                                if req.positionData then
+                                    local tooltip = tooltipLib.new{parent = reqLabel}
+                                    for objId, posDt in pairs(req.positionData) do
+                                        local posDescriptions = {}
+                                        for _, p in pairs(posDt.positions) do
+                                            table.insert(posDescriptions, p.description)
+                                        end
+                                        tooltip:add{
+                                            name = posDt.name,
+                                            description = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions)
+                                        }
+                                    end
+                                end
 
                                 makeLabelSelectable(reqLabel)
 

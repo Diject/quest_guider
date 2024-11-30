@@ -316,7 +316,10 @@ function this.registerModConfig()
             label = "Show info about the current quest stage instead of information about the stage to which this entry corresponds"}
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "scriptValues"}, label = "Show info about local variables of involved scripts"}
 
-        createYesNo{self = journalPage, config = {path = "journal", name = "objectNames"}, label = "Maximum number of object names in tooltip or field"}
+        createNumberEdit{self = journalPage, config = {path = "journal", name = "objectNames"},
+            label = "Maximum number of object names in a tooltip or a field", limits = {min = 0, max = 10}}
+        createNumberEdit{self = journalPage, config = {path = "journal.requirements", name = "pathDescriptions"},
+            label = "Maximum number of path descriptions on a requirement label", limits = {min = 0, max = 10}}
     end
 
     do
