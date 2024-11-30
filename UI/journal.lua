@@ -384,10 +384,11 @@ function this.drawScriptLocalsMenu(parent, scriptNames)
                                         for _, p in pairs(posDt.positions) do
                                             table.insert(posDescriptions, p.description)
                                         end
-                                        tooltip:add{
-                                            name = posDt.name,
-                                            description = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions)
-                                        }
+                                        tooltip:add{name = posDt.name}
+                                        local strings = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions, nil, true)
+                                        for _, str in pairs(strings) do
+                                            tooltip:add{description = str}
+                                        end
                                     end
                                 end
 
@@ -600,10 +601,11 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                         for _, p in pairs(posDt.positions) do
                                             table.insert(posDescriptions, p.description)
                                         end
-                                        tooltip:add{
-                                            name = posDt.name,
-                                            description = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions)
-                                        }
+                                        tooltip:add{name = posDt.name}
+                                        local strings = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions, nil, true)
+                                        for _, str in pairs(strings) do
+                                            tooltip:add{description = str}
+                                        end
                                     end
                                 end
 

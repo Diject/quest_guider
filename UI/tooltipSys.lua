@@ -1,5 +1,7 @@
 local tooltipMenu = {
     tooltipBlock = "qGuider_ts_block",
+    tooltipName = "qGuider_ts_name",
+    tooltipDescription = "qGuider_ts_description",
 }
 
 local this = {}
@@ -59,20 +61,21 @@ function this.new(params)
         if #luaData.items == 0 then return end
 
         local tooltip = tes3ui.createTooltipMenu()
+        tooltip.childAlignX = 0
 
         local block
         local createDivider = false
         for i, rec in pairs(luaData.items) do
+
+            if createDivider and rec.name then
+                local divider = tooltip:createDivider{}
+            end
 
             block = tooltip:createBlock{id = tooltipMenu.tooltipBlock}
             block.flowDirection = tes3.flowDirection.topToBottom
             block.autoHeight = true
             block.autoWidth = true
             block.maxWidth = luaData.maxWidth or 350
-
-            if createDivider then
-                local divider = block:createDivider{}
-            end
 
             if rec.name then
                 local label = block:createLabel{id = tooltipMenu.tooltipName, text = rec.name}
@@ -81,6 +84,7 @@ function this.new(params)
                 label.maxWidth = luaData.maxWidth or 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.center
+                createDivider = true
             end
 
             if rec.description then
@@ -91,8 +95,6 @@ function this.new(params)
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.left
             end
-
-            createDivider = true
 
             ::continue::
         end

@@ -4,9 +4,10 @@ local this = {}
 ---@param tb table<any, string>
 ---@param max integer
 ---@param framePattern string|nil pattern with %s into which result will packed if max more than 0
----@return string
-function this.getValueEnumString(tb, max, framePattern)
-    local str = ""
+---@param returnTable boolean? return an array with values
+---@return string|string[]|nil
+function this.getValueEnumString(tb, max, framePattern, returnTable)
+    local str = returnTable and {} or ""
     local count = 0
 
     if max <= 0 then
@@ -15,16 +16,24 @@ function this.getValueEnumString(tb, max, framePattern)
 
     for _, value in pairs(tb) do
         if count >= max then
-            str = string.format("%s and %d more", str, table.size(tb) - count)
+            if returnTable then
+                table.insert(str, string.format("and %d more", table.size(tb) - count))
+            else
+                str = string.format("%s and %d more", str, table.size(tb) - count)
+            end
             break
         end
 
-        str = string.format("%s%s\"%s\"", str, str:len() ~= 0 and ", " or "", value)
+        if returnTable then
+            table.insert(str, string.format(framePattern or "%s", value))
+        else
+            str = string.format("%s%s\"%s\"", str, str:len() ~= 0 and ", " or "", value)
+        end
         count = count + 1
 
     end
 
-    if framePattern then
+    if framePattern and not returnTable then
         return string.format(framePattern, str)
     end
 
