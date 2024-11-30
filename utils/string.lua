@@ -1,7 +1,7 @@
 local this = {}
 
 --- Returns string like ' "1", "2" and 3 more '
----@param tb table<string, string>
+---@param tb table<any, string>
 ---@param max integer
 ---@param framePattern string|nil pattern with %s into which result will packed if max more than 0
 ---@return string
