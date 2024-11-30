@@ -27,11 +27,18 @@ end
 ---@field maxWidth integer?
 
 ---@param params questGuider.tooltipSys.new.params
+---@return questGuider.tooltipSys.tooltip
 function this.new(params)
+    local parent = params.parent
+    do
+        local class = parent:getLuaData("_tooltipClass_")
+        if class then
+            return class
+        end
+    end
+
     ---@class questGuider.tooltipSys.tooltip
     local self = setmetatable({}, tooltipClass)
-
-    local parent = params.parent
 
     ---@class questGuider.tooltipSys.tooltipData
     local tooltipData = {items = {}}
