@@ -17,6 +17,7 @@ local function uiJournalActivatedCallback(e)
 
     if e.newlyCreated then
         journalUI.updateJournalMenu()
+        e.element:updateLayout()
 
         e.element:registerBefore(tes3.uiEvent.update, function (ei)
             journalUI.updateJournalMenu()
