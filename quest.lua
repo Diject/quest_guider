@@ -449,6 +449,23 @@ function this.getRequirementPositionData(requirement)
             goto continue
         end
 
+        if name == "script" then
+            local scrData = dataHandler.questObjects[value]
+            if scrData and scrData.links and tes3.getScript(value) then
+                for _, id in pairs(scrData.links) do
+                    local linkData = dataHandler.questObjects[id]
+                    if linkData and (linkData.type == 1 or linkData.type == 2) then
+                        local obj = tes3.getObject(id)
+                        if obj then
+                            objects[obj] = id
+                        end
+                    end
+                end
+            end
+
+            goto continue
+        end
+
         local obj = tes3.getObject(value)
         if obj then
             objects[obj] = value
@@ -466,7 +483,7 @@ function this.getRequirementPositionData(requirement)
     ---@param dt questGuider.quest.getRequirementPositionData.positionData
     local function add(objId, obj, dt)
         if not out[objId] then
-            out[objId] = {name = obj.editorName or obj.name or "", positions = {}}
+            out[objId] = {name = obj.editorName or obj.name or obj.id or "", positions = {}}
         end
         table.insert(out[objId].positions, dt)
     end
