@@ -1,6 +1,7 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 local stringLib = include("diject.quest_guider.utils.string")
+local cellLib = include("diject.quest_guider.cell")
 
 local config = include("diject.quest_guider.config")
 
@@ -34,7 +35,7 @@ function this.getQuestData(questId)
 end
 
 ---@param objectId string
----@return questDataGenerator.objectInfo|nil
+---@return questDataGenerator.objectPosition[]|nil
 function this.getObjectPositionData(objectId)
     local objData = dataHandler.questObjects[objectId:lower()]
     if not objData then return end
@@ -97,6 +98,7 @@ end
 ---@field str string
 ---@field priority number
 ---@field objects table<string, string>|nil
+---@field positionData table<string, questGuider.quest.getRequirementPositionData.returnData>?
 ---@field data questDataGenerator.requirementData
 
 ---@alias questGuider.quest.getDescriptionDataFromBlock.return questGuider.quest.getDescriptionDataFromBlock.returnArr[]
@@ -351,6 +353,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             reqOut.objects = objects
         end
 
+        reqOut.positionData = this.getRequirementPositionData(requirement)
+
         table.insert(out, reqOut)
 
         ::continue::
@@ -416,6 +420,131 @@ function this.isContainsLocalVariableRequirement(reqBlock)
         end
     end
     return false
+end
+
+
+---@class questGuider.quest.getRequirementPositionData.positionData
+---@field description string
+---@field id string? cell id
+---@field position tes3vector3?
+---@field exitPos tes3vector3
+---@field doorPath tes3travelDestinationNode[]?
+---@field cellPath tes3cell[]?
+
+---@class questGuider.quest.getRequirementPositionData.returnData
+---@field name string
+---@field positions questGuider.quest.getRequirementPositionData.positionData[]
+
+---@param requirement questDataGenerator.requirementData
+---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
+function this.getRequirementPositionData(requirement)
+    ---@type table<string, questGuider.quest.getRequirementPositionData.returnData>
+    local out = {}
+
+    local objects = {}
+    ---@type table<tes3cell, string>
+    local cells = {}
+    for name, value in pairs(requirement) do
+        if type(value) ~= "string" then
+            goto continue
+        end
+
+        local obj = tes3.getObject(value)
+        if obj then
+            objects[obj] = value
+        end
+        local cell = tes3.getCell{id = value}
+        if cell then
+            cells[cell] = value
+        end
+
+        ::continue::
+    end
+
+    ---@param objId string
+    ---@param obj any
+    ---@param dt questGuider.quest.getRequirementPositionData.positionData
+    local function add(objId, obj, dt)
+        if not out[objId] then
+            out[objId] = {name = obj.editorName or obj.name or "", positions = {}}
+        end
+        table.insert(out[objId].positions, dt)
+    end
+
+    for obj, id in pairs(objects) do
+        local posData = this.getObjectPositionData(id)
+        if not posData then goto continue end
+
+        for _, posDt in pairs(posData) do
+            local x = posDt.pos[1]
+            local y = posDt.pos[2]
+            local z = posDt.pos[3]
+
+            if posDt.name then
+                local cell = tes3.getCell{id = posDt.name}
+                if cell then
+                    local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
+                    if exCellPos then
+
+                        local descr
+                        if cellPath then
+                            for i = #cellPath, 1, -1 do
+                                descr = descr and string.format("%s => \"%s\"", descr, cellPath[i].editorName) or
+                                    string.format("\"%s\"", cellPath[i].editorName)
+                            end
+                        end
+
+                        add(id, obj, {description = descr, id = posDt.name, position = tes3vector3.new(x, y, z),
+                            exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath})
+                    else
+                        goto continue
+                    end
+                end
+            elseif posDt.grid then
+                local cell = tes3.getCell{x = posDt.grid[1], y = posDt.grid[2]}
+                if cell then
+                    local descr = cell.editorName
+                    local pos = tes3vector3.new(x, y, z)
+                    add(id, obj, {description = descr, id = nil, position = pos, exitPos = pos})
+                end
+            end
+
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    for cell, id in pairs(cells) do
+        if cell.isInterior then
+            local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
+            if exCellPos then
+
+                local descr
+                if cellPath then
+                    for i = #cellPath, 1, -1 do
+                        descr = descr and string.format("%s => \"%s\"", descr, cellPath[i].editorName) or
+                            string.format("\"%s\"", cellPath[i].editorName)
+                    end
+                end
+
+                add(id, cell, {description = descr, id = cell.name, exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath})
+            else
+                goto continue
+            end
+        else
+            local descr = cell.editorName
+            add(id, cell, {description = descr, id = nil, exitPos = tes3vector3.new(cell.gridX * 8192 + 4000, cell.gridY * 8192 + 4000)})
+        end
+
+        ::continue::
+    end
+
+    if table.size(out) == 0 then
+        return nil
+    end
+
+    return out
 end
 
 

@@ -843,20 +843,13 @@ function this.drawMapMenu(parent, questId, index, questData)
 
             ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
             local reqData = child:getLuaData("requirement")
-            if not reqData or not reqData.objects then return end
+            if not reqData or not reqData.positionData then return end
 
             local color = markerColors[colorIndex]
 
-            local objectIds = {}
 
             local foundObjectsInChildren = 0
-            for _, objId in pairs(reqData.objects) do
-
-                local obj = tes3.getObject(objId)
-                local objName = obj and obj.name
-                local objPosData = questLib.getObjectPositionData(objId)
-
-                if not objPosData then goto continue1 end
+            for objId, dt in pairs(reqData.positionData) do
 
                 foundObjectsInChildren = foundObjectsInChildren + 1
 
@@ -869,39 +862,19 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 if colorOfObject[objId] then
                     color = colorOfObject[objId]
-                    goto continue1
+                    goto continue
                 else
                     colorOfObject[objId] = color
                 end
 
-                objectIds[objId] = true
+                for _, posData in pairs(dt.positions) do
+                    local x = posData.exitPos.x
+                    local y = posData.exitPos.y
 
-                for _, posData in pairs(objPosData) do
-                    local x = posData.pos[1]
-                    local y = posData.pos[2]
-
-                    local cellPath
-                    local doorPath
-
-                    if posData.name then
-                        local cell = tes3.getCell{id = posData.name}
-                        if cell then
-                            local exCellPos
-                            exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
-                            if exCellPos then
-                                x = exCellPos.x
-                                y = exCellPos.y
-                            else
-                                goto continue2
-                            end
-                        end
-                    end
-
-                    table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = objName, cellPath = cellPath })
-                    ::continue2::
+                    table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = dt.name, descr = posData.description })
                 end
 
-                ::continue1::
+                ::continue::
             end
 
             if foundObjectsInChildren > 0 then
@@ -950,18 +923,10 @@ function this.drawMapMenu(parent, questId, index, questData)
 
             for _, data in pairs(markersData) do
 
-                local descr
-                if data.cellPath then
-                    for i = #data.cellPath, 1, -1 do
-                        descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i].editorName) or string.format("\"%s\"",
-                            data.cellPath[i].editorName)
-                    end
-                end
-
                 local im, alignX, alignY = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
                     x = data.x, y = data.y, color = data.color,
                     name = data.objName,
-                    description = descr,
+                    description = data.descr,
                 }
 
                 if im then
