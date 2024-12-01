@@ -95,6 +95,10 @@ local function cellActivatedCallback(e)
     playerQuests.init()
     tracking.isInit()
 
+    if config.data.tracking.quest.enabled then
+        tracking.addMarkersForInteriorCell(e.cell)
+    end
+
     if config.data.tracking.giver.enabled then
         tracking.createQuestGiverMarkers(e.cell)
     end

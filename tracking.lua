@@ -34,7 +34,7 @@ this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", 
 this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark8x16.dds", shiftX = -3, shiftY = 10, scale = 0.75 }
 
 ---@class questGuider.tracking.storageData
----@field markerByObjectId table<string, questGuider.tracking.markerRecord>?
+---@field markerByObjectId table<string, questGuider.tracking.objectRecord>?
 ---@field trackedObjectsByQuestId table<string, {objects : table<string, string[]>, color : number[]}>?
 ---@field colorId integer?
 
@@ -48,13 +48,16 @@ this.scannedCellsForTemporaryMarkers = {}
 this.trackedQuestGivers = {}
 
 ---@class questGuider.tracking.markerRecord
----@field quests table<string, {id : string, index : integer}>
----@field color number[]
 ---@field localMarkerId string|nil
 ---@field localDoorMarkerId string|nil
 ---@field worldMarkerId string|nil
 
----@type table<string, questGuider.tracking.markerRecord>
+---@class questGuider.tracking.objectRecord
+---@field color number[]
+---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord}> by quest id
+---@field targetCells table<string, boolean>?
+
+---@type table<string, questGuider.tracking.objectRecord>
 this.markerByObjectId = {}
 
 ---@type table<string, {objects : table<string, string[]>, color : number[]}>
@@ -158,10 +161,15 @@ function this.addMarker(params)
         color[2] = math.clamp(color[2] + (objNum % 3 == 1 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
         color[3] = math.clamp(color[3] + (objNum % 3 == 2 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
 
-        objectTrackingData = { quests = {}, color = color } ---@diagnostic disable-line: missing-fields
+        objectTrackingData = { markers = {}, color = color } ---@diagnostic disable-line: missing-fields
     end
 
-    objectTrackingData.localMarkerId = objectTrackingData.localMarkerId or markerLib.addRecord{
+    if objectTrackingData.markers[params.questId] then return end
+
+    ---@type questGuider.tracking.markerRecord
+    local objectMarkerData = {}
+
+    objectMarkerData.localMarkerId = objectMarkerData.localMarkerId or markerLib.addRecord{
         path = this.localMarkerImageInfo.path,
         pathAbove = this.localMarkerImageInfo.pathAbove,
         pathBelow = this.localMarkerImageInfo.pathBelow,
@@ -172,7 +180,7 @@ function this.addMarker(params)
         name = object.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
-    objectTrackingData.worldMarkerId = objectTrackingData.worldMarkerId or markerLib.addRecord{
+    objectMarkerData.worldMarkerId = objectMarkerData.worldMarkerId or markerLib.addRecord{
         path = this.worldMarkerImageInfo.path,
         color = objectTrackingData.color,
         textureShiftX = this.worldMarkerImageInfo.shiftX,
@@ -182,40 +190,40 @@ function this.addMarker(params)
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
 
-    if not objectTrackingData.localMarkerId and not objectTrackingData.worldMarkerId then return end
+    if not objectMarkerData.localMarkerId and not objectMarkerData.worldMarkerId then return end
 
-    if not objectTrackingData.quests then objectTrackingData.quests = {} end
-    objectTrackingData.quests[params.questId] = { id = params.questId, index = params.questStage }
+    if not objectTrackingData.markers then objectTrackingData.markers = {} end
+    objectTrackingData.markers[params.questId] = { id = params.questId, index = params.questStage, data = objectMarkerData }
 
     local objects = {}
     objects[objectId] = true
 
     for _, positionData in pairs(objectPositions) do
 
-        if objectTrackingData.localMarkerId then
+        if objectMarkerData.localMarkerId then
 
             if positionData.type == 1 then
                 markerLib.addLocalMarker{
-                    record = objectTrackingData.localMarkerId,
+                    record = objectMarkerData.localMarkerId,
                     objectId = objectId,
-                    canBeOffscreen = true,
+                    trackOffscreen = true,
                 }
 
             elseif positionData.type == 2 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    record = objectTrackingData.localMarkerId,
+                    record = objectMarkerData.localMarkerId,
                     objectId = positionData.id,
                     itemId = objectId,
-                    canBeOffscreen = true,
+                    trackOffscreen = true,
                 }
 
             elseif positionData.type == 4 then
                 objects[positionData.id] = true
                 markerLib.addLocalMarker{
-                    record = objectTrackingData.localMarkerId,
+                    record = objectMarkerData.localMarkerId,
                     objectId = positionData.id,
-                    canBeOffscreen = true,
+                    trackOffscreen = true,
                 }
             end
 
@@ -223,9 +231,9 @@ function this.addMarker(params)
 
         if positionData.grid then
 
-            if objectTrackingData.worldMarkerId then
+            if objectMarkerData.worldMarkerId then
                 markerLib.addWorldMarker{
-                    record = objectTrackingData.worldMarkerId,
+                    record = objectMarkerData.worldMarkerId,
                     x = positionData.pos[1],
                     y = positionData.pos[2],
                 }
@@ -237,16 +245,16 @@ function this.addMarker(params)
 
                 local exitPos, path = cellLib.findExitPos(cell)
 
-                if exitPos and objectTrackingData.worldMarkerId then
+                if exitPos and objectMarkerData.worldMarkerId then
                     markerLib.addWorldMarker{
-                        record = objectTrackingData.worldMarkerId,
+                        record = objectMarkerData.worldMarkerId,
                         x = exitPos.x,
                         y = exitPos.y,
                     }
                 end
 
                 if path then
-                    objectTrackingData.localDoorMarkerId = objectTrackingData.localDoorMarkerId or markerLib.addRecord{
+                    objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
                         path = this.localDoorMarkerImageInfo.path,
                         pathAbove = this.localDoorMarkerImageInfo.pathAbove,
                         pathBelow = this.localDoorMarkerImageInfo.pathBelow,
@@ -258,19 +266,39 @@ function this.addMarker(params)
                         description = string.format("Quest: \"%s\"", questData.name or "")
                     }
 
-                    if objectTrackingData.localDoorMarkerId then
-                        for i = #path, 1, -1 do
-                            local node = path[i]
-                            local markerPos = node.marker.position
-                            markerLib.addLocalMarker{
-                                record = objectTrackingData.localDoorMarkerId,
-                                cell = node.cell.isInterior == true and node.cell.name or nil,
-                                position = markerPos,
-                                canBeOffscreen = true,
-                                replace = true,
-                            }
+                    if objectMarkerData.localDoorMarkerId then
+                        local exitPositions = cellLib.findExitPositions(cell)
+                        if exitPositions then
+                            for _, pos in pairs(exitPositions) do
+                                markerLib.addLocalMarker{
+                                    record = objectMarkerData.localDoorMarkerId,
+                                    position = pos,
+                                    trackOffscreen = true,
+                                    replace = true,
+                                }
+                            end
                         end
+
+                        if not objectTrackingData.targetCells then
+                            objectTrackingData.targetCells = {}
+                        end
+
+                        objectTrackingData.targetCells[cell.editorName] = true
                     end
+
+                    -- if objectTrackingData.localDoorMarkerId then
+                    --     for i = #path, 1, -1 do
+                    --         local node = path[i]
+                    --         local markerPos = node.marker.position
+                    --         markerLib.addLocalMarker{
+                    --             record = objectTrackingData.localDoorMarkerId,
+                    --             cell = node.cell.isInterior == true and node.cell.name or nil,
+                    --             position = markerPos,
+                    --             canBeOffscreen = true,
+                    --             replace = true,
+                    --         }
+                    --     end
+                    -- end
                 end
             end
         end
@@ -330,34 +358,49 @@ end
 function this.removeMarker(params)
     if not params.questId and not params.objectId then return end
 
+    ---@param data questGuider.tracking.markerRecord
+    local function removeMarkers(data)
+        if data.worldMarkerId then
+            markerLib.removeRecord(data.worldMarkerId)
+        end
+
+        if data.localMarkerId then
+            markerLib.removeRecord(data.localMarkerId)
+        end
+
+        if data.localDoorMarkerId then
+            markerLib.removeRecord(data.localDoorMarkerId)
+        end
+    end
+
     local function removeMarkersFromObject(id)
         local objData = this.markerByObjectId[id]
         if not objData then return end
 
-        if objData.worldMarkerId then
-            markerLib.removeRecord(objData.worldMarkerId)
+        if not params.questId then
+            for qId, markerInfo in pairs(objData.markers) do
+                local markerRecords = markerInfo.data
+                removeMarkers(markerRecords)
+            end
+            this.markerByObjectId[id] = nil
+        else
+            local markerInfo = objData.markers[params.questId]
+            if markerInfo and markerInfo.data then
+                removeMarkers(markerInfo.data)
+            end
+            objData.markers[params.questId] = nil
         end
-
-        if objData.localMarkerId then
-            markerLib.removeRecord(objData.localMarkerId)
-        end
-
-        if objData.localDoorMarkerId then
-            markerLib.removeRecord(objData.localDoorMarkerId)
-        end
-
-        this.markerByObjectId[id] = nil
     end
 
     local function removeFromObject(objectId)
         local data = this.markerByObjectId[objectId]
         if data then
-            for qId, dt in pairs(data.quests or {}) do
+            for qId, dt in pairs(data.markers or {}) do
                 local questTrackedData = this.trackedObjectsByQuestId[dt.id]
                 if questTrackedData then
                     removeMarkersFromObject(objectId)
                     for _, objId in pairs(questTrackedData.objects[objectId] or {}) do
-                        this.markerByObjectId[objId] = nil
+                        removeMarkersFromObject(objId)
                     end
                     questTrackedData.objects[objectId] = nil
 
@@ -373,34 +416,22 @@ function this.removeMarker(params)
 
         local questTrackedData = this.trackedObjectsByQuestId[params.questId]
         if questTrackedData then
-            local protectedMarkerIds = {}
-            local markerIdsToRemove = {}
-            for parentObjId, objId in pairs(table.keys(questTrackedData.objects)) do
+            for _, objId in pairs(table.keys(questTrackedData.objects)) do
                 local objectData = this.markerByObjectId[objId]
                 if not objectData then goto continue end
 
-                objectData.quests[params.questId] = nil
+                local markerInfo = objectData.markers[params.questId]
+                if not markerInfo then goto continue end
 
-                markerIdsToRemove[objectData.localDoorMarkerId or ""] = true
-                markerIdsToRemove[objectData.localMarkerId or ""] = true
-                markerIdsToRemove[objectData.worldMarkerId or ""] = true
+                removeMarkers(markerInfo.data)
 
-                if table.size(objectData.quests) == 0 then
+                objectData.markers[params.questId] = nil
+
+                if table.size(objectData.markers) == 0 then
                     this.markerByObjectId[objId] = nil
-                else
-                    protectedMarkerIds[objectData.localDoorMarkerId or ""] = true
-                    protectedMarkerIds[objectData.localMarkerId or ""] = true
-                    protectedMarkerIds[objectData.worldMarkerId or ""] = true
                 end
 
                 ::continue::
-            end
-
-            markerIdsToRemove[""] = nil
-            for markerId, _ in pairs(markerIdsToRemove) do
-                if not protectedMarkerIds[markerId] then
-                    markerLib.removeRecord(markerId)
-                end
             end
 
             this.trackedObjectsByQuestId[params.questId] = nil
@@ -410,7 +441,6 @@ function this.removeMarker(params)
     if params.objectId then
         removeFromObject(params.objectId)
     end
-
 end
 
 function this.removeMarkers()
@@ -428,32 +458,35 @@ function this.changeObjectMarkerColor(trackedObjectId, color, priority)
     local data = this.markerByObjectId[trackedObjectId]
     if not data then return end
 
-    if data.localMarkerId then
-        local record = markerLib.getRecord(data.localMarkerId)
-        if record then
-            record.color = table.copy(color)
-            if priority then
-                record.priority = priority
+    for qId, markerInfo in pairs(data.markers) do
+        local markerData = markerInfo.data
+        if markerData.localMarkerId then
+            local record = markerLib.getRecord(markerData.localMarkerId)
+            if record then
+                record.color = table.copy(color)
+                if priority then
+                    record.priority = priority
+                end
             end
         end
-    end
 
-    if data.worldMarkerId then
-        local record = markerLib.getRecord(data.worldMarkerId)
-        if record then
-            record.color = table.copy(color)
-            if priority then
-                record.priority = priority
+        if markerData.worldMarkerId then
+            local record = markerLib.getRecord(markerData.worldMarkerId)
+            if record then
+                record.color = table.copy(color)
+                if priority then
+                    record.priority = priority
+                end
             end
         end
-    end
 
-    if data.localDoorMarkerId then
-        local record = markerLib.getRecord(data.localDoorMarkerId)
-        if record then
-            record.color = table.copy(color)
-            if priority then
-                record.priority = priority
+        if markerData.localDoorMarkerId then
+            local record = markerLib.getRecord(markerData.localDoorMarkerId)
+            if record then
+                record.color = table.copy(color)
+                if priority then
+                    record.priority = priority
+                end
             end
         end
     end
@@ -532,7 +565,7 @@ function this.createQuestGiverMarkers(cell)
             record = recordId,
             trackedRef = ref,
             temporary = true,
-            canBeOffscreen = true,
+            trackOffscreen = true,
         }
 
         this.trackedQuestGivers[objectId] = recordId
@@ -595,6 +628,46 @@ function this.trackQuestsFromQuest(questId, index)
 
     if shouldUpdate then
         this.updateMarkers(true)
+    end
+end
+
+
+---@param cell tes3cell
+function this.addMarkersForInteriorCell(cell)
+    if not cell or not cell.isInterior then return end
+
+    ---@type table<tes3reference, {cells : any, hasExit : any}>
+    local doors = {}
+
+    for doorRef in cell:iterateReferences(tes3.objectType.door) do
+        if doorRef.destination and not doorRef.deleted and not doorRef.disabled then
+            local reachableCells, hasExit = cellLib.findReachableCellsByNode(doorRef.destination, {[cell.editorName] = cell})
+            reachableCells[cell.editorName] = nil
+
+            doors[doorRef] = {cells = reachableCells, hasExit = hasExit}
+        end
+    end
+
+    for objId, objData in pairs(this.markerByObjectId) do
+        for cellId, _ in pairs(objData.targetCells or {}) do
+            for qId, markerInfo in pairs(objData.markers) do
+                local markerData = markerInfo.data
+                if not markerData.localDoorMarkerId then goto continue end
+                for doorRef, doorData in pairs(doors) do
+                    if doorData.cells[cellId] then
+                        markerLib.addLocalMarker{
+                            record = markerData.localDoorMarkerId,
+                            cell = doorRef.cell.isInterior == true and doorRef.cell.name or nil,
+                            position = doorRef.position,
+                            replace = true,
+                            shortTerm = true,
+                        }
+                    end
+                end
+            end
+        end
+
+        ::continue::
     end
 end
 
