@@ -29,7 +29,8 @@ local default = {
             pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
-        questGiverMarker = { path = "diject\\quest guider\\exclamationMark8x16.dds", shiftX = -3, shiftY = 10, scale = 0.75 },
+        questGiverMarker = { path = "diject\\quest guider\\exclamationMark16x32.dds", pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds",
+            pathBelow = "diject\\quest guider\\exclamationMarkDown32x32.dds", shiftX = -3, shiftY = 12, scale = 0.4 },
     },
 }
 
