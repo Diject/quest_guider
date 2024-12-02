@@ -1183,6 +1183,9 @@ function this.updateJournalMenu()
                 reqLabel.imageScaleX = 0.5
                 reqLabel.imageScaleY = 0.5
                 reqLabel.borderRight = 2
+                reqLabel.color = {0.9, 0.9, 0.9}
+
+                makeLabelSelectable(reqLabel)
 
                 reqLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
@@ -1207,6 +1210,9 @@ function this.updateJournalMenu()
                 local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
                 mapLabel.imageScaleX = 0.5
                 mapLabel.imageScaleY = 0.5
+                mapLabel.color = {0.9, 0.9, 0.9}
+
+                makeLabelSelectable(mapLabel)
 
                 mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
