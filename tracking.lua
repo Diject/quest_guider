@@ -124,8 +124,7 @@ end
 ---@field associatedNumber number|nil not used
 
 ---@param params questGuider.tracking.addMarker
----@return boolean|nil
----@return boolean|nil
+---@return questGuider.tracking.objectRecord|nil
 function this.addMarker(params)
     if not initialized then return end
 
@@ -311,7 +310,7 @@ function this.addMarker(params)
     qTrackingInfo.objects[objectId] = table.keys(objects)
 
     this.trackedObjectsByQuestId[params.questId] = qTrackingInfo
-    return true
+    return objectTrackingData
 end
 
 ---@class questGuider.tracking.addMarkersForQuest

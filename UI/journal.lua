@@ -612,6 +612,13 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 reqLabel.color = this.colors.lightDefault
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
+                                for objId, _ in pairs(req.objects or {}) do
+                                    local trackingObj = trackingLib.getObjectData(objId)
+                                    if trackingObj then
+                                        reqLabel.color = trackingObj.color
+                                        break
+                                    end
+                                end
 
                                 if req.positionData then
                                     local tooltip = tooltipLib.new{parent = reqLabel}
@@ -629,6 +636,15 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                             tooltip:add{description = str}
                                         end
                                     end
+
+                                    reqLabel:register(tes3.uiEvent.mouseClick, function (e)
+                                        for objId, _ in pairs(req.objects or {}) do
+                                            local res = trackingLib.addMarker{objectId = objId, questId = questId, questStage = index}
+                                            if res then
+                                                reqLabel.color = res.color
+                                            end
+                                        end
+                                    end)
                                 end
 
                                 makeLabelSelectable(reqLabel)
