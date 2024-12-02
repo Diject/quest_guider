@@ -387,13 +387,15 @@ function this.registerModConfig()
         end
 
         otherPage:createDropdown{
-            label = "Marker icons",
+            label = "Marker icons. !Will only affect newly created markers",
             options = options,
             variable = mcm.createTableVariable{
                 id = "iconProfile",
                 table = config.data.main
             }
         }
+
+        createYesNo{self = otherPage, config = {path = "main", name = "helpLabels"}, label = "Show help info in menus"}
     end
 
     -- template:register()
