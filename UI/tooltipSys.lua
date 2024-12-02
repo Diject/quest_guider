@@ -13,6 +13,8 @@ tooltipClass.__index = tooltipClass
 ---@class questGuider.tooltipSys.tooltip.dataBlock
 ---@field name string?
 ---@field description string?
+---@field nameColor number[]?
+---@field descrColor number[]?
 
 ---@param params questGuider.tooltipSys.tooltip.dataBlock
 function tooltipClass:add(params)
@@ -84,6 +86,9 @@ function this.new(params)
                 label.maxWidth = luaData.maxWidth or 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.center
+                if rec.nameColor then
+                    label.color = rec.nameColor
+                end
                 createDivider = true
             end
 
@@ -94,6 +99,9 @@ function this.new(params)
                 label.maxWidth = luaData.maxWidth or 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.left
+                if rec.descrColor then
+                    label.color = rec.descrColor
+                end
             end
 
             ::continue::

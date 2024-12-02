@@ -2,6 +2,9 @@ local log = include("diject.quest_guider.utils.log")
 
 local questLib = include("diject.quest_guider.quest")
 local trackingLib = include("diject.quest_guider.tracking")
+local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
+
+local config = include("diject.quest_guider.config")
 
 
 local mapAddon = {
@@ -80,6 +83,13 @@ function this.updateMapMenu()
             qDescrLabel.wrapText = true
             qDescrLabel.borderLeft = 20
             qDescrLabel.color = markerColor
+
+            if config.data.main.helpLabels then
+                local tooltip = tooltipLib.new{parent = qDescrLabel}
+                if config.data.main.helpLabels then
+                    tooltip:add{name = "Click to remove."}
+                end
+            end
 
             qDescrLabel:register(tes3.uiEvent.mouseOver, function (e)
                 local color = {1, 1, 1}

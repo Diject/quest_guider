@@ -85,6 +85,10 @@ local journalMenu = {
     mapIcon = "qGuider_journal_MapIcon",
 }
 
+local helpMenu = {
+    label = "qGuider_help_label",
+}
+
 this.colors = {
     default = {0.792, 0.647, 0.376},
     lightDefault = {0.892, 0.747, 0.476},
@@ -159,6 +163,18 @@ local function makeLabelSelectable(element, color)
         element.color = originalColor or element.color
         element:getTopLevelMenu():updateLayout()
     end)
+end
+
+---@param element tes3uiElement
+---@param message string
+local function createHelpMessage(element, message)
+    if not config.data.main.helpLabels then return end
+    local label = element:createLabel{ id = helpMenu.label, text = message }
+    label.autoWidth = false
+    label.widthProportional = 1
+    label.justifyText = tes3.justifyText.center
+    label.wrapText = true
+    label.color = this.colors.lightDefault
 end
 
 ---@param element tes3uiElement
@@ -379,6 +395,9 @@ function this.drawScriptLocalsMenu(parent, scriptNames)
 
                                 if req.positionData then
                                     local tooltip = tooltipLib.new{parent = reqLabel}
+                                    if config.data.main.helpLabels then
+                                        tooltip:add{name = "Click to track.", nameColor = this.colors.lightDefault}
+                                    end
                                     for objId, posDt in pairs(req.positionData) do
                                         local posDescriptions = {}
                                         for _, p in pairs(posDt.positions) do
@@ -596,6 +615,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                                 if req.positionData then
                                     local tooltip = tooltipLib.new{parent = reqLabel}
+                                    if config.data.main.helpLabels then
+                                        tooltip:add{name = "Click to track.", nameColor = this.colors.lightDefault}
+                                    end
                                     for objId, posDt in pairs(req.positionData) do
                                         local posDescriptions = {}
                                         for _, p in pairs(posDt.positions) do
@@ -1189,6 +1211,7 @@ function this.updateJournalMenu()
 
                 reqLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
+                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track all.")
                     if not this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end
@@ -1216,6 +1239,7 @@ function this.updateJournalMenu()
 
                 mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
+                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track all.")
                     if not this.drawMapMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end

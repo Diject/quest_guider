@@ -9,6 +9,7 @@ local this = {}
 this.default = {
     main = {
         enabled = true,
+        helpLabels = true,
     },
     journal = {
         enabled = true,
