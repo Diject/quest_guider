@@ -10,6 +10,7 @@ this.default = {
     main = {
         enabled = true,
         helpLabels = true,
+        iconProfile = "default",
     },
     journal = {
         enabled = true,

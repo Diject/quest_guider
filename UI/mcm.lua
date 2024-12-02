@@ -1,6 +1,8 @@
 local config = include("diject.quest_guider.config")
 local log = include("diject.quest_guider.utils.log")
 
+local markerIconInfo = include("diject.quest_guider.markers")
+
 local mcm = mwse.mcm
 
 local this = {}
@@ -362,6 +364,36 @@ function this.registerModConfig()
 
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "maxPositions"},
             label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 100}, int = true}
+    end
+
+    do
+        local otherPage = template:createPage{label = "Other"}
+
+        ---@type mwseMCMDropdownOption[]
+        local options = {}
+
+        for _, id in pairs(markerIconInfo.getIds()) do
+            local name = markerIconInfo.getName(id) or id
+            ---@type mwseMCMDropdownOption
+            local option = {
+                label = name,
+                value = id,
+                callback = function (self)
+                    markerIconInfo.apply(id)
+                end
+            }
+
+            table.insert(options, option)
+        end
+
+        otherPage:createDropdown{
+            label = "Marker icons",
+            options = options,
+            variable = mcm.createTableVariable{
+                id = "iconProfile",
+                table = config.data.main
+            }
+        }
     end
 
     -- template:register()

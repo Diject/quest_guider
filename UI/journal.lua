@@ -107,12 +107,13 @@ end
 
 ---@class questGuider.ui.markerImage
 ---@field path string
----@field shiftX integer|nil
----@field shiftY integer|nil
+---@field scale number?
+---@field shiftX integer?
+---@field shiftY integer?
 
 ---@type table<string, questGuider.ui.markerImage>
 this.markers = {
-    quest = {path = "textures\\diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4},
+    quest = {path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4, scale = 1},
 }
 
 
@@ -794,7 +795,7 @@ local function createMarker(params)
     if not params.pane then return end
     if not params.markerData or not params.markerData.path then return end
 
-    local image = params.pane:createImage{id = mapMenu.marker, path = params.markerData.path}
+    local image = params.pane:createImage{id = mapMenu.marker, path = "textures\\"..params.markerData.path}
 
     if not image then return end
 
@@ -808,6 +809,8 @@ local function createMarker(params)
     image.absolutePosAlignX = math.max(0, math.min(1, alignX))
     image.absolutePosAlignY = math.max(0, math.min(1, alignY))
     image.color = params.color or {1, 1, 1}
+    image.imageScaleX = params.markerData.scale or 1
+    image.imageScaleY = params.markerData.scale or 1
 
     image:setLuaData("records", {params})
 
