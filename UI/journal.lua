@@ -1180,7 +1180,7 @@ function this.updateJournalMenu()
             local function createTrackAllButton(menuEl, buttonBlock)
                 local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track all" }
                 trackButton:register(tes3.uiEvent.mouseClick, function (e)
-                    trackingLib.trackQuestsFromQuest(questId, questIndex)
+                    trackingLib.trackQuestsbyQuest(questId, questIndex)
                     local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
                     if innMenuReqBlock then
                         local drawFunc = innMenuReqBlock:getLuaData("callback")
@@ -1236,6 +1236,11 @@ function this.updateJournalMenu()
                     end
                 end)
                 reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                    if tes3.worldController.inputController:isShiftDown() then
+                        trackingLib.trackQuestsbyQuest(questId, questIndex)
+                        return
+                    end
+
                     local el, buttonBlock = this.drawContainer("Requirements", createTrackAllButton)
 
                     if not el or not buttonBlock then return end
@@ -1264,6 +1269,11 @@ function this.updateJournalMenu()
                     end
                 end)
                 mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
+                    if tes3.worldController.inputController:isShiftDown() then
+                        trackingLib.trackQuestsbyQuest(questId, questIndex)
+                        return
+                    end
+
                     local el, buttonBlock = this.drawContainer("Map", createTrackAllButton)
 
                     if not el or not buttonBlock then return end

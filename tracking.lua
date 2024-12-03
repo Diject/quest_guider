@@ -604,7 +604,7 @@ end
 
 ---@param questId string should be lowercase
 ---@param index integer
-function this.trackQuestsFromQuest(questId, index)
+function this.trackQuestsbyQuest(questId, index)
     local shouldUpdate = false
 
     local questTrackingData = this.getQuestData(questId)
