@@ -45,20 +45,20 @@ function this.createMenu(params)
     if params.dataNotExistsMessage then
         local block = menu:createBlock{ id = menuId.label1Block }
         block.autoHeight = true
-        block.widthProportional = 1
-        block.childAlignX = 0.5
+        block.autoWidth = true
         block.borderBottom = 5
         local label = block:createLabel{ id = menuId.label1 }
         label.text = "There is no data about quests. Would you like to generate it?"
+        label.widthProportional = 1
         label.wrapText = true
     elseif params.dataChangedMessage then
         local block = menu:createBlock{ id = menuId.label1Block }
         block.autoHeight = true
-        block.widthProportional = 1
-        block.childAlignX = 0.5
+        block.autoWidth = true
         block.borderBottom = 5
         local label = block:createLabel{ id = menuId.label1 }
         label.text = "Active game files have changed. Would you like to re-generate quest data?"
+        label.widthProportional = 1
         label.wrapText = true
     end
 
@@ -84,10 +84,16 @@ function this.createMenu(params)
             return
         end
 
-        tes3ui.showNotifyMenu("Data generation completed")
-        config.updateGameFileData()
+        config.data.init.ignoreDataChanges = false
         config.save()
         dataHandler.init()
+
+        if math.isclose(dataHandler.info.time or 0, os.time(), 10) then
+            tes3ui.showNotifyMenu("Data generation completed successfully")
+        else
+            tes3ui.showNotifyMenu("Data generation failed")
+        end
+
         menu:destroy()
     end)
 
@@ -102,13 +108,15 @@ function this.createMenu(params)
     local laterBtn = buttonBlock:createButton{ id = menuId.skipBtn }
     laterBtn.text = "Skip"
     laterBtn:register(tes3.uiEvent.mouseClick, function (e)
-        config.updateGameFileData()
+        config.data.init.ignoreDataChanges = true
         config.save()
 
         tes3ui.showNotifyMenu("You will be able to generate the data from the mod settings.")
 
         menu:destroy()
     end)
+
+    menu:getTopLevelMenu():updateLayout()
 
     return menu
 end

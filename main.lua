@@ -106,8 +106,8 @@ end
 
 --- @param e enterFrameEventData
 local function afterInitCallback(e)
-    if config.data.main.enabled and config.compareGameFileData() then
-        local isDataEmpty = config.isGameFileDataEmpty()
+    if config.data.main.enabled and not config.data.init.ignoreDataChanges and dataHandler.compareGameFileData() then
+        local isDataEmpty = dataHandler.isGameFileDataEmpty()
         dataGeneratoUI.createMenu{ dataChangedMessage = not isDataEmpty, dataNotExistsMessage = isDataEmpty }
     end
     event.unregister(tes3.event.enterFrame, afterInitCallback)
