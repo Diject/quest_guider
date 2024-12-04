@@ -34,23 +34,30 @@ function this.updateMapMenu()
 
     local flowDirection = dragMenu.flowDirection
 
+    local uiexpElement = dragMenu:findChild("UIEXP:MapControls")
+
     local btnBlock = dragMenu:createBlock{ id = mapAddon.buttonBlock }
     btnBlock.autoHeight = true
     btnBlock.autoWidth = true
     btnBlock.absolutePosAlignX = 0
-    btnBlock.absolutePosAlignY = 1
+    btnBlock.absolutePosAlignY = 0
     btnBlock.flowDirection = tes3.flowDirection.leftToRight
 
     local trackedBtn = btnBlock:createButton{ id = mapAddon.showHideBtn, text = ">" }
-
-    local removeAllBtn = btnBlock:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
-    removeAllBtn.visible = false
 
     local questPane = dragMenu:createVerticalScrollPane{ id = mapAddon.scrollPane }
     questPane.heightProportional = 1
     questPane.widthProportional = 0.75
     questPane.visible = false
     questPane.widget.scrollbarVisible = true
+
+    if uiexpElement then
+        questPane.heightProportional = nil
+        questPane.height = dragMenu.height - uiexpElement.height - 2
+        menu:registerAfter(tes3.uiEvent.preUpdate, function (e)
+            questPane.height = math.max(0, dragMenu.height - uiexpElement.height - 5)
+        end)
+    end
 
     dragMenu:reorderChildren(dragMenu.children[1], questPane, -1)
 
@@ -131,6 +138,18 @@ function this.updateMapMenu()
         for questId, trackingData in pairs(trackingLib.trackedObjectsByQuestId) do
             createTrackingBlock(questPane, questId, trackingData)
         end
+
+        local removeAllBtn = questPane:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
+        removeAllBtn.absolutePosAlignX = 0.5
+        removeAllBtn:register(tes3.uiEvent.mouseClick, function (e)
+            trackingLib.removeMarkers()
+            trackingLib.updateMarkers(true)
+        end)
+
+        local emptyBlock = questPane:createBlock{}
+        emptyBlock.height = 40
+        emptyBlock.width = 1
+
         menu:updateLayout()
         questPane.widget:contentsChanged()
     end
@@ -138,14 +157,13 @@ function this.updateMapMenu()
     trackedBtn:register(tes3.uiEvent.mouseClick, function (e)
         questPane.visible = not questPane.visible
         trackedBtn.text = questPane.visible and "<" or ">"
+        btnBlock.absolutePosAlignX = questPane.visible and 0.395 or 0
 
         if questPane.visible then
-            removeAllBtn.visible = true
             menuLocal.widthProportional = 2 - questPane.widthProportional
             menuWorld.widthProportional = 2 - questPane.widthProportional
             dragMenu.flowDirection = tes3.flowDirection.leftToRight
         else
-            removeAllBtn.visible = false
             menuLocal.widthProportional = 1
             menuWorld.widthProportional = 1
             dragMenu.flowDirection = flowDirection
@@ -153,11 +171,6 @@ function this.updateMapMenu()
 
         menu:updateLayout()
         questPane.widget:contentsChanged()
-    end)
-
-    removeAllBtn:register(tes3.uiEvent.mouseClick, function (e)
-        trackingLib.removeMarkers()
-        trackingLib.updateMarkers(true)
     end)
 
     trackingLib.callbackToUpdateMapMenu = fillQuestPane
