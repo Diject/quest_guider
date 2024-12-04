@@ -3,6 +3,7 @@ local this = {}
 ---@class questGuider.playerQuest.data
 ---@field index integer
 ---@field record tes3dialogue
+---@field text string?
 
 ---@type table<string, questGuider.playerQuest.data>
 this.questData = {}
@@ -49,6 +50,7 @@ function this.updateIndex(questId, index)
     if not data then return end
 
     data.index = index
+    data.text = nil
 end
 
 ---@param quest tes3dialogue|string

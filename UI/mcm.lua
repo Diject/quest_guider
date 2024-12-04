@@ -328,6 +328,8 @@ function this.registerModConfig()
         local trackingPage = template:createPage{label = "Tracking"}
         createYesNo{self = trackingPage, config = {path = "tracking.quest", name = "enabled"}, label = "Auto track quest objects when a new journal entry has been added"}
         createYesNo{self = trackingPage, config = {path = "map", name = "enabled"}, label = "Integrate tracking info to the game Map menu"}
+        createYesNo{self = trackingPage, config = {path = "map", name = "showJournalTextTooltip"},
+            label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "maxPositions"},
             label = "Don't track quest items that have more copies in the world than the value", limits = {min = 1, max = 100}, int = true}
 

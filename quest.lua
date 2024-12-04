@@ -48,10 +48,14 @@ function this.getObjectData(objectId)
     return dataHandler.questObjects[objectId:lower()]
 end
 
+function this.removeSpecialCharactersFromJournalText(text)
+    return text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
+end
+
 ---@param text string
 ---@return questDataGenerator.questTopicInfo[]|nil
 function this.getQuestInfoByJournalText(text)
-    local str = text:gsub("@", ""):gsub("#", ""):gsub("\n", " ")
+    local str = this.removeSpecialCharactersFromJournalText(text)
     return dataHandler.questByText[str]
 end
 

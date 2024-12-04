@@ -31,6 +31,7 @@ this.default = {
     },
     map = {
         enabled = true,
+        showJournalTextTooltip = true,
     },
     tooltip = {
         width = 400,

@@ -6,6 +6,7 @@ local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
 
 local config = include("diject.quest_guider.config")
 
+local playerQuests = include("diject.quest_guider.playerQuests")
 
 local mapAddon = {
     buttonBlock = "qGuider_mapAddon_buttonBlock",
@@ -76,6 +77,24 @@ function this.updateMapMenu()
         qNameLabel.widthProportional = 1
         qNameLabel.wrapText = true
         qNameLabel.borderLeft = 10
+
+        if config.data.map.showJournalTextTooltip then
+            local qData = playerQuests.getQuestData(questId)
+            if qData then
+                local journalInfo = qData.record:getJournalInfo()
+                if journalInfo then
+                    local tooltip = tooltipLib.new{ parent = qNameLabel }
+                    local text
+                    if qData.text then
+                        text = qData.text
+                    else
+                        qData.text = journalInfo.text
+                        text = qData.text
+                    end
+                    tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(text) }
+                end
+            end
+        end
 
         for objId, _ in pairs(trackingData.objects) do
             local object = tes3.getObject(objId)
