@@ -269,9 +269,10 @@ function this.addMarker(params)
                         local exitPositions = cellLib.findExitPositions(cell)
                         if exitPositions then
                             for _, pos in pairs(exitPositions) do
+                                local nearestDoor = cellLib.findNearestDoor(pos)
                                 markerLib.addLocalMarker{
                                     record = objectMarkerData.localDoorMarkerId,
-                                    position = pos,
+                                    position = nearestDoor and nearestDoor.position or pos,
                                     trackOffscreen = true,
                                     replace = true,
                                 }
@@ -284,20 +285,6 @@ function this.addMarker(params)
 
                         objectTrackingData.targetCells[cell.editorName] = true
                     end
-
-                    -- if objectTrackingData.localDoorMarkerId then
-                    --     for i = #path, 1, -1 do
-                    --         local node = path[i]
-                    --         local markerPos = node.marker.position
-                    --         markerLib.addLocalMarker{
-                    --             record = objectTrackingData.localDoorMarkerId,
-                    --             cell = node.cell.isInterior == true and node.cell.name or nil,
-                    --             position = markerPos,
-                    --             canBeOffscreen = true,
-                    --             replace = true,
-                    --         }
-                    --     end
-                    -- end
                 end
             end
         end
