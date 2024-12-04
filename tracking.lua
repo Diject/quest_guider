@@ -305,6 +305,7 @@ end
 ---@field questIndex integer|string
 
 ---@param params questGuider.tracking.addMarkersForQuest
+---@return table<string, boolean>? objects object ids
 function this.addMarkersForQuest(params)
 
     local questData = questLib.getQuestData(params.questId)
@@ -313,6 +314,8 @@ function this.addMarkersForQuest(params)
     local indexStr = tostring(params.questIndex)
     local indexData = questData[indexStr]
     if not indexData then return end
+
+    local out = {}
 
     for i, reqDataBlock in pairs(indexData.requirements or {}) do
 
@@ -327,12 +330,16 @@ function this.addMarkersForQuest(params)
 
                 this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex }
 
+                out[objId] = true
+
                 ::continue::
             end
         end
 
         ::continue::
     end
+
+    return out
 end
 
 
@@ -590,8 +597,7 @@ function this.trackQuestFromCallback(questId, e)
 end
 
 ---@param questId string should be lowercase
----@param index integer
-function this.trackQuestsbyQuest(questId, index)
+function this.trackQuestsbyQuestId(questId)
     local shouldUpdate = false
 
     local questTrackingData = this.getQuestData(questId)
@@ -600,16 +606,36 @@ function this.trackQuestsbyQuest(questId, index)
         shouldUpdate = true
     end
 
+    local index = playerQuests.getCurrentIndex(questId)
+    if not index then return end
+
     local questNextIndexes = questLib.getNextIndexes(questId, index)
+
+    local objects = {}
 
     if not questNextIndexes then
         this.removeMarker{ questId = questId }
         shouldUpdate = true
     elseif questNextIndexes then
         for _, indexStr in pairs(questNextIndexes) do
-            this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            table.copy(objs, objects)
         end
         shouldUpdate = true
+    end
+
+    if table.size(objects) > 0 then
+        local names = {}
+        for id, _ in pairs(objects) do
+            local obj = tes3.getObject(id)
+            if obj and obj.name then
+                table.insert(names, obj.name)
+            end
+        end
+
+        if #names > 0 then
+            tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+        end
     end
 
     if shouldUpdate then

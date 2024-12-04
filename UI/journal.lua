@@ -1178,9 +1178,9 @@ function this.updateJournalMenu()
             if not quest then goto continue end
 
             local function createTrackAllButton(menuEl, buttonBlock)
-                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track all" }
+                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track current stage" }
                 trackButton:register(tes3.uiEvent.mouseClick, function (e)
-                    trackingLib.trackQuestsbyQuest(questId, questIndex)
+                    trackingLib.trackQuestsbyQuestId(questId)
                     local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
                     if innMenuReqBlock then
                         local drawFunc = innMenuReqBlock:getLuaData("callback")
@@ -1230,14 +1230,14 @@ function this.updateJournalMenu()
 
                 reqLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track all.")
+                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
                     if not this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end
                 end)
                 reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     if tes3.worldController.inputController:isShiftDown() then
-                        trackingLib.trackQuestsbyQuest(questId, questIndex)
+                        trackingLib.trackQuestsbyQuestId(questId)
                         return
                     end
 
@@ -1263,14 +1263,14 @@ function this.updateJournalMenu()
 
                 mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track all.")
+                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
                     if not this.drawMapMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end
                 end)
                 mapLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     if tes3.worldController.inputController:isShiftDown() then
-                        trackingLib.trackQuestsbyQuest(questId, questIndex)
+                        trackingLib.trackQuestsbyQuestId(questId)
                         return
                     end
 
