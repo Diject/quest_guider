@@ -549,7 +549,7 @@ function this.createQuestGiverMarkers(cell)
 
         markerLib.addLocalMarker{
             record = recordId,
-            trackedRef = ref,
+            objectId = objectId,
             temporary = true,
             trackOffscreen = true,
         }
