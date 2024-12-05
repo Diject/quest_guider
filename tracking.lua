@@ -61,7 +61,7 @@ this.trackedQuestGivers = {}
 ---@type table<string, questGuider.tracking.objectRecord>
 this.markerByObjectId = {}
 
----@type table<string, {objects : table<string, string[]>, color : number[]}>
+---@type table<string, {objects : table<string, string[]>}>
 this.trackedObjectsByQuestId = {}
 
 
@@ -145,22 +145,16 @@ function this.addMarker(params)
     if this.trackedObjectsByQuestId[params.questId] then
         qTrackingInfo = this.trackedObjectsByQuestId[params.questId]
     else
-        local colorId = math.min(this.storageData.colorId, #colors)
-        qTrackingInfo = {objects = {}, color = colors[colorId]}
-        this.storageData.colorId = colorId < #colors and colorId + 1 or 1
+        qTrackingInfo = {objects = {}}
     end
 
     local objectTrackingData = this.markerByObjectId[objectId]
     if not objectTrackingData then
+        local colorId = math.min(this.storageData.colorId, #colors)
 
-        local color = table.copy(qTrackingInfo.color)
+        objectTrackingData = { markers = {}, color = colors[colorId] } ---@diagnostic disable-line: missing-fields
 
-        local objNum = table.size(qTrackingInfo.objects)
-        color[1] = math.clamp(color[1] + (objNum % 3 == 0 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
-        color[2] = math.clamp(color[2] + (objNum % 3 == 1 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
-        color[3] = math.clamp(color[3] + (objNum % 3 == 2 and (math.random() > 0.5 and -0.25 or 0.25) or 0) + (math.random() - 0.5) * 0.25, 0, 1)
-
-        objectTrackingData = { markers = {}, color = color } ---@diagnostic disable-line: missing-fields
+        this.storageData.colorId = colorId < #colors and colorId + 1 or 1
     end
 
     if objectTrackingData.markers[params.questId] then return end
