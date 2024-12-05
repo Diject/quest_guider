@@ -98,13 +98,14 @@ function this.updateMapMenu()
 
         for objId, _ in pairs(trackingData.objects) do
             local object = tes3.getObject(objId)
-            if not object then goto continue end
+            local objName = object and object.name or objId
+
             local objectMarkerData = trackingLib.markerByObjectId[objId]
             if not objectMarkerData then goto continue end
 
             local markerColor = table.copy(objectMarkerData.color)
 
-            local qDescrLabel = block:createLabel{ id = mapAddon.questObjLabel, text = object.name }
+            local qDescrLabel = block:createLabel{ id = mapAddon.questObjLabel, text = objName }
             qDescrLabel.widthProportional = 1
             qDescrLabel.wrapText = true
             qDescrLabel.borderLeft = 20

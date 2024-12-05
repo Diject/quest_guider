@@ -131,13 +131,10 @@ function this.addMarker(params)
     if not initialized then return end
 
     local objectId = params.objectId
-    -- local object = tes3.getObject(objectId) or tes3.getScript(objectId)
-
-    -- if not object then return end
 
     local objectPositions = questLib.getObjectPositionData(objectId)
 
-    if not objectPositions or #objectPositions > config.data.tracking.maxPositions then return end
+    if objectPositions and #objectPositions > config.data.tracking.maxPositions then return end
 
     local questData = questLib.getQuestData(params.questId)
     local positionData = params.positionData
