@@ -7,6 +7,7 @@ local cellLib = include("diject.quest_guider.cell")
 local questLib = include("diject.quest_guider.quest")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local config = include("diject.quest_guider.config")
+local otherTypes = include("diject.quest_guider.Types.other")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -120,6 +121,7 @@ end
 ---@field questId string should be lower
 ---@field questStage integer
 ---@field objectId string should be lower
+---@field positionData questGuider.quest.getRequirementPositionData.returnData
 ---@field color number[]|nil
 ---@field associatedNumber number|nil not used
 
@@ -129,17 +131,18 @@ function this.addMarker(params)
     if not initialized then return end
 
     local objectId = params.objectId
-    local object = tes3.getObject(objectId) or tes3.getScript(objectId)
+    -- local object = tes3.getObject(objectId) or tes3.getScript(objectId)
 
-    if not object then return end
+    -- if not object then return end
 
     local objectPositions = questLib.getObjectPositionData(objectId)
 
     if not objectPositions or #objectPositions > config.data.tracking.maxPositions then return end
 
     local questData = questLib.getQuestData(params.questId)
+    local positionData = params.positionData
 
-    if not questData then return end
+    if not questData or not positionData then return end
 
     local qTrackingInfo
     if this.trackedObjectsByQuestId[params.questId] then
@@ -176,7 +179,7 @@ function this.addMarker(params)
         textureShiftX = this.localMarkerImageInfo.shiftX,
         textureShiftY = this.localMarkerImageInfo.shiftY,
         scale = this.localMarkerImageInfo.scale,
-        name = object.name,
+        name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
     objectMarkerData.worldMarkerId = objectMarkerData.worldMarkerId or markerLib.addRecord{
@@ -185,7 +188,7 @@ function this.addMarker(params)
         textureShiftX = this.worldMarkerImageInfo.shiftX,
         textureShiftY = this.worldMarkerImageInfo.shiftY,
         scale = this.worldMarkerImageInfo.scale,
-        name = object.name,
+        name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
 
@@ -197,49 +200,90 @@ function this.addMarker(params)
     local objects = {}
     objects[objectId] = true
 
-    for _, positionData in pairs(objectPositions) do
+    for _, data in pairs(positionData.positions) do
 
         if objectMarkerData.localMarkerId then
 
-            if positionData.type == 1 then
-                markerLib.addLocalMarker{
-                    record = objectMarkerData.localMarkerId,
-                    objectId = objectId,
-                    trackOffscreen = true,
-                }
+            local rawData = data.rawData
 
-            elseif positionData.type == 2 then
-                objects[positionData.id] = true
-                markerLib.addLocalMarker{
-                    record = objectMarkerData.localMarkerId,
-                    objectId = positionData.id,
-                    itemId = objectId,
-                    trackOffscreen = true,
-                }
+            if rawData then
+                if rawData.type == 1 then
+                    local obj = tes3.getObject(objectId)
+                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            cell = data.id,
+                            position = data.position,
+                            trackOffscreen = true,
+                        }
+                    else
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            objectId = objectId,
+                            trackOffscreen = true,
+                        }
+                    end
 
-            elseif positionData.type == 4 then
-                objects[positionData.id] = true
+                elseif rawData.type == 2 then
+                    objects[rawData.id] = true
+
+                    local obj = tes3.getObject(rawData.id)
+
+                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            cell = data.id,
+                            position = data.position,
+                            trackOffscreen = true,
+                        }
+                    else
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            objectId = rawData.id,
+                            trackOffscreen = true,
+                        }
+                    end
+
+                elseif rawData.type == 4 then
+                    objects[rawData.id] = true
+
+                    local obj = tes3.getObject(rawData.id)
+                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            cell = data.id,
+                            position = data.position,
+                            trackOffscreen = true,
+                        }
+                    else
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            objectId = rawData.id,
+                            trackOffscreen = true,
+                        }
+                    end
+                end
+            else
                 markerLib.addLocalMarker{
                     record = objectMarkerData.localMarkerId,
-                    objectId = positionData.id,
+                    cell = data.id,
+                    position = data.position,
                     trackOffscreen = true,
                 }
             end
-
         end
 
-        if positionData.grid then
+        if data.id == nil then
 
             if objectMarkerData.worldMarkerId then
                 markerLib.addWorldMarker{
                     record = objectMarkerData.worldMarkerId,
-                    x = positionData.pos[1],
-                    y = positionData.pos[2],
+                    x = data.exitPos.x,
+                    y = data.exitPos.y,
                 }
             end
-
         else
-            local cell = tes3.getCell{id = positionData.name}
+            local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
             if cell then
 
                 local exitPos, path = cellLib.findExitPos(cell)
@@ -261,7 +305,7 @@ function this.addMarker(params)
                         textureShiftX = this.localDoorMarkerImageInfo.shiftX,
                         textureShiftY = this.localDoorMarkerImageInfo.shiftY,
                         scale = this.localDoorMarkerImageInfo.scale,
-                        name = object.name,
+                        name = positionData.name,
                         description = string.format("Quest: \"%s\"", questData.name or "")
                     }
 
@@ -323,12 +367,9 @@ function this.addMarkersForQuest(params)
         if not requirementData then goto continue end
 
         for _, requirement in ipairs(requirementData) do
-            for _, objId in pairs(requirement.objects or {}) do
+            for objId, posData in pairs(requirement.positionData or {}) do
 
-                local objPosData = questLib.getObjectPositionData(objId)
-                if not objPosData then goto continue end
-
-                this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex }
+                this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex, positionData = posData }
 
                 out[objId] = true
 

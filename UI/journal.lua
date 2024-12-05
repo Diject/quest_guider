@@ -639,8 +639,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                     end
 
                                     reqLabel:register(tes3.uiEvent.mouseClick, function (e)
-                                        for objId, _ in pairs(req.objects or {}) do
-                                            local res = trackingLib.addMarker{objectId = objId, questId = questId, questStage = index}
+                                        for objId, posDt in pairs(req.positionData) do
+                                            local res = trackingLib.addMarker{objectId = objId, questId = questId, questStage = index, positionData = posDt}
                                             if res then
                                                 reqLabel.color = res.color
                                             end
@@ -958,8 +958,8 @@ function this.drawMapMenu(parent, questId, index, questData)
 
                 ---@param e tes3uiEventData
                 local function mouseClick(e)
-                    for objId, _ in pairs(reqData.objects) do
-                        trackingLib.addMarker{objectId = objId, color = color, questId = questId, questStage = index}
+                    for objId, posDt in pairs(reqData.positionData or {}) do
+                        trackingLib.addMarker{objectId = objId, questId = questId, questStage = index, positionData = posDt}
                     end
                     trackingLib.updateMarkers(true)
                     drawMarkers(reqBl)

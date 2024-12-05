@@ -434,6 +434,7 @@ end
 ---@field exitPos tes3vector3
 ---@field doorPath tes3travelDestinationNode[]?
 ---@field cellPath tes3cell[]?
+---@field rawData questDataGenerator.objectPosition?
 
 ---@class questGuider.quest.getRequirementPositionData.returnData
 ---@field name string
@@ -516,7 +517,7 @@ function this.getRequirementPositionData(requirement)
                         end
 
                         add(id, obj, {description = descr, id = posDt.name, position = tes3vector3.new(x, y, z),
-                            exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath})
+                            exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath, rawData = posDt})
                     else
                         goto continue
                     end
@@ -526,7 +527,7 @@ function this.getRequirementPositionData(requirement)
                 if cell then
                     local descr = cell.editorName
                     local pos = tes3vector3.new(x, y, z)
-                    add(id, obj, {description = descr, id = nil, position = pos, exitPos = pos})
+                    add(id, obj, {description = descr, id = nil, position = pos, exitPos = pos, rawData = posDt})
                 end
             end
 
