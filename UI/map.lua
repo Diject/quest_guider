@@ -78,6 +78,28 @@ function this.updateMapMenu()
         qNameLabel.wrapText = true
         qNameLabel.borderLeft = 10
 
+        qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
+            tes3.messageBox{
+                message = "Remove markers for this quest?",
+                buttons = { "Yes", "No" },
+                showInDialog = false,
+                callback = function (e1)
+                    if e1.button == 0 then
+                        trackingLib.removeMarker{ questId = questId }
+                        trackingLib.updateMarkers(true)
+                        qNameLabel:getTopLevelMenu():updateLayout()
+                    end
+                end,
+            }
+        end)
+
+        if config.data.main.helpLabels then
+            local tooltip = tooltipLib.new{parent = qNameLabel}
+            if config.data.main.helpLabels then
+                tooltip:add{name = "Click to remove."}
+            end
+        end
+
         if config.data.map.showJournalTextTooltip then
             local qData = playerQuests.getQuestData(questId)
             if qData then
