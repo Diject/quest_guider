@@ -69,8 +69,9 @@ function this.new(params)
         local createDivider = false
         for i, rec in pairs(luaData.items) do
 
-            if createDivider and rec.name then
+            if createDivider and (rec.name or rec.description) then
                 local divider = tooltip:createDivider{}
+                divider.borderAllSides = 4
             end
 
             block = tooltip:createBlock{id = tooltipMenu.tooltipBlock}
