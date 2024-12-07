@@ -15,6 +15,7 @@ local menuId = {
     generateBtn = "qGuider_generateBtn",
     skipBtn = "qGuider_skipBtn",
     disableBtn = "qGuider_disableBtn",
+    cancelBtn = "qGuider_cancelBtn",
 }
 
 ---@class questGuider.dataGenerator.createMenu.params
@@ -105,14 +106,22 @@ function this.createMenu(params)
         menu:destroy()
     end)
 
-    local laterBtn = buttonBlock:createButton{ id = menuId.skipBtn }
-    laterBtn.text = "Skip"
-    laterBtn:register(tes3.uiEvent.mouseClick, function (e)
-        config.data.init.ignoreDataChanges = true
-        config.save()
+    if params.dataNotExistsMessage or params.dataChangedMessage then
+        local laterBtn = buttonBlock:createButton{ id = menuId.skipBtn }
+        laterBtn.text = "Don't ask again"
+        laterBtn:register(tes3.uiEvent.mouseClick, function (e)
+            config.data.init.ignoreDataChanges = true
+            config.save()
 
-        tes3ui.showNotifyMenu("You will be able to generate the data from the mod settings.")
+            tes3ui.showNotifyMenu("You will be able to generate the data from the mod settings.")
 
+            menu:destroy()
+        end)
+    end
+
+    local cancelBtn = buttonBlock:createButton{ id = menuId.cancelBtn }
+    cancelBtn.text = "Cancel"
+    cancelBtn:register(tes3.uiEvent.mouseClick, function (e)
         menu:destroy()
     end)
 
