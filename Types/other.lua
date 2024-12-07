@@ -164,13 +164,4 @@ this.vampireClan = {
     [3] = "Quarra",
 }
 
-this.objectTypesWithouRef = {
-    [tes3.objectType.container] = true,
-    [tes3.objectType.static] = true,
-    [tes3.objectType.door] = true,
-    [tes3.objectType.miscItem] = true,
-    [tes3.objectType.activator] = true,
-    [tes3.objectType.book] = true,
-}
-
 return this
