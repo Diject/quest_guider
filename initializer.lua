@@ -1,4 +1,5 @@
 local log = include("diject.quest_guider.utils.log")
+local config = include("diject.quest_guider.config")
 
 local this = {}
 
@@ -7,11 +8,12 @@ this.logLevel = 0
 ---@param async boolean|nil
 ---@return boolean res true if successful. If async always true
 function this.runDataGeneration(async)
+    local maxPos = config.data.data.maxPos
     local dir = string.format("%s\\Quest Guider", tes3.installDirectory)
     local outputDir = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data"
 
     -- by morrowind.ini
-    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -o \"%s\" -l %d", dir, outputDir, this.logLevel)
+    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -o \"%s\" -l %d", dir, maxPos, outputDir, this.logLevel)
 
     -- by mod names
     -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -d \"%s\" -o \"%s\" -l %d -f", dir, tes3.installDirectory, outputDir, this.logLevel)

@@ -65,6 +65,9 @@ this.default = {
     init = {
         ignoreDataChanges = false,
     },
+    data = {
+        maxPos = 50,
+    },
 }
 
 ---@class questGuider.config

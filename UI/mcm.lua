@@ -300,6 +300,18 @@ function this.registerModConfig()
     end
 
     do
+        local dataPage = template:createPage{label = "Data"}
+        createNumberEdit{self = dataPage, config = {
+            path = "data", name = "maxPos"},
+            label = "Limits the maximum number of positions for an tracked object in generated data. Affects mainly only markers for the world map and some descriptions. Requires data re-genereation",
+            limits = {min = 1, max = 10000}
+        }
+        dataPage:createButton{buttonText = "Generate data for the mod", callback = function()
+            include("diject.quest_guider.UI.dataGenerator").createMenu{}
+        end}
+    end
+
+    do
         local journalPage = template:createPage{label = "Journal"}
 
         createYesNo{self = journalPage, config = {path = "journal", name = "enabled"}, label = "Integrate the mod to the game Journal menu"}
