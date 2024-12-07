@@ -132,12 +132,9 @@ function this.addMarker(params)
 
     local objectId = params.objectId
 
-    local objectPositions = questLib.getObjectPositionData(objectId)
-
-    if objectPositions and #objectPositions > config.data.tracking.maxPositions then return end
+    local positionData = params.positionData
 
     local questData = questLib.getQuestData(params.questId)
-    local positionData = params.positionData
 
     if not questData or not positionData then return end
 
@@ -188,71 +185,20 @@ function this.addMarker(params)
     if not objectTrackingData.markers then objectTrackingData.markers = {} end
     objectTrackingData.markers[params.questId] = { id = params.questId, index = params.questStage, data = objectMarkerData }
 
+    local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
+
     local objects = {}
     objects[objectId] = true
 
-    for _, data in pairs(positionData.positions) do
+    for _, data in pairs(positionData.positions or {}) do
 
         if objectMarkerData.localMarkerId then
 
             local rawData = data.rawData
 
             if rawData then
-                if rawData.type == 1 then
-                    local obj = tes3.getObject(objectId)
-                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            cell = data.id,
-                            position = data.position,
-                            trackOffscreen = true,
-                        }
-                    else
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            objectId = objectId,
-                            trackOffscreen = true,
-                        }
-                    end
-
-                elseif rawData.type == 2 then
+                if rawData.id then
                     objects[rawData.id] = true
-
-                    local obj = tes3.getObject(rawData.id)
-
-                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            cell = data.id,
-                            position = data.position,
-                            trackOffscreen = true,
-                        }
-                    else
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            objectId = rawData.id,
-                            trackOffscreen = true,
-                        }
-                    end
-
-                elseif rawData.type == 4 then
-                    objects[rawData.id] = true
-
-                    local obj = tes3.getObject(rawData.id)
-                    if obj and otherTypes.objectTypesWithouRef[obj.objectType] then
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            cell = data.id,
-                            position = data.position,
-                            trackOffscreen = true,
-                        }
-                    else
-                        markerLib.addLocalMarker{
-                            record = objectMarkerData.localMarkerId,
-                            objectId = rawData.id,
-                            trackOffscreen = true,
-                        }
-                    end
                 end
             else
                 markerLib.addLocalMarker{
@@ -264,61 +210,63 @@ function this.addMarker(params)
             end
         end
 
-        if data.id == nil then
+        if allowWorldMarkers then
+            if data.id == nil then
 
-            if objectMarkerData.worldMarkerId then
-                markerLib.addWorldMarker{
-                    record = objectMarkerData.worldMarkerId,
-                    x = data.exitPos.x,
-                    y = data.exitPos.y,
-                }
-            end
-        else
-            local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
-            if cell then
-
-                local exitPos, path = cellLib.findExitPos(cell)
-
-                if exitPos and objectMarkerData.worldMarkerId then
+                if objectMarkerData.worldMarkerId then
                     markerLib.addWorldMarker{
                         record = objectMarkerData.worldMarkerId,
-                        x = exitPos.x,
-                        y = exitPos.y,
+                        x = data.exitPos.x,
+                        y = data.exitPos.y,
                     }
                 end
+            else
+                local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
+                if cell then
 
-                if path then
-                    objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
-                        path = this.localDoorMarkerImageInfo.path,
-                        pathAbove = this.localDoorMarkerImageInfo.pathAbove,
-                        pathBelow = this.localDoorMarkerImageInfo.pathBelow,
-                        color = objectTrackingData.color,
-                        textureShiftX = this.localDoorMarkerImageInfo.shiftX,
-                        textureShiftY = this.localDoorMarkerImageInfo.shiftY,
-                        scale = this.localDoorMarkerImageInfo.scale,
-                        name = positionData.name,
-                        description = string.format("Quest: \"%s\"", questData.name or "")
-                    }
+                    local exitPos, path = cellLib.findExitPos(cell)
 
-                    if objectMarkerData.localDoorMarkerId then
-                        local exitPositions = cellLib.findExitPositions(cell)
-                        if exitPositions then
-                            for _, pos in pairs(exitPositions) do
-                                local nearestDoor = cellLib.findNearestDoor(pos)
-                                markerLib.addLocalMarker{
-                                    record = objectMarkerData.localDoorMarkerId,
-                                    position = nearestDoor and nearestDoor.position or pos,
-                                    trackOffscreen = true,
-                                    replace = true,
-                                }
+                    if exitPos and objectMarkerData.worldMarkerId then
+                        markerLib.addWorldMarker{
+                            record = objectMarkerData.worldMarkerId,
+                            x = exitPos.x,
+                            y = exitPos.y,
+                        }
+                    end
+
+                    if path then
+                        objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
+                            path = this.localDoorMarkerImageInfo.path,
+                            pathAbove = this.localDoorMarkerImageInfo.pathAbove,
+                            pathBelow = this.localDoorMarkerImageInfo.pathBelow,
+                            color = objectTrackingData.color,
+                            textureShiftX = this.localDoorMarkerImageInfo.shiftX,
+                            textureShiftY = this.localDoorMarkerImageInfo.shiftY,
+                            scale = this.localDoorMarkerImageInfo.scale,
+                            name = positionData.name,
+                            description = string.format("Quest: \"%s\"", questData.name or "")
+                        }
+
+                        if objectMarkerData.localDoorMarkerId then
+                            local exitPositions = cellLib.findExitPositions(cell)
+                            if exitPositions then
+                                for _, pos in pairs(exitPositions) do
+                                    local nearestDoor = cellLib.findNearestDoor(pos)
+                                    markerLib.addLocalMarker{
+                                        record = objectMarkerData.localDoorMarkerId,
+                                        position = nearestDoor and nearestDoor.position or pos,
+                                        trackOffscreen = true,
+                                        replace = true,
+                                    }
+                                end
                             end
-                        end
 
-                        if not objectTrackingData.targetCells then
-                            objectTrackingData.targetCells = {}
-                        end
+                            if not objectTrackingData.targetCells then
+                                objectTrackingData.targetCells = {}
+                            end
 
-                        objectTrackingData.targetCells[cell.editorName] = true
+                            objectTrackingData.targetCells[cell.editorName] = true
+                        end
                     end
                 end
             end
@@ -326,6 +274,14 @@ function this.addMarker(params)
     end
 
     for objId, _ in pairs(objects) do
+        if objectMarkerData.localMarkerId then
+            markerLib.addLocalMarker{
+                record = objectMarkerData.localMarkerId,
+                objectId = objId,
+                trackOffscreen = true,
+            }
+        end
+
         this.markerByObjectId[objId] = objectTrackingData
     end
 
@@ -381,6 +337,7 @@ end
 
 ---@param params questGuider.tracking.removeMarker
 function this.removeMarker(params)
+    log(params)
     if not params.questId and not params.objectId then return end
 
     ---@param data questGuider.tracking.markerRecord

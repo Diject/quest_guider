@@ -493,45 +493,75 @@ function this.getRequirementPositionData(requirement)
         table.insert(out[objId].positions, dt)
     end
 
-    for obj, id in pairs(objects) do
-        local posData = this.getObjectPositionData(id)
-        if not posData then goto continue end
+    for object, id in pairs(objects) do
 
-        for _, posDt in pairs(posData) do
-            local x = posDt.pos[1]
-            local y = posDt.pos[2]
-            local z = posDt.pos[3]
+        ---@param posData questDataGenerator.objectPosition[]
+        local function addPosData(posData, ownerId)
+            if not posData then return end
 
-            if posDt.name then
-                local cell = tes3.getCell{id = posDt.name}
-                if cell then
-                    local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
-                    if exCellPos then
+            for _, posDt in pairs(posData) do
+                local x = posDt.pos[1]
+                local y = posDt.pos[2]
+                local z = posDt.pos[3]
 
-                        local descr
-                        if cellPath then
-                            for i = #cellPath, 1, -1 do
-                                descr = descr and string.format("%s => \"%s\"", descr, cellPath[i].editorName) or
-                                    string.format("\"%s\"", cellPath[i].editorName)
+                if posDt.name then
+                    local cell = tes3.getCell{id = posDt.name}
+                    if cell then
+                        local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
+                        if exCellPos then
+
+                            local descr
+                            if cellPath then
+                                for i = #cellPath, 1, -1 do
+                                    descr = descr and string.format("%s => \"%s\"", descr, cellPath[i].editorName) or
+                                        string.format("\"%s\"", cellPath[i].editorName)
+                                end
                             end
-                        end
 
-                        add(id, obj, {description = descr, id = posDt.name, position = tes3vector3.new(x, y, z),
-                            exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath, rawData = posDt})
-                    else
-                        goto continue
+                            local newPosData = table.copy(posDt)
+                            if ownerId then
+                                newPosData.type = 2
+                                newPosData.id = ownerId
+                            else
+                                newPosData.type = 1
+                            end
+
+                            add(id, object, {description = descr, id = posDt.name, position = tes3vector3.new(x, y, z),
+                                exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath, rawData = newPosData})
+                        else
+                            goto continue
+                        end
+                    end
+                elseif posDt.grid then
+                    local cell = tes3.getCell{x = posDt.grid[1], y = posDt.grid[2]}
+                    if cell then
+                        local descr = cell.editorName
+                        local pos = tes3vector3.new(x, y, z)
+                        local newPosData = table.copy(posDt)
+                        if ownerId then
+                            newPosData.type = 2
+                            newPosData.id = ownerId
+                        else
+                            newPosData.type = 1
+                        end
+                        add(id, object, {description = descr, id = nil, position = pos, exitPos = pos, rawData = newPosData})
                     end
                 end
-            elseif posDt.grid then
-                local cell = tes3.getCell{x = posDt.grid[1], y = posDt.grid[2]}
-                if cell then
-                    local descr = cell.editorName
-                    local pos = tes3vector3.new(x, y, z)
-                    add(id, obj, {description = descr, id = nil, position = pos, exitPos = pos, rawData = posDt})
-                end
-            end
 
-            ::continue::
+                ::continue::
+            end
+        end
+
+        local objectData = this.getObjectData(id)
+        if not objectData then goto continue end
+
+        addPosData(objectData.positions)
+
+        for _, linkId in pairs(objectData.links or {}) do
+            local obj = tes3.getObject(linkId)
+            if obj then
+                addPosData(this.getObjectPositionData(linkId), linkId)
+            end
         end
 
         ::continue::
