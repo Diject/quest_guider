@@ -281,9 +281,8 @@ function this.addMarker(params)
                 trackOffscreen = true,
             }
         end
-
-        this.markerByObjectId[objId] = objectTrackingData
     end
+    this.markerByObjectId[objectId] = objectTrackingData
 
     qTrackingInfo.objects[objectId] = table.keys(objects)
 
@@ -337,91 +336,88 @@ end
 
 ---@param params questGuider.tracking.removeMarker
 function this.removeMarker(params)
-    log(params)
     if not params.questId and not params.objectId then return end
 
-    ---@param data questGuider.tracking.markerRecord
-    local function removeMarkers(data)
-        if data.worldMarkerId then
-            markerLib.removeRecord(data.worldMarkerId)
-        end
+    local recordIdsToRemove = {}
+    local protectedRecordIds = {}
 
-        if data.localMarkerId then
-            markerLib.removeRecord(data.localMarkerId)
-        end
-
-        if data.localDoorMarkerId then
-            markerLib.removeRecord(data.localDoorMarkerId)
-        end
+    ---@param rec questGuider.tracking.markerRecord
+    local function addToRemove(rec)
+        recordIdsToRemove[rec.localDoorMarkerId or ""] = true
+        recordIdsToRemove[rec.localMarkerId or ""] = true
+        recordIdsToRemove[rec.worldMarkerId or ""] = true
     end
 
-    local function removeMarkersFromObject(id)
-        local objData = this.markerByObjectId[id]
-        if not objData then return end
-
-        if not params.questId then
-            for qId, markerInfo in pairs(objData.markers) do
-                local markerRecords = markerInfo.data
-                removeMarkers(markerRecords)
-            end
-            this.markerByObjectId[id] = nil
-        else
-            local markerInfo = objData.markers[params.questId]
-            if markerInfo and markerInfo.data then
-                removeMarkers(markerInfo.data)
-            end
-            objData.markers[params.questId] = nil
-        end
+    ---@param rec questGuider.tracking.markerRecord
+    local function addToProtect(rec)
+        protectedRecordIds[rec.localDoorMarkerId or ""] = true
+        protectedRecordIds[rec.localMarkerId or ""] = true
+        protectedRecordIds[rec.worldMarkerId or ""] = true
     end
 
-    local function removeFromObject(objectId)
-        local data = this.markerByObjectId[objectId]
-        if data then
-            for qId, dt in pairs(data.markers or {}) do
-                local questTrackedData = this.trackedObjectsByQuestId[dt.id]
-                if questTrackedData then
-                    removeMarkersFromObject(objectId)
-                    for _, objId in pairs(questTrackedData.objects[objectId] or {}) do
-                        removeMarkersFromObject(objId)
-                    end
-                    questTrackedData.objects[objectId] = nil
+    for qId, qData in pairs(this.trackedObjectsByQuestId) do
+        if params.questId and params.questId ~= qId then
+            for qObjId, qObjs in pairs(qData.objects) do
+                local objData = this.markerByObjectId[qObjId]
+                if not objData then goto continue end
 
-                    if table.size(questTrackedData.objects) == 0 then
-                        this.trackedObjectsByQuestId[dt.id] = nil
-                    end
-                end
-            end
-        end
-    end
-
-    if params.questId then
-
-        local questTrackedData = this.trackedObjectsByQuestId[params.questId]
-        if questTrackedData then
-            for _, objId in pairs(table.keys(questTrackedData.objects)) do
-                local objectData = this.markerByObjectId[objId]
-                if not objectData then goto continue end
-
-                local markerInfo = objectData.markers[params.questId]
-                if not markerInfo then goto continue end
-
-                removeMarkers(markerInfo.data)
-
-                objectData.markers[params.questId] = nil
-
-                if table.size(objectData.markers) == 0 then
-                    this.markerByObjectId[objId] = nil
+                for markerQId, markerData in pairs(objData.markers) do
+                    addToProtect(markerData.data)
                 end
 
                 ::continue::
             end
 
-            this.trackedObjectsByQuestId[params.questId] = nil
+            goto continue
         end
+
+        for qObjId, qObjs in pairs(qData.objects) do
+
+            if params.objectId and qObjId ~= params.objectId then
+                local objData = this.markerByObjectId[qObjId]
+                if objData then
+                    for markerQId, markerData in pairs(objData.markers) do
+                        addToProtect(markerData.data)
+                    end
+                end
+                goto continue
+            end
+
+            local protect = false
+            local objData = this.markerByObjectId[qObjId]
+            if not objData then goto continue end
+
+            for markerQId, markerData in pairs(objData.markers) do
+                if params.questId and markerQId ~= params.questId then
+                    addToProtect(markerData.data)
+                    protect = true
+                else
+                    addToRemove(markerData.data)
+                    objData.markers[markerQId] = nil
+                end
+            end
+
+            if table.size(objData.markers) == 0 then
+                this.markerByObjectId[qObjId] = nil
+                qData.objects[qObjId] = nil
+            end
+
+            ::continue::
+        end
+
+        if table.size(qData.objects) == 0 then
+            this.trackedObjectsByQuestId[qId] = nil
+        end
+
+        ::continue::
     end
 
-    if params.objectId then
-        removeFromObject(params.objectId)
+    recordIdsToRemove[""] = nil
+    protectedRecordIds[""] = nil
+    for id, _ in pairs(recordIdsToRemove) do
+        if not protectedRecordIds[id] then
+            markerLib.removeRecord(id)
+        end
     end
 end
 
@@ -431,6 +427,9 @@ function this.removeMarkers()
     for _, qId in pairs(questIds) do
         this.removeMarker{ questId = qId }
     end
+
+    this.trackedObjectsByQuestId = {}
+    this.markerByObjectId = {}
 end
 
 ---@param trackedObjectId string

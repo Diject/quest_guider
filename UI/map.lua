@@ -163,7 +163,7 @@ function this.updateMapMenu()
                     showInDialog = false,
                     callback = function (e1)
                         if e1.button == 0 then
-                            trackingLib.removeMarker{ objectId = objId }
+                            trackingLib.removeMarker{ objectId = objId, questId = questId }
                             trackingLib.updateMarkers(true)
                             qDescrLabel:getTopLevelMenu():updateLayout()
                         end
