@@ -5,8 +5,9 @@ local this = {}
 ---@param max integer
 ---@param framePattern string|nil pattern with %s into which result will packed if max more than 0
 ---@param returnTable boolean? return an array with values
+---@param customNumber integer? number of elements in the table
 ---@return string|string[]|nil
-function this.getValueEnumString(tb, max, framePattern, returnTable)
+function this.getValueEnumString(tb, max, framePattern, returnTable, customNumber)
     local str = returnTable and {} or ""
     local count = 0
 
@@ -17,9 +18,9 @@ function this.getValueEnumString(tb, max, framePattern, returnTable)
     for _, value in pairs(tb) do
         if count >= max then
             if returnTable then
-                table.insert(str, string.format("and %d more", table.size(tb) - count))
+                table.insert(str, string.format("and %d more", (customNumber or table.size(tb)) - count))
             else
-                str = string.format("%s and %d more", str, table.size(tb) - count)
+                str = string.format("%s and %d more", str, (customNumber or table.size(tb)) - count)
             end
             break
         end
