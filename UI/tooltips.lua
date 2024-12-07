@@ -29,16 +29,17 @@ function this.drawObjectTooltip(parent, objectId)
 
     local involvedQuests = {}
     for _, stageData in pairs(objectInfo.stages) do
-        involvedQuests[stageData.id] = true
+        local oldIndex = involvedQuests[stageData.id] or 0
+        involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
     end
 
     local involvedNames = {}
-    for questId, _ in pairs(involvedQuests) do
+    for questId, maxIndex in pairs(involvedQuests) do
         local questData = questLib.getQuestData(questId)
         if not questData or not questData.name then goto continue end
 
         local playerData = playerQuests.getQuestData(questId)
-        if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then goto continue end
+        if not playerData or (config.data.tracking.giver.hideStarted and playerData.index >= maxIndex) then goto continue end
 
         table.insert(involvedNames, questData.name)
 
@@ -153,11 +154,12 @@ function this.drawDoorTooltip(parent, reference)
                     if config.data.tracking.giver.hideStarted then
                         local quests = {}
                         for _, stage in pairs(objData.stages) do
-                            quests[stage.id] = true
+                            local oldIndex = quests[stage.id] or 0
+                            quests[stage.id] = math.max(oldIndex, stage.index)
                         end
-                        for qId, _ in pairs(quests) do
+                        for qId, maxIndex in pairs(quests) do
                             local playerData = playerQuests.getQuestData(qId)
-                            if not playerData or playerData.index <= 0 then
+                            if not playerData or playerData.index <= maxIndex then
                                 valid = true
                                 break
                             end
