@@ -331,7 +331,7 @@ function this.registerModConfig()
         createYesNo{self = trackingPage, config = {path = "map", name = "showJournalTextTooltip"},
             label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "maxPositions"},
-            label = "Don't track quest items that have more copies in the world than the value", limits = {min = 1, max = 100}, int = true}
+            label = "Don't create markers on the world map for objects that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
 
         local giverGroup = trackingPage:createCategory{label = "Quest givers"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
@@ -348,7 +348,7 @@ function this.registerModConfig()
 
         local objectGroup = tooltipsPage:createCategory{label = "Tooltip on an object"}
         createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "enabled"}, label = "Enable"}
-        createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "invNamesMax"}, 
+        createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "invNamesMax"},
             label = "Maximum number of names of quests in which the object is involved, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
         createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "startsNamesMax"},
             label = "Maximum number of names of quests the object can start, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
@@ -365,7 +365,7 @@ function this.registerModConfig()
             label = "Maximum number of names of NPCs that are in the location and involved to a quest, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
 
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "maxPositions"},
-            label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 100}, int = true}
+            label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
     end
 
     do
