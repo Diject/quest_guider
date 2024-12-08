@@ -438,6 +438,7 @@ end
 
 ---@class questGuider.quest.getRequirementPositionData.returnData
 ---@field name string
+---@field inWorld integer?
 ---@field positions questGuider.quest.getRequirementPositionData.positionData[]
 
 ---@param requirement questDataGenerator.requirementData
@@ -556,11 +557,20 @@ function this.getRequirementPositionData(requirement)
         if not objectData then goto continue end
 
         addPosData(objectData.positions)
+        local outD = out[id]
+        if outD then
+            outD.inWorld = objectData.inWorld
+        end
 
         for _, linkId in pairs(objectData.links or {}) do
             local obj = tes3.getObject(linkId)
-            if obj then
-                addPosData(this.getObjectPositionData(linkId), linkId)
+            local objDt = this.getObjectData(linkId)
+            if obj and objDt then
+                addPosData(objDt.positions, linkId)
+                outD = out[id]
+                if outD then
+                    outD.inWorld = (outD.inWorld or 0) + objectData.inWorld
+                end
             end
         end
 

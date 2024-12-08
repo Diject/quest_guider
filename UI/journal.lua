@@ -633,7 +633,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                             table.insert(posDescriptions, p.description)
                                         end
                                         tooltip:add{name = posDt.name}
-                                        local strings = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions, nil, true, #posDt.positions)
+                                        local strings = stringLib.getValueEnumString(posDescriptions, config.data.journal.requirements.pathDescriptions,
+                                            nil, true, posDt.inWorld or #posDt.positions)
                                         for _, str in pairs(strings) do
                                             tooltip:add{description = str}
                                         end
