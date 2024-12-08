@@ -12,21 +12,21 @@ local default = {
     name = "default",
     ---@type { marker : questGuider.ui.markerImage }
     journal = {
-        marker = { path = "diject\\quest guider\\circleMarker16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 },
+        marker = { path = "diject\\quest guider\\defaultArrow32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
     },
     ---@type { localMarker : questGuider.tracking.markerImage, doorMarker : questGuider.tracking.markerImage, worldMarker : questGuider.tracking.markerImage, questGiverMarker : questGuider.tracking.markerImage }
     tracking = {
         ---@type questGuider.tracking.markerImage
-        localMarker = { path = "diject\\quest guider\\circleMarker16x16.dds", pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds",
-            pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 },
+        localMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
+            pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
-        doorMarker = { path = "diject\\quest guider\\circleMarker16x16.dds", pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds",
-            pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 },
+        doorMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
+            pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
-        worldMarker = { path = "diject\\quest guider\\circleMarker16x16.dds", pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds",
-            pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 },
+        worldMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
+            pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
         questGiverMarker = { path = "diject\\quest guider\\exclamationMark16x32.dds", pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds",
