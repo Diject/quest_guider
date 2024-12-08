@@ -1180,7 +1180,7 @@ function this.updateJournalMenu()
             if not quest then goto continue end
 
             local function createTrackAllButton(menuEl, buttonBlock)
-                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track current stage" }
+                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track the current stage" }
                 trackButton:register(tes3.uiEvent.mouseClick, function (e)
                     trackingLib.trackQuestsbyQuestId(questId)
                     local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
