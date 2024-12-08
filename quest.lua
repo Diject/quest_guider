@@ -113,6 +113,15 @@ end
 function this.getDescriptionDataFromDataBlock(reqBlock, questId)
     if not reqBlock then return end
 
+    local function getName(obj, default)
+        if obj and obj.id == "player" then
+            return "the player"
+        elseif obj and obj.name then
+            return obj.name
+        end
+        return default or "???"
+    end
+
     ---@type questGuider.quest.getDescriptionDataFromBlock.return
     local out = {}
 
@@ -233,11 +242,11 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                 elseif codeStr == "varQuestName" then
                     mapped[pattern] = environment.variableQuestName
                 elseif codeStr == "objectName" then
-                    mapped[pattern] = environment.objectObj and (environment.objectObj.name or "???") or "???"
+                    mapped[pattern] = getName(environment.objectObj)
                 elseif codeStr == "valueName" then
-                    mapped[pattern] = environment.valueObj and (environment.valueObj.name or "???") or "???"
+                    mapped[pattern] = getName(environment.valueObj)
                 elseif codeStr == "varName" then
-                    mapped[pattern] = environment.variableObj and (environment.variableObj.name or "???") or "???"
+                    mapped[pattern] = getName(environment.variableObj)
                 elseif codeStr == "skillName" then
                     mapped[pattern] = environment.skill and (tes3.skillName[environment.skill] or "???") or "???"
                 elseif codeStr == "attributeName" then
@@ -256,6 +265,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     mapped[pattern] = vampireClan[environment.value] and vampireClan[environment.value] or tostring(environment.value)
                 elseif codeStr == "weatherIdVal" then
                     mapped[pattern] = weatherById[environment.value] and weatherById[environment.value] or tostring(environment.value)
+                elseif codeStr == "objNameOrTheActor" then
+                    mapped[pattern] = getName(environment.variableObj, "the actor")
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
