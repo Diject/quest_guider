@@ -168,14 +168,17 @@ end
 
 ---@param element tes3uiElement
 ---@param message string
-local function createHelpMessage(element, message)
-    if not config.data.main.helpLabels then return end
+---@param justifyText tes3.justifyText?
+---@return boolean
+local function createHelpMessage(element, message, justifyText)
+    if not config.data.main.helpLabels then return false end
     local label = element:createLabel{ id = helpMenu.label, text = message }
     label.autoWidth = false
     label.widthProportional = 1
-    label.justifyText = tes3.justifyText.center
+    label.justifyText = justifyText or tes3.justifyText.center
     label.wrapText = true
     label.color = this.colors.lightDefault
+    return true
 end
 
 ---@param element tes3uiElement
@@ -1212,8 +1215,17 @@ function this.updateJournalMenu()
 
                 infoLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
+                    if not config.data.journal.info.tooltip then
+                        if not createHelpMessage(tooltip, "Click to open.", tes3.justifyText.left) then
+                            tooltip:destroy()
+                        end
+                        return
+                    else
+                        createHelpMessage(tooltip, "Click to open.")
+                    end
                     this.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
                 end)
+
                 infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     local el = this.drawContainer("Info")
                     this.drawQuestInfoMenu(el, questId, questIndex, quest)
@@ -1230,13 +1242,22 @@ function this.updateJournalMenu()
 
                 makeLabelSelectable(reqLabel)
 
+
                 reqLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                    if not config.data.journal.requirements.tooltip then
+                        if not createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
+                            tooltip:destroy()
+                        end
+                        return
+                    else
+                        createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                    end
                     if not this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end
                 end)
+
                 reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
                     if tes3.worldController.inputController:isShiftDown() then
                         trackingLib.trackQuestsbyQuestId(questId)
@@ -1265,7 +1286,14 @@ function this.updateJournalMenu()
 
                 mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
-                    createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                    if not config.data.journal.map.tooltip then
+                        if not createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
+                            tooltip:destroy()
+                        end
+                        return
+                    else
+                        createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                    end
                     if not this.drawMapMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end

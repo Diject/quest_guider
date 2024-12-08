@@ -318,14 +318,17 @@ function this.registerModConfig()
 
         local infoLabelGroup = journalPage:createCategory{label = "Info about name and stages of a quest"}
         createYesNo{self = infoLabelGroup, config = {path = "journal.info", name = "enabled"}, label = "Enable"}
+        createYesNo{self = infoLabelGroup, config = {path = "journal.info", name = "tooltip"}, label = "Show as a tooltip"}
 
         local mapLabelGroup = journalPage:createCategory{label = "Info about location of quest objects and about requirements"}
         createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "enabled"}, label = "Enable"}
+        createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "tooltip"}, label = "Show as a tooltip"}
         createNumberEdit{self = mapLabelGroup, config = {path = "journal.map", name = "maxScale"}, label = "Maximum scale value for the map", limits = {min = 1, max = 5}}
 
         local reqLabelGroup = journalPage:createCategory{label = "Menu about quest requirements"}
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "enabled"},
             label = "Show a separate icon for the requirements without info about their location"}
+        createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "tooltip"}, label = "Show as a tooltip"}
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "currentByDefault"},
             label = "Show info about the current quest stage instead of information about the stage to which this entry corresponds"}
         createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "scriptValues"}, label = "Show info about local variables of involved scripts"}

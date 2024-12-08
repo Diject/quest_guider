@@ -16,15 +16,18 @@ this.default = {
         enabled = true,
         info = {
             enabled = true,
+            tooltip = true,
         },
         requirements = {
             enabled = true,
+            tooltip = false,
             currentByDefault = false,
             scriptValues = true,
             pathDescriptions = 5,
         },
         map = {
             enabled = true,
+            tooltip = false,
             maxScale = 3,
         },
         objectNames = 3,
