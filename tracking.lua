@@ -569,10 +569,10 @@ function this.trackQuestFromCallback(questId, e)
 
     local questNextIndexes = questLib.getNextIndexes(questId, e.index)
 
-    if not questNextIndexes or e.info.isQuestFinished then
+    if not questNextIndexes then
         this.removeMarker{ questId = questId }
         shouldUpdate = true
-    elseif questNextIndexes then
+    else
         for _, indexStr in pairs(questNextIndexes) do
             this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
         end
