@@ -10,6 +10,7 @@ local descriptionLines = include("diject.quest_guider.descriptionLines")
 local otherTypes = include("diject.quest_guider.Types.other")
 
 local dataHandler = include("diject.quest_guider.dataHandler")
+local playerQuests = include("diject.quest_guider.playerQuests")
 
 local this = {}
 
@@ -461,38 +462,72 @@ function this.getRequirementPositionData(requirement)
     local objects = {}
     ---@type table<tes3cell, string>
     local cells = {}
-    for name, value in pairs(requirement) do
-        if type(value) ~= "string" then
-            goto continue
-        end
 
-        if name == "script" then
-            local scrData = dataHandler.questObjects[value]
-            if scrData and scrData.links and tes3.getScript(value) then
-                for _, id in pairs(scrData.links) do
-                    local linkData = dataHandler.questObjects[id]
-                    if linkData and (linkData.type == 1 or linkData.type == 2) then
-                        local obj = tes3.getObject(id)
-                        if obj then
-                            objects[obj] = id
+    local requirements = {requirement}
+
+    if requirement.type == types.requirementType.Journal and playerQuests.isInitialized() then
+        local index = playerQuests.getCurrentIndex(requirement.variable or "")
+        if not index or index == 0 then
+            local qDt = this.getQuestData(requirement.variable)
+            if qDt then
+                local stageData = qDt["1"]
+                if not stageData then
+                    local keys = {}
+                    for n, _ in pairs(qDt) do
+                        local num = tonumber(n)
+                        if num then
+                            table.insert(keys, num)
+                        end
+                    end
+                    table.sort(keys)
+                    stageData = qDt[tostring(keys[1])]
+                end
+
+                if stageData then
+                    for _, block in pairs(stageData.requirements or {}) do
+                        for _, req in pairs(block) do
+                            table.insert(requirements, req)
                         end
                     end
                 end
             end
-
-            goto continue
         end
+    end
 
-        local obj = tes3.getObject(value)
-        if obj then
-            objects[obj] = value
-        end
-        local cell = tes3.getCell{id = value}
-        if cell then
-            cells[cell] = value
-        end
+    for _, req in pairs(requirements) do
+        for name, value in pairs(req) do
+            if type(value) ~= "string" then
+                goto continue
+            end
 
-        ::continue::
+            if name == "script" then
+                local scrData = dataHandler.questObjects[value]
+                if scrData and scrData.links and tes3.getScript(value) then
+                    for _, id in pairs(scrData.links) do
+                        local linkData = dataHandler.questObjects[id]
+                        if linkData and (linkData.type == 1 or linkData.type == 2) then
+                            local obj = tes3.getObject(id)
+                            if obj then
+                                objects[obj] = id
+                            end
+                        end
+                    end
+                end
+
+                goto continue
+            end
+
+            local obj = tes3.getObject(value)
+            if obj then
+                objects[obj] = value
+            end
+            local cell = tes3.getCell{id = value}
+            if cell then
+                cells[cell] = value
+            end
+
+            ::continue::
+        end
     end
 
     ---@param objId string

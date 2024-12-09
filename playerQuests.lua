@@ -38,6 +38,10 @@ function this.reset()
     this.questData = {}
 end
 
+function this.isInitialized()
+    return initialized
+end
+
 ---@param questId string should be lowercase
 function this.getQuestData(questId)
     return this.questData[questId]
