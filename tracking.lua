@@ -339,7 +339,6 @@ function this.removeMarker(params)
     if not params.questId and not params.objectId then return end
 
     local recordIdsToRemove = {}
-    local protectedRecordIds = {}
 
     ---@param rec questGuider.tracking.markerRecord
     local function addToRemove(rec)
@@ -348,59 +347,32 @@ function this.removeMarker(params)
         recordIdsToRemove[rec.worldMarkerId or ""] = true
     end
 
-    ---@param rec questGuider.tracking.markerRecord
-    local function addToProtect(rec)
-        protectedRecordIds[rec.localDoorMarkerId or ""] = true
-        protectedRecordIds[rec.localMarkerId or ""] = true
-        protectedRecordIds[rec.worldMarkerId or ""] = true
+    for objId, objData in pairs(this.markerByObjectId) do
+        if params.objectId and objId ~= params.objectId then goto continue end
+
+        for qId, markerData in pairs(objData.markers) do
+            if params.questId and qId ~= params.questId then goto continue end
+
+            addToRemove(markerData.data)
+            objData.markers[qId] = nil
+
+            ::continue::
+        end
+
+        if table.size(objData.markers) == 0 then
+            this.markerByObjectId[objId] = nil
+        end
+
+        ::continue::
     end
 
     for qId, qData in pairs(this.trackedObjectsByQuestId) do
-        if params.questId and params.questId ~= qId then
-            for qObjId, qObjs in pairs(qData.objects) do
-                local objData = this.markerByObjectId[qObjId]
-                if not objData then goto continue end
+        if params.questId and params.questId ~= qId then goto continue end
 
-                for markerQId, markerData in pairs(objData.markers) do
-                    addToProtect(markerData.data)
-                end
+        for objId, _ in pairs(qData.objects) do
+            if params.objectId and objId ~= params.objectId then goto continue end
 
-                ::continue::
-            end
-
-            goto continue
-        end
-
-        for qObjId, qObjs in pairs(qData.objects) do
-
-            if params.objectId and qObjId ~= params.objectId then
-                local objData = this.markerByObjectId[qObjId]
-                if objData then
-                    for markerQId, markerData in pairs(objData.markers) do
-                        addToProtect(markerData.data)
-                    end
-                end
-                goto continue
-            end
-
-            local protect = false
-            local objData = this.markerByObjectId[qObjId]
-            if not objData then goto continue end
-
-            for markerQId, markerData in pairs(objData.markers) do
-                if params.questId and markerQId ~= params.questId then
-                    addToProtect(markerData.data)
-                    protect = true
-                else
-                    addToRemove(markerData.data)
-                    objData.markers[markerQId] = nil
-                end
-            end
-
-            if table.size(objData.markers) == 0 then
-                this.markerByObjectId[qObjId] = nil
-                qData.objects[qObjId] = nil
-            end
+            qData.objects[objId] = nil
 
             ::continue::
         end
@@ -413,11 +385,8 @@ function this.removeMarker(params)
     end
 
     recordIdsToRemove[""] = nil
-    protectedRecordIds[""] = nil
     for id, _ in pairs(recordIdsToRemove) do
-        if not protectedRecordIds[id] then
-            markerLib.removeRecord(id)
-        end
+        markerLib.removeRecord(id)
     end
 end
 
@@ -569,10 +538,12 @@ function this.trackQuestFromCallback(questId, e)
 
     local questNextIndexes = questLib.getNextIndexes(questId, e.index)
 
-    if not questNextIndexes then
+    if not questNextIndexes or e.info.isQuestFinished then
         this.removeMarker{ questId = questId }
         shouldUpdate = true
-    else
+    end
+
+    if questNextIndexes then
         for _, indexStr in pairs(questNextIndexes) do
             this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
         end
