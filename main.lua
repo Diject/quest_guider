@@ -34,22 +34,6 @@ local function uiMapActivatedCallback(e)
     end
 end
 
---- @param e loadEventData
-local function loadCallback(e)
-    storage.reset()
-    tracking.reset()
-    playerQuests.reset()
-end
-
---- @param e loadedEventData
-local function loadedCallback(e)
-    if not storage.isPlayerStorageReady() then
-        storage.initPlayerStorage()
-    end
-    tracking.isInit()
-    playerQuests.init()
-end
-
 --- @param e journalEventData
 local function journalCallback(e)
     if not dataHandler.isReady() or not config.data.main.enabled then return end
@@ -101,6 +85,43 @@ local function cellActivatedCallback(e)
 
     if config.data.tracking.giver.enabled then
         tracking.createQuestGiverMarkers(e.cell)
+    end
+end
+
+local cellBeforeLoad
+
+--- @param e loadEventData
+local function loadCallback(e)
+    storage.reset()
+    tracking.reset()
+    playerQuests.reset()
+
+    if tes3.player then
+        cellBeforeLoad = tes3.player.cell.editorName
+    else
+        cellBeforeLoad = nil
+    end
+end
+
+--- @param e loadedEventData
+local function loadedCallback(e)
+    if not storage.isPlayerStorageReady() then
+        storage.initPlayerStorage()
+    end
+    tracking.isInit()
+    playerQuests.init()
+
+    if cellBeforeLoad and tes3.player.cell.editorName == cellBeforeLoad then
+        local cells
+        if tes3.player.cell.isInterior then
+            cells = {}
+            table.insert(cells, {cell = tes3.player.cell})
+        else
+            cells = tes3.dataHandler.exteriorCells
+        end
+        for _, dt in pairs(cells) do
+            cellActivatedCallback({cell = dt.cell}) ---@diagnostic disable-line: missing-fields
+        end
     end
 end
 
