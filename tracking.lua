@@ -67,6 +67,9 @@ this.trackedObjectsByQuestId = {}
 
 this.callbackToUpdateMapMenu = nil
 
+---@type markerLib.localMarkerOOP[]
+local lastInteriorMarkers = {}
+
 local initialized = false
 
 ---@return boolean isSuccessful
@@ -102,6 +105,7 @@ function this.reset()
     this.trackedObjectsByQuestId = {}
     this.scannedCellsForTemporaryMarkers = {}
     this.trackedQuestGivers = {}
+    lastInteriorMarkers = {}
 end
 
 function this.isInit()
@@ -324,6 +328,10 @@ function this.addMarkersForQuest(params)
         end
 
         ::continue::
+    end
+
+    if tes3.player.cell.isInterior then
+        this.addMarkersForInteriorCell(tes3.player.cell)
     end
 
     return out
@@ -607,6 +615,11 @@ end
 function this.addMarkersForInteriorCell(cell)
     if not cell or not cell.isInterior then return end
 
+    for _, marker in pairs(lastInteriorMarkers) do
+        marker:remove()
+    end
+    lastInteriorMarkers = {}
+
     ---@type table<tes3reference, {cells : any, hasExit : any}>
     local doors = {}
 
@@ -626,13 +639,15 @@ function this.addMarkersForInteriorCell(cell)
                 if not markerData.localDoorMarkerId then goto continue end
                 for doorRef, doorData in pairs(doors) do
                     if doorData.cells[cellId] then
-                        markerLib.addLocalMarker{
+                        local marker = markerLib.localMarker.new{
                             record = markerData.localDoorMarkerId,
                             cell = doorRef.cell.isInterior == true and doorRef.cell.name or nil,
                             position = doorRef.position,
-                            replace = true,
                             shortTerm = true,
                         }
+                        if marker then
+                            table.insert(lastInteriorMarkers, marker)
+                        end
                     end
                 end
             end

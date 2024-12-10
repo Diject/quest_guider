@@ -650,6 +650,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                                 reqLabel.color = res.color
                                             end
                                         end
+                                        if tes3.player.cell.isInterior then
+                                            trackingLib.addMarkersForInteriorCell(tes3.player.cell)
+                                        end
                                     end)
                                 end
 
@@ -965,6 +968,9 @@ function this.drawMapMenu(parent, questId, index, questData)
                 local function mouseClick(e)
                     for objId, posDt in pairs(reqData.positionData or {}) do
                         trackingLib.addMarker{objectId = objId, questId = questId, questStage = index, positionData = posDt}
+                    end
+                    if tes3.player.cell.isInterior then
+                        trackingLib.addMarkersForInteriorCell(tes3.player.cell)
                     end
                     trackingLib.updateMarkers(true)
                     drawMarkers(reqBl)
