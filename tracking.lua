@@ -551,7 +551,7 @@ function this.trackQuestFromCallback(questId, e)
         shouldUpdate = true
     end
 
-    if questNextIndexes then
+    if questNextIndexes and (not e.info.isQuestFinished or config.data.tracking.quest.finished) then
         for _, indexStr in pairs(questNextIndexes) do
             this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
         end

@@ -57,6 +57,7 @@ this.default = {
     tracking = {
         quest = {
             enabled = true,
+            finished = false, -- autotrack finished
         },
         maxPositions = 20,
         giver = {
