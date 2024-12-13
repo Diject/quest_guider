@@ -67,6 +67,26 @@ function this.getLocalVariableDataByScriptName(scriptName)
 end
 
 ---@param questData string|questDataGenerator.questData
+---@return string[]|nil
+function this.getIndexes(questData)
+    if not questData then return end
+    if type(questData) == "string" then
+        questData = this.getQuestData(questData)
+    end
+    if not questData then return end
+
+    local indexes = {}
+    for ind, _ in pairs(questData) do
+        local indInt = tonumber(ind)
+        if indInt then
+            table.insert(indexes, indInt)
+        end
+    end
+    table.sort(indexes)
+    return indexes
+end
+
+---@param questData string|questDataGenerator.questData
 ---@param questIndex integer|string
 ---@return string[]|nil
 function this.getNextIndexes(questData, questIndex)

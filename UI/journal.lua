@@ -37,6 +37,7 @@ local requirementsMenu = {
     selectedCurrentBlock = "qGuider_req_selectedCurrentBlock",
     selectedLabel = "qGuider_req_selectedLabel",
     currentLabel = "qGuider_req_currentLabel",
+    allLabel = "qGuider_req_allLabel",
     indexTabBlock = "qGuider_req_indexTabBlock",
     indexTabLabel = "qGuider_req_indexTabLabel",
     indexTab = "qGuider_req_indexTab",
@@ -218,15 +219,8 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
     local questIdLabel = mainBlock:createLabel{ id = infoMenu.questidId, text = "Quest id: "..questIdStr }
 
     local indexesStr = ""
-    local indexes = {}
-    for ind, _ in pairs(questData) do
-        local indInt = tonumber(ind)
-        if indInt then
-            table.insert(indexes, indInt)
-        end
-    end
-    table.sort(indexes)
-    for _, ind in ipairs(indexes) do
+    local indexes = questLib.getIndexes(questData)
+    for _, ind in ipairs(indexes or {}) do
         indexesStr = indexesStr..tostring(ind)..", "
     end
     if #indexesStr > 0 then
@@ -491,20 +485,22 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         finishedLabel.widthProportional = 1
     end
 
-    local showSelectedCurrentBlock = true
     local selectedCurrentBlock = scrollBlockContent:createBlock{ id = requirementsMenu.selectedCurrentBlock }
     selectedCurrentBlock.autoHeight = true
     selectedCurrentBlock.autoWidth = true
     selectedCurrentBlock.flowDirection = tes3.flowDirection.leftToRight
     selectedCurrentBlock.borderBottom = 2
-    selectedCurrentBlock.visible = false
+    -- selectedCurrentBlock.visible = false
     selectedCurrentBlock:createLabel{ id = requirementsMenu.text, text = "Stage:" }.borderRight = 20
     local selLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.selectedLabel, text = string.format("Selected (%s)", topicIndexStr) }
     local lstLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.currentLabel, text = string.format("Current (%s)", playerCurrentIndexStr) }
+    local allLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.allLabel, text = "All" }
     lstLabel.borderLeft = 20
+    allLabel.borderLeft = 20
 
     makeLabelSelectable(selLabel)
     makeLabelSelectable(lstLabel)
+    makeLabelSelectable(allLabel)
 
     local reqIndexMainBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementIndexMainBlock }
     reqIndexMainBlock.autoHeight = true
@@ -512,7 +508,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqIndexMainBlock.borderBottom = 2
     reqIndexMainBlock.flowDirection = tes3.flowDirection.leftToRight
     local nextIndexLabel = reqIndexMainBlock:createLabel{ id = requirementsMenu.nextIndexLabel, text = "Possible next:" }
-    nextIndexLabel.visible = false
+    -- nextIndexLabel.visible = false
 
     local reqIndexBlock = reqIndexMainBlock:createBlock{ id = requirementsMenu.requirementIndexBlock }
     reqIndexBlock.autoHeight = true
@@ -532,12 +528,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     reqBlock.flowDirection = tes3.flowDirection.topToBottom
 
 
-    if index == playerCurrentIndex then
-        selectedCurrentBlock.visible = false
-        showSelectedCurrentBlock = false
-    end
-
-
     local function resetDynamicToDefault()
         indexTabBlock.visible = false
         reqBlock:destroyChildren()
@@ -545,17 +535,27 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         indexTabBlock:destroyChildren()
         selLabel.color = this.colors.disabled
         lstLabel.color = this.colors.disabled
+        allLabel.color = this.colors.disabled
+        nextIndexLabel.text = "Possible next:"
     end
 
-    ---@param topicIndex integer
+    ---@param topicIndex integer?
     local function drawTopicInfo(topicIndex)
-        if not topicIndex then return end
 
-        local nextIndexes = questLib.getNextIndexes(questData, topicIndex)
-        if not nextIndexes then return end
+        local indexes
+        if topicIndex then
+            indexes = questLib.getNextIndexes(questData, topicIndex)
+        else
+            indexes = questLib.getIndexes(questData)
+        end
+        if not indexes then
+            indexTabBlock:destroyChildren()
+            reqBlock:destroyChildren()
+            return
+        end
 
         local nextIndTabs = {}
-        for _, ind in ipairs(nextIndexes) do
+        for _, ind in ipairs(indexes) do
 
             local indStr = tostring(ind)
             local indTopicData = questData[indStr]
@@ -579,6 +579,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 e.source.color = this.colors.lightGreen
 
                 indexTabBlock:destroyChildren()
+                reqBlock:destroyChildren()
 
                 indexTabBlock:createLabel{ id = requirementsMenu.text, text = "Requirements:" }.borderRight = 10
 
@@ -586,7 +587,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 for i, reqDataBlock in pairs(indTopicData.requirements or {}) do
 
                     indexTabBlock.visible = true
-                    selectedCurrentBlock.visible = showSelectedCurrentBlock
 
                     if #tabs > 0 then
                         local textLabel = indexTabBlock:createLabel{ id = requirementsMenu.text, text = "or" }
@@ -714,7 +714,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 if #tabs > 0 then
                     tabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
                     reqIndexMainBlock.visible = true
-                    nextIndexLabel.visible = true
+                    -- nextIndexLabel.visible = true
                     -- tabs[1].color = this.colors.lightGreen
 
                     if #tabs == 1 then
@@ -745,6 +745,13 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         drawTopicInfo(playerCurrentIndex)
     end)
 
+    allLabel:register(tes3.uiEvent.mouseClick, function (e)
+        resetDynamicToDefault()
+        allLabel.color = this.colors.lightGreen
+        drawTopicInfo()
+        nextIndexLabel.text = "Stages:"
+    end)
+
     if config.data.journal.requirements.currentByDefault then
         lstLabel:triggerEvent(tes3.uiEvent.mouseClick)
     else
@@ -753,7 +760,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     updateContainerMenu(mainBlock, scrollBlock)
 
-    mainBlock.visible = indexTabBlock.visible or nextIndexLabel.visible or selectedCurrentBlock.visible
+    mainBlock.visible = indexTabBlock.visible or nextIndexLabel.visible or selectedCurrentBlock.visible or allLabel.visible
 
     return mainBlock.visible
 end
