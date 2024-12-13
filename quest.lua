@@ -562,11 +562,16 @@ function this.getRequirementPositionData(requirement)
 
     for object, id in pairs(objects) do
 
-        ---@param posData questDataGenerator.objectPosition[]
-        local function addPosData(posData, ownerId)
-            if not posData then return end
+        ---@param objData questDataGenerator.objectInfo
+        local function addPosData(objData, ownerId)
+            if not objData then return end
 
-            for _, posDt in pairs(posData) do
+            if not objData.positions then
+                out[id] = {name = object.editorName or object.name or object.id or "", positions = {}}
+                return
+            end
+
+            for _, posDt in pairs(objData.positions) do
                 local x = posDt.pos[1]
                 local y = posDt.pos[2]
                 local z = posDt.pos[3]
@@ -622,7 +627,7 @@ function this.getRequirementPositionData(requirement)
         local objectData = this.getObjectData(id)
         if not objectData then goto continue end
 
-        addPosData(objectData.positions)
+        addPosData(objectData)
         local outD = out[id]
         if outD then
             outD.inWorld = objectData.inWorld
@@ -632,7 +637,7 @@ function this.getRequirementPositionData(requirement)
             local obj = tes3.getObject(linkId)
             local objDt = this.getObjectData(linkId)
             if obj and objDt then
-                addPosData(objDt.positions, linkId)
+                addPosData(objDt, linkId)
                 outD = out[id]
                 if outD then
                     outD.inWorld = (outD.inWorld or 0) + objectData.inWorld
