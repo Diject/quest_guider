@@ -282,11 +282,11 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     local res = ""
                     if environment.script then
                         local scrData = dataHandler.questObjects[environment.script]
-                        if scrData and scrData.links then
+                        if scrData and scrData.contains then
                             local objs = {}
 
                             local haveObject = false
-                            for _, id in pairs(scrData.links) do
+                            for _, id in pairs(scrData.contains) do
                                 local linkData = dataHandler.questObjects[id]
                                 if linkData and (linkData.type == 1 or linkData.type == 2) then
                                     local obj = tes3.getObject(id)
@@ -355,8 +355,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
         end
         if environment.script then
             local scrData = dataHandler.questObjects[environment.script]
-            if scrData and scrData.links then
-                for _, id in pairs(scrData.links) do
+            if scrData and scrData.contains then
+                for _, id in pairs(scrData.contains) do
                     local linkData = dataHandler.questObjects[id]
                     if linkData and (linkData.type == 1 or linkData.type == 2) then
                         objects[id] = id
@@ -502,8 +502,8 @@ function this.getRequirementPositionData(requirement)
 
             if name == "script" then
                 local scrData = dataHandler.questObjects[value]
-                if scrData and scrData.links and tes3.getScript(value) then
-                    for _, id in pairs(scrData.links) do
+                if scrData and scrData.contains and tes3.getScript(value) then
+                    for _, id in pairs(scrData.contains) do
                         local linkData = dataHandler.questObjects[id]
                         if linkData and (linkData.type == 1 or linkData.type == 2) then
                             local obj = tes3.getObject(id)
