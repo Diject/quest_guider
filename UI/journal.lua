@@ -563,7 +563,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
             if #nextIndTabs > 0 then
                 local textLabel = reqIndexBlock:createLabel{ id = requirementsMenu.text, text = "," }
-                textLabel.borderRight = 4
+                textLabel.borderRight = 2
             end
 
             local nextIndexValueLabel = reqIndexBlock:createLabel{ id = requirementsMenu.nextIndexValueLabel, text = "-"..indStr.."-" }
@@ -590,8 +590,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     if #tabs > 0 then
                         local textLabel = indexTabBlock:createLabel{ id = requirementsMenu.text, text = "or" }
-                        textLabel.borderLeft = 5
-                        textLabel.borderRight = 5
+                        textLabel.borderLeft = 2
+                        textLabel.borderRight = 2
                     end
 
                     local tab = indexTabBlock:createLabel{ id = requirementsMenu.indexTab, text = "-"..tostring(i).."-" }
