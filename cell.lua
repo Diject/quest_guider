@@ -4,6 +4,8 @@ local this = {}
 ---@return tes3vector3|nil outPos
 ---@return tes3travelDestinationNode[]|nil doorPath
 ---@return tes3cell[]|nil cellPath
+---@return boolean|nil isExterior
+---@return table<tes3cell,boolean>|nil checkedCells
 function this.findExitPos(cell, path, checked, cellPath)
     if not checked then checked = {} end
     if not path then path = {} end
@@ -12,7 +14,7 @@ function this.findExitPos(cell, path, checked, cellPath)
         table.insert(cellPath, cell)
     end
 
-    if checked[cell] then return end
+    if checked[cell] then return nil, nil, nil, nil, checked end
     checked[cell] = true
     for door in cell:iterateReferences(tes3.objectType.door) do
         if door.destination and not door.deleted and not door.disabled then
@@ -24,15 +26,15 @@ function this.findExitPos(cell, path, checked, cellPath)
             local cellPathCopy = table.copy(cellPath)
             table.insert(cellPathCopy, door.destination.cell)
 
-            if not door.destination.cell.isInterior then
-                return door.destination.marker.position, pathCopy, cellPathCopy
+            if door.destination.cell.isOrBehavesAsExterior then
+                return door.destination.marker.position, pathCopy, cellPathCopy, not door.destination.cell.isInterior
             else
-                local out, destPath, cPath = this.findExitPos(door.destination.cell, pathCopy, checked, cellPathCopy)
-                if out then return out, destPath, cPath end
+                local out, destPath, cPath, isEx = this.findExitPos(door.destination.cell, pathCopy, checked, cellPathCopy)
+                if out then return out, destPath, cPath, isEx, checked end
             end
         end
     end
-    return nil
+    return nil, nil, nil, nil, checked
 end
 
 ---@param node tes3travelDestinationNode
@@ -42,7 +44,7 @@ end
 function this.findReachableCellsByNode(node, cells)
     if not cells then cells = {} end
 
-    local hasExitToExterior = node.cell.isOrBehavesAsExterior
+    local hasExitToExterior = not node.cell.isInterior
 
     if cells[node.cell.editorName] then
         return cells, false
@@ -58,7 +60,7 @@ function this.findReachableCellsByNode(node, cells)
         if door.destination and not door.deleted and not door.disabled then
             this.findReachableCellsByNode(door.destination, cells)
 
-            if not door.destination.cell.isOrBehavesAsExterior then
+            if not door.destination.cell.isInterior then
                 hasExitToExterior = true
             else
                 local cls, hasExit = this.findReachableCellsByNode(door.destination, cells)

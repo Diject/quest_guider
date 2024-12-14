@@ -955,10 +955,12 @@ function this.drawMapMenu(parent, questId, index, questData)
                 end
 
                 for _, posData in pairs(dt.positions) do
-                    local x = posData.exitPos.x
-                    local y = posData.exitPos.y
+                    if posData.isExitEx then
+                        local x = posData.exitPos.x
+                        local y = posData.exitPos.y
 
-                    table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = dt.name, descr = posData.description })
+                        table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = dt.name, descr = posData.description })
+                    end
                 end
 
                 ::continue::

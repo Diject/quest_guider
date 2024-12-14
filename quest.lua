@@ -463,10 +463,11 @@ end
 ---@field description string
 ---@field id string? cell id
 ---@field position tes3vector3?
----@field exitPos tes3vector3
+---@field exitPos tes3vector3?
 ---@field doorPath tes3travelDestinationNode[]?
 ---@field cellPath tes3cell[]?
 ---@field rawData questDataGenerator.objectPosition?
+---@field isExitEx boolean?
 
 ---@class questGuider.quest.getRequirementPositionData.returnData
 ---@field name string
@@ -579,7 +580,15 @@ function this.getRequirementPositionData(requirement)
                 if posDt.name then
                     local cell = tes3.getCell{id = posDt.name}
                     if cell then
-                        local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
+                        local newPosData = table.copy(posDt)
+                        if ownerId then
+                            newPosData.type = 2
+                            newPosData.id = ownerId
+                        else
+                            newPosData.type = 1
+                        end
+
+                        local exCellPos, doorPath, cellPath, isExterior, checkedCells = cellLib.findExitPos(cell)
                         if exCellPos then
 
                             local descr
@@ -590,18 +599,22 @@ function this.getRequirementPositionData(requirement)
                                 end
                             end
 
-                            local newPosData = table.copy(posDt)
-                            if ownerId then
-                                newPosData.type = 2
-                                newPosData.id = ownerId
-                            else
-                                newPosData.type = 1
-                            end
-
                             add(id, object, {description = descr, id = posDt.name, position = tes3vector3.new(x, y, z),
-                                exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath, rawData = newPosData})
+                                exitPos = exCellPos, isExitEx = isExterior, doorPath = doorPath, cellPath = cellPath, rawData = newPosData})
+
                         else
-                            goto continue
+                            local descr
+                            if cellPath then
+                                local list = {}
+                                local count = 0
+                                for cl, _ in pairs(checkedCells) do
+                                    table.insert(list, cl.name)
+                                    count = count + 1
+                                end
+                                table.shuffle(list, count)
+                                descr = stringLib.getValueEnumString(list, config.data.journal.objectNames, "Reachable from %s")
+                            end
+                            add(id, object, {description = descr or posDt.name, id = posDt.name, position = tes3vector3.new(x, y, z), rawData = newPosData})
                         end
                     end
                 elseif posDt.grid then
@@ -616,7 +629,7 @@ function this.getRequirementPositionData(requirement)
                         else
                             newPosData.type = 1
                         end
-                        add(id, object, {description = descr, id = nil, position = pos, exitPos = pos, rawData = newPosData})
+                        add(id, object, {description = descr, id = nil, position = pos, exitPos = pos, isExitEx = true, rawData = newPosData})
                     end
                 end
 
@@ -650,7 +663,7 @@ function this.getRequirementPositionData(requirement)
 
     for cell, id in pairs(cells) do
         if cell.isInterior then
-            local exCellPos, doorPath, cellPath = cellLib.findExitPos(cell)
+            local exCellPos, doorPath, cellPath, isExterior, checkedCells = cellLib.findExitPos(cell)
             if exCellPos then
 
                 local descr
@@ -661,9 +674,22 @@ function this.getRequirementPositionData(requirement)
                     end
                 end
 
-                add(id, cell, {description = descr, id = cell.name, exitPos = exCellPos, doorPath = doorPath, cellPath = cellPath})
+                add(id, cell, {description = descr, id = cell.name, exitPos = exCellPos, isExitEx = isExterior, doorPath = doorPath, cellPath = cellPath})
+
             else
-                goto continue
+                local descr
+                if cellPath then
+                    local list = {}
+                    local count = 0
+                    for cl, _ in pairs(checkedCells) do
+                        table.insert(list, cl.name)
+                        count = count + 1
+                    end
+                    table.shuffle(list, count)
+                    descr = stringLib.getValueEnumString(list, config.data.journal.objectNames, "Reachable from %s")
+                end
+
+                add(id, cell, {description = descr or cell.name, id = cell.name, })
             end
         else
             local descr = cell.editorName

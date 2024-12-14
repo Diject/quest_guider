@@ -183,6 +183,17 @@ function this.addMarker(params)
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
+    objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
+        path = this.localDoorMarkerImageInfo.path,
+        pathAbove = this.localDoorMarkerImageInfo.pathAbove,
+        pathBelow = this.localDoorMarkerImageInfo.pathBelow,
+        color = objectTrackingData.color,
+        textureShiftX = this.localDoorMarkerImageInfo.shiftX,
+        textureShiftY = this.localDoorMarkerImageInfo.shiftY,
+        scale = this.localDoorMarkerImageInfo.scale,
+        name = positionData.name,
+        description = string.format("Quest: \"%s\"", questData.name or "")
+    }
 
     if not objectMarkerData.localMarkerId and not objectMarkerData.worldMarkerId then return end
 
@@ -228,48 +239,48 @@ function this.addMarker(params)
                 local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
                 if cell then
 
-                    local exitPos, path = cellLib.findExitPos(cell)
+                    local exitPos, path, cellPath, isEx, checkedCells = cellLib.findExitPos(cell)
 
-                    if exitPos and objectMarkerData.worldMarkerId then
-                        markerLib.addWorldMarker{
-                            record = objectMarkerData.worldMarkerId,
-                            x = exitPos.x,
-                            y = exitPos.y,
-                        }
-                    end
+                    if data.isExitEx then
+                        if exitPos then
+                            if objectMarkerData.worldMarkerId then
+                                markerLib.addWorldMarker{
+                                    record = objectMarkerData.worldMarkerId,
+                                    x = exitPos.x,
+                                    y = exitPos.y,
+                                }
+                            end
 
-                    if path then
-                        objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
-                            path = this.localDoorMarkerImageInfo.path,
-                            pathAbove = this.localDoorMarkerImageInfo.pathAbove,
-                            pathBelow = this.localDoorMarkerImageInfo.pathBelow,
-                            color = objectTrackingData.color,
-                            textureShiftX = this.localDoorMarkerImageInfo.shiftX,
-                            textureShiftY = this.localDoorMarkerImageInfo.shiftY,
-                            scale = this.localDoorMarkerImageInfo.scale,
-                            name = positionData.name,
-                            description = string.format("Quest: \"%s\"", questData.name or "")
-                        }
+                            if path then
+                                if objectMarkerData.localDoorMarkerId then
+                                    local exitPositions = cellLib.findExitPositions(cell)
+                                    if exitPositions then
+                                        for _, pos in pairs(exitPositions) do
+                                            local nearestDoor = cellLib.findNearestDoor(pos)
+                                            markerLib.addLocalMarker{
+                                                record = objectMarkerData.localDoorMarkerId,
+                                                position = nearestDoor and nearestDoor.position or pos,
+                                                trackOffscreen = true,
+                                                replace = true,
+                                            }
+                                        end
+                                    end
 
-                        if objectMarkerData.localDoorMarkerId then
-                            local exitPositions = cellLib.findExitPositions(cell)
-                            if exitPositions then
-                                for _, pos in pairs(exitPositions) do
-                                    local nearestDoor = cellLib.findNearestDoor(pos)
-                                    markerLib.addLocalMarker{
-                                        record = objectMarkerData.localDoorMarkerId,
-                                        position = nearestDoor and nearestDoor.position or pos,
-                                        trackOffscreen = true,
-                                        replace = true,
-                                    }
+                                    if not objectTrackingData.targetCells then
+                                        objectTrackingData.targetCells = {}
+                                    end
+
+                                    objectTrackingData.targetCells[cell.editorName] = true
                                 end
                             end
+                        end
+                    elseif checkedCells then
+                        if not objectTrackingData.targetCells then
+                            objectTrackingData.targetCells = {}
+                        end
 
-                            if not objectTrackingData.targetCells then
-                                objectTrackingData.targetCells = {}
-                            end
-
-                            objectTrackingData.targetCells[cell.editorName] = true
+                        for cl, _ in pairs(checkedCells) do
+                            objectTrackingData.targetCells[cl.editorName] = true
                         end
                     end
                 end
