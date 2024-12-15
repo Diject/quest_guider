@@ -60,6 +60,7 @@ this.default = {
             finished = false, -- autotrack finished
         },
         maxPositions = 20,
+        maxCellDepth = 12,
         giver = {
             enabled = true,
             hideStarted = true,

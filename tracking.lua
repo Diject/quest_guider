@@ -694,10 +694,13 @@ function this.addMarkersForInteriorCell(cell)
         for doorRef, doorDt in pairs(objDoorDt) do
             local shouldCreateMarker = false
 
+            local lowestDepth = 999
             for _, depthData in pairs(doorDt) do
                 if lowestDepthHashTable[depthData.depth] then
                     shouldCreateMarker = true
-                    break
+                    if lowestDepth > depthData.depth then
+                        lowestDepth = depthData.depth
+                    end
                 end
             end
 
@@ -716,6 +719,27 @@ function this.addMarkersForInteriorCell(cell)
                         }
                         if marker then
                             table.insert(lastInteriorMarkers, marker)
+                        end
+
+                        local infoRecordId, recordData = markerLib.duplicateRecord(markerData.localDoorMarkerId)
+                        if infoRecordId and recordData then
+                            recordData.temporary = true
+                            recordData.priority = -1000
+
+                            recordData.description = string.format("%s is %d cells away", recordData.name or "???", lowestDepth)
+                            recordData.color = tes3ui.getPalette(tes3.palette.journalFinishedQuestOverColor)
+
+                            recordData.name = nil
+
+                            local infoMarker = markerLib.localMarker.new{
+                                record = infoRecordId,
+                                cell = doorRef.cell.isInterior == true and doorRef.cell.name or nil,
+                                position = doorRef.position,
+                                shortTerm = true,
+                            }
+                            if infoMarker then
+                                table.insert(lastInteriorMarkers, infoMarker)
+                            end
                         end
                     end
                 end

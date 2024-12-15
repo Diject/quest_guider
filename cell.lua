@@ -1,3 +1,5 @@
+local config = include("diject.quest_guider.config")
+
 local this = {}
 
 ---@param cell tes3cell
@@ -42,12 +44,14 @@ end
 ---@return table<string, {cell : tes3cell, depth : integer}>?
 ---@return boolean hasExitToExterior
 function this.findReachableCellsByNode(node, cells, depth)
+    local maxDepth = config.data.tracking.maxCellDepth
     if not cells then cells = {} end
-    if not depth then depth = 0 end
+    if not depth then depth = 1 end
 
     local hasExitToExterior = not node.cell.isInterior
 
-    if cells[node.cell.editorName] then
+    local cellData = cells[node.cell.editorName]
+    if (cellData and cellData.depth <= depth) or depth > maxDepth then
         return cells, false
     end
 
@@ -55,22 +59,18 @@ function this.findReachableCellsByNode(node, cells, depth)
         return cells, true
     end
 
-    cells[node.cell.editorName] = {cell = node.cell, depth = depth}
+    if cellData then
+        cellData.depth = depth
+    else
+        cells[node.cell.editorName] = {cell = node.cell, depth = depth}
+    end
 
     for door in node.cell:iterateReferences(tes3.objectType.door) do
         if door.destination and not door.deleted and not door.disabled then
             if not door.destination.cell.isInterior then
                 hasExitToExterior = true
             else
-                local cls, hasExit = this.findReachableCellsByNode(door.destination, table.deepcopy(cells), depth + 1)
-                for cellName, dt in pairs(cls) do
-                    local cellDt = cells[cellName]
-                    if not cellDt then
-                        cells[cellName] = dt
-                    elseif cellDt.depth > dt.depth then
-                        cellDt.depth = dt.depth
-                    end
-                end
+                local cls, hasExit = this.findReachableCellsByNode(door.destination, cells, depth + 1)
                 hasExitToExterior = hasExitToExterior or hasExit
             end
         end

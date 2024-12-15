@@ -348,6 +348,11 @@ function this.registerModConfig()
             label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "maxPositions"},
             label = "Don't create markers on the world map for objects that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
+        createNumberEdit{
+            self = trackingPage, config = {path = "tracking", name = "maxCellDepth"},
+            label = "Depth in game cells to which markers for doors in interior cells are looked for. The larger the value and the more adjacent interior cells, the longer it will take to calculate (the game will lag when loading or starting to track in interior cells)",
+            limits = {min = 1, max = 30}, int = true
+        }
 
         local giverGroup = trackingPage:createCategory{label = "Quest givers"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
