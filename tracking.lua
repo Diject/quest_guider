@@ -225,9 +225,9 @@ function this.addMarker(params)
             end
         end
 
-        if allowWorldMarkers then
-            if data.id == nil then
+        if data.id == nil then
 
+            if allowWorldMarkers then
                 if objectMarkerData.worldMarkerId then
                     markerLib.addWorldMarker{
                         record = objectMarkerData.worldMarkerId,
@@ -235,55 +235,53 @@ function this.addMarker(params)
                         y = data.exitPos.y,
                     }
                 end
-            else
-                local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
-                if cell then
+            end
+        else
+            local cell = tes3.getCell(data) ---@diagnostic disable-line: param-type-mismatch
+            if cell then
 
+                if data.isExitEx and allowWorldMarkers then
                     local exitPos, path, cellPath, isEx, checkedCells = cellLib.findExitPos(cell)
 
-                    if data.isExitEx then
-                        if exitPos then
-                            if objectMarkerData.worldMarkerId then
-                                markerLib.addWorldMarker{
-                                    record = objectMarkerData.worldMarkerId,
-                                    x = exitPos.x,
-                                    y = exitPos.y,
-                                }
-                            end
+                    if exitPos then
+                        if objectMarkerData.worldMarkerId then
+                            markerLib.addWorldMarker{
+                                record = objectMarkerData.worldMarkerId,
+                                x = exitPos.x,
+                                y = exitPos.y,
+                            }
+                        end
 
-                            if path then
-                                if objectMarkerData.localDoorMarkerId then
-                                    local exitPositions = cellLib.findExitPositions(cell)
-                                    if exitPositions then
-                                        for _, pos in pairs(exitPositions) do
-                                            local nearestDoor = cellLib.findNearestDoor(pos)
-                                            markerLib.addLocalMarker{
-                                                record = objectMarkerData.localDoorMarkerId,
-                                                position = nearestDoor and nearestDoor.position or pos,
-                                                trackOffscreen = true,
-                                                replace = true,
-                                            }
-                                        end
+                        if path then
+                            if objectMarkerData.localDoorMarkerId then
+                                local exitPositions = cellLib.findExitPositions(cell)
+                                if exitPositions then
+                                    for _, pos in pairs(exitPositions) do
+                                        local nearestDoor = cellLib.findNearestDoor(pos)
+                                        markerLib.addLocalMarker{
+                                            record = objectMarkerData.localDoorMarkerId,
+                                            position = nearestDoor and nearestDoor.position or pos,
+                                            trackOffscreen = true,
+                                            replace = true,
+                                        }
                                     end
-
-                                    if not objectTrackingData.targetCells then
-                                        objectTrackingData.targetCells = {}
-                                    end
-
-                                    objectTrackingData.targetCells[cell.editorName] = cell.editorName
                                 end
-                            end
-                        end
-                    elseif checkedCells then
-                        if not objectTrackingData.targetCells then
-                            objectTrackingData.targetCells = {}
-                        end
 
-                        for cl, _ in pairs(checkedCells) do
-                            objectTrackingData.targetCells[cl.editorName] = cell.editorName
+                                if not objectTrackingData.targetCells then
+                                    objectTrackingData.targetCells = {}
+                                end
+
+                                objectTrackingData.targetCells[cell.editorName] = cell.editorName
+                            end
                         end
                     end
                 end
+
+                if not objectTrackingData.targetCells then
+                    objectTrackingData.targetCells = {}
+                end
+
+                objectTrackingData.targetCells[cell.editorName] = cell.editorName
             end
         end
     end
