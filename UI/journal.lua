@@ -1,6 +1,7 @@
 local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
+local filedBlockLib = include("diject.quest_guider.UI.fieldBlockSys")
 local stringLib = include("diject.quest_guider.utils.string")
 
 local questLib = include("diject.quest_guider.quest")
@@ -512,14 +513,20 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local reqIndexBlock = reqIndexMainBlock:createBlock{ id = requirementsMenu.requirementIndexBlock }
     reqIndexBlock.autoHeight = true
-    reqIndexBlock.autoWidth = true
+    reqIndexBlock.width = 250
     reqIndexBlock.borderLeft = 10
+    reqIndexBlock.flowDirection = tes3.flowDirection.topToBottom
+
+    local indexFieldBlock = filedBlockLib.new{parent = reqIndexBlock, delimiter = ",", delimiterBorderRight = 6}
 
     local indexTabBlock = scrollBlockContent:createBlock{ id = requirementsMenu.indexTabBlock }
     indexTabBlock.autoHeight = true
-    indexTabBlock.autoWidth = true
+    indexTabBlock.autoWidth = false
+    indexTabBlock.width = 360
     indexTabBlock.flowDirection = tes3.flowDirection.leftToRight
     indexTabBlock.visible = false
+
+    local tabFieldBlock = filedBlockLib.new{parent = indexTabBlock, delimiter = "or", delimiterBorderRight = 6, borderRight = 6}
 
     local reqBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementBlock }
     reqBlock.autoHeight = true
@@ -531,12 +538,14 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local function resetDynamicToDefault()
         indexTabBlock.visible = false
         reqBlock:destroyChildren()
-        reqIndexBlock:destroyChildren()
-        indexTabBlock:destroyChildren()
+        indexFieldBlock:destroyChildren()
+        -- indexTabBlock:destroyChildren()
+        tabFieldBlock:destroyChildren()
         selLabel.color = this.colors.disabled
         lstLabel.color = this.colors.disabled
         allLabel.color = this.colors.disabled
         nextIndexLabel.text = "Possible next:"
+        indexFieldBlock.width = 250
     end
 
     ---@param topicIndex integer?
@@ -549,7 +558,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             indexes = questLib.getIndexes(questData)
         end
         if not indexes then
-            indexTabBlock:destroyChildren()
+            -- indexTabBlock:destroyChildren()
+            tabFieldBlock:destroyChildren()
             reqBlock:destroyChildren()
             return
         end
@@ -561,12 +571,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             local indTopicData = questData[indStr]
             if not indTopicData then goto continue end
 
-            if #nextIndTabs > 0 then
-                local textLabel = reqIndexBlock:createLabel{ id = requirementsMenu.text, text = "," }
-                textLabel.borderRight = 2
-            end
-
-            local nextIndexValueLabel = reqIndexBlock:createLabel{ id = requirementsMenu.nextIndexValueLabel, text = "-"..indStr.."-" }
+            local nextIndexValueLabel = indexFieldBlock:add{ id = requirementsMenu.nextIndexValueLabel, text = "-"..indStr.."-" }
+            if not nextIndexValueLabel then goto continue end
             table.insert(nextIndTabs, nextIndexValueLabel)
 
             makeLabelSelectable(nextIndexValueLabel)
@@ -578,23 +584,20 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 end
                 e.source.color = this.colors.lightGreen
 
-                indexTabBlock:destroyChildren()
+                -- indexTabBlock:destroyChildren()
+                tabFieldBlock:destroyChildren()
                 reqBlock:destroyChildren()
 
-                indexTabBlock:createLabel{ id = requirementsMenu.text, text = "Requirements:" }.borderRight = 10
+                -- indexTabBlock:createLabel{ id = requirementsMenu.text, text = "Requirements:" }.borderRight = 10
+                tabFieldBlock:add{ id = requirementsMenu.text, text = "Requirements:", isLabel = true }
 
                 local tabs = {}
                 for i, reqDataBlock in pairs(indTopicData.requirements or {}) do
 
                     indexTabBlock.visible = true
 
-                    if #tabs > 0 then
-                        local textLabel = indexTabBlock:createLabel{ id = requirementsMenu.text, text = "or" }
-                        textLabel.borderLeft = 2
-                        textLabel.borderRight = 2
-                    end
-
-                    local tab = indexTabBlock:createLabel{ id = requirementsMenu.indexTab, text = "-"..tostring(i).."-" }
+                    local tab = tabFieldBlock:add{ id = requirementsMenu.indexTab, text = "-"..tostring(i).."-" }
+                    if not tab then goto continue end
                     table.insert(tabs, tab)
 
                     makeLabelSelectable(tab)
@@ -709,6 +712,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                         end
 
                     end)
+
+                    ::continue::
                 end
 
                 if #tabs > 0 then
@@ -747,9 +752,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     allLabel:register(tes3.uiEvent.mouseClick, function (e)
         resetDynamicToDefault()
+        nextIndexLabel.text = "Stages:"
+        indexFieldBlock.width = 300
         allLabel.color = this.colors.lightGreen
         drawTopicInfo()
-        nextIndexLabel.text = "Stages:"
     end)
 
     if config.data.journal.requirements.currentByDefault then
