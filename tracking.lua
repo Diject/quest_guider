@@ -560,11 +560,27 @@ function this.trackQuestFromCallback(questId, e)
         shouldUpdate = true
     end
 
+    local objects = {}
     if questNextIndexes and (not e.info.isQuestFinished or config.data.tracking.quest.finished) then
         for _, indexStr in pairs(questNextIndexes) do
-            this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            table.copy(objs, objects)
         end
         shouldUpdate = true
+    end
+
+    if table.size(objects) > 0 then
+        local names = {}
+        for id, _ in pairs(objects) do
+            local obj = tes3.getObject(id)
+            if obj and obj.name then
+                table.insert(names, obj.name)
+            end
+        end
+
+        if #names > 0 then
+            tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+        end
     end
 
     if shouldUpdate then
