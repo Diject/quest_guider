@@ -56,7 +56,7 @@ this.trackedQuestGivers = {}
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
 ---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord}> by quest id
----@field targetCells table<string, boolean>?
+---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
 this.markerByObjectId = {}
@@ -270,7 +270,7 @@ function this.addMarker(params)
                                         objectTrackingData.targetCells = {}
                                     end
 
-                                    objectTrackingData.targetCells[cell.editorName] = true
+                                    objectTrackingData.targetCells[cell.editorName] = cell.editorName
                                 end
                             end
                         end
@@ -280,7 +280,7 @@ function this.addMarker(params)
                         end
 
                         for cl, _ in pairs(checkedCells) do
-                            objectTrackingData.targetCells[cl.editorName] = true
+                            objectTrackingData.targetCells[cl.editorName] = cell.editorName
                         end
                     end
                 end
@@ -631,25 +631,83 @@ function this.addMarkersForInteriorCell(cell)
     end
     lastInteriorMarkers = {}
 
-    ---@type table<tes3reference, {cells : any, hasExit : any}>
+    ---@type table<tes3reference, {cells : table<string, { cell: tes3cell, depth: integer }>?, hasExit : any, ref : tes3reference}>
     local doors = {}
 
     for doorRef in cell:iterateReferences(tes3.objectType.door) do
         if doorRef.destination and not doorRef.deleted and not doorRef.disabled then
-            local reachableCells, hasExit = cellLib.findReachableCellsByNode(doorRef.destination, {[cell.editorName] = cell})
+            local reachableCells, hasExit = cellLib.findReachableCellsByNode(doorRef.destination, {[cell.editorName] = {cell = cell, depth = 0}})
             reachableCells[cell.editorName] = nil
 
-            doors[doorRef] = {cells = reachableCells, hasExit = hasExit}
+            doors[doorRef] = {cells = reachableCells, hasExit = hasExit, ref = doorRef}
         end
     end
 
+    ---@type table<string, table<tes3reference, { cell: tes3cell, depth: integer }[]>>
+    local doorByObjId = {}
+
     for objId, objData in pairs(this.markerByObjectId) do
-        for cellId, _ in pairs(objData.targetCells or {}) do
-            for qId, markerInfo in pairs(objData.markers) do
-                local markerData = markerInfo.data
-                if not markerData.localDoorMarkerId then goto continue end
+        for qId, markerInfo in pairs(objData.markers) do
+            local markerData = markerInfo.data
+            if not markerData.localDoorMarkerId then goto continue end
+
+            for cellId, parentCellId in pairs(objData.targetCells or {}) do
                 for doorRef, doorData in pairs(doors) do
-                    if doorData.cells[cellId] then
+                    local targetCellDt = doorData.cells[parentCellId]
+                    if targetCellDt then
+                        if not doorByObjId[objId] then doorByObjId[objId] = {} end
+                        if not doorByObjId[objId][doorRef] then doorByObjId[objId][doorRef] = {} end
+
+                        table.insert(doorByObjId[objId][doorRef], targetCellDt)
+                    end
+                end
+            end
+        end
+        ::continue::
+    end
+
+    for objId, objDoorDt in pairs(doorByObjId) do
+        local depthHashTable = {}
+
+        for doorRef, doorDt in pairs(objDoorDt) do
+            for _, depthData in pairs(doorDt) do
+                depthHashTable[depthData.depth] = true
+            end
+        end
+
+        local depths = table.keys(depthHashTable, true)
+
+        if #depths == 0 or depths[1] == 0 then goto continue end
+
+        local lowestDepthHashTable = {}
+        if depths[1] == 1 then
+            lowestDepthHashTable[1] = true
+        else
+            local lowestDepth = depths[1]
+            for i = 1, math.clamp(#depths, 1, config.protected.tracking.interior.depthConut) do
+                if lowestDepth + config.protected.tracking.interior.depthMaxDifference >= depths[i] then
+                    lowestDepthHashTable[depths[i]] = true
+                end
+            end
+        end
+
+        for doorRef, doorDt in pairs(objDoorDt) do
+            local shouldCreateMarker = false
+
+            for _, depthData in pairs(doorDt) do
+                if lowestDepthHashTable[depthData.depth] then
+                    shouldCreateMarker = true
+                    break
+                end
+            end
+
+            if shouldCreateMarker then
+                local objData = this.markerByObjectId[objId]
+                if not objData then goto continue end
+
+                for qId, markerInfo in pairs(objData.markers) do
+                    local markerData = markerInfo.data
+                    if markerData and markerData.localDoorMarkerId then
                         local marker = markerLib.localMarker.new{
                             record = markerData.localDoorMarkerId,
                             cell = doorRef.cell.isInterior == true and doorRef.cell.name or nil,

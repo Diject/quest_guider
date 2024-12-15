@@ -74,6 +74,15 @@ this.default = {
     },
 }
 
+this.protected = {
+    tracking = {
+        interior = {
+            depthConut = 2,
+            depthMaxDifference = 3,
+        },
+    },
+}
+
 ---@class questGuider.config
 this.data = mwse.loadConfig(storageName)
 

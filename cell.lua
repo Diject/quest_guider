@@ -38,11 +38,12 @@ function this.findExitPos(cell, path, checked, cellPath)
 end
 
 ---@param node tes3travelDestinationNode
----@param cells table<string, tes3cell>? by editor name
----@return table<string, tes3cell>?
----@return boolean? hasExitToExterior
-function this.findReachableCellsByNode(node, cells)
+---@param cells table<string, {cell : tes3cell, depth : integer}>? by editor name
+---@return table<string, {cell : tes3cell, depth : integer}>?
+---@return boolean hasExitToExterior
+function this.findReachableCellsByNode(node, cells, depth)
     if not cells then cells = {} end
+    if not depth then depth = 0 end
 
     local hasExitToExterior = not node.cell.isInterior
 
@@ -54,16 +55,22 @@ function this.findReachableCellsByNode(node, cells)
         return cells, true
     end
 
-    cells[node.cell.editorName] = node.cell
+    cells[node.cell.editorName] = {cell = node.cell, depth = depth}
 
     for door in node.cell:iterateReferences(tes3.objectType.door) do
         if door.destination and not door.deleted and not door.disabled then
-            this.findReachableCellsByNode(door.destination, cells)
-
             if not door.destination.cell.isInterior then
                 hasExitToExterior = true
             else
-                local cls, hasExit = this.findReachableCellsByNode(door.destination, cells)
+                local cls, hasExit = this.findReachableCellsByNode(door.destination, table.deepcopy(cells), depth + 1)
+                for cellName, dt in pairs(cls) do
+                    local cellDt = cells[cellName]
+                    if not cellDt then
+                        cells[cellName] = dt
+                    elseif cellDt.depth > dt.depth then
+                        cellDt.depth = dt.depth
+                    end
+                end
                 hasExitToExterior = hasExitToExterior or hasExit
             end
         end
