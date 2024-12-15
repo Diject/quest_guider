@@ -724,7 +724,7 @@ function this.addMarkersForInteriorCell(cell)
                             recordData.temporary = true
                             recordData.priority = -1000
 
-                            recordData.description = string.format("%s is %d cells away", recordData.name or "???", lowestDepth)
+                            recordData.description = string.format("%s is %d cell%s away", recordData.name or "???", lowestDepth, lowestDepth == 1 and "" or "s")
                             recordData.color = tes3ui.getPalette(tes3.palette.journalFinishedQuestOverColor)
 
                             recordData.name = nil
