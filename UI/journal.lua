@@ -607,6 +607,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     tab:register(tes3.uiEvent.mouseClick, function (e)
                         reqBlock:destroyChildren()
+                        reqBlock:setLuaData("index", i)
+                        reqBlock:setLuaData("questId", questId)
 
                         ---@type table<string, table<string, string>>
                         local variableScripts = {}
@@ -1204,9 +1206,68 @@ function this.updateJournalMenu()
             if not quest then goto continue end
 
             local function createTrackAllButton(menuEl, buttonBlock)
-                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track Current stage" }
+                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track Current" }
                 trackButton:register(tes3.uiEvent.mouseClick, function (e)
                     trackingLib.trackQuestsbyQuestId(questId)
+                    local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+                    if innMenuReqBlock then
+                        local drawFunc = innMenuReqBlock:getLuaData("callback")
+                        if drawFunc then
+                            drawFunc(innMenuReqBlock)
+                        end
+                    end
+                end)
+
+                local trackDisplayedButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track displayed" }
+                trackDisplayedButton:register(tes3.uiEvent.mouseClick, function (e)
+                    local reqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+                    if not reqBlock then return end
+
+                    local qIndex = reqBlock:getLuaData("index")
+                    if not qIndex then return end
+
+                    local objects = {}
+                    for _, child in pairs(reqBlock.children) do
+                        if child.name == requirementsMenu.requirementLabel then
+                            ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
+                            local requirement = child:getLuaData("requirement")
+                            if not requirement then goto continue end
+
+                            if not requirement.positionData then goto continue end
+
+
+                            for objId, posData in pairs(requirement.positionData) do
+                                trackingLib.addMarker{objectId = objId, positionData = posData, questId = questId, questStage = qIndex}
+                                objects[objId] = true
+                            end
+                        end
+                        ::continue::
+                    end
+                    objects = table.keys(objects)
+
+                    if #objects > 0 then
+                        local names = {}
+                        for _, objId in pairs(objects) do
+                            local obj = tes3.getObject(objId)
+                            if not obj then goto continue end
+                            table.insert(names, obj.name)
+                            ::continue::
+                        end
+                        tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+                    end
+
+                    local drawFunc = reqBlock:getLuaData("callback")
+                    if drawFunc then
+                        drawFunc(reqBlock)
+                    end
+                end)
+
+                local removeButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Remove" }
+                removeButton:register(tes3.uiEvent.mouseClick, function (e)
+                    trackingLib.removeMarker{questId = questId}
+
+                    tes3ui.showNotifyMenu("The markers have been removed.")
+
                     local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
                     if innMenuReqBlock then
                         local drawFunc = innMenuReqBlock:getLuaData("callback")
