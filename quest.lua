@@ -693,7 +693,7 @@ function this.getRequirementPositionData(requirement)
             end
         else
             local descr = cell.editorName
-            add(id, cell, {description = descr, id = nil, exitPos = tes3vector3.new(cell.gridX * 8192 + 4000, cell.gridY * 8192 + 4000)})
+            add(id, cell, {description = descr, id = nil, exitPos = tes3vector3.new(cell.gridX * 8192 + 4000, cell.gridY * 8192 + 4000, 0)})
         end
 
         ::continue::
