@@ -1316,7 +1316,7 @@ function this.updateJournalMenu()
             end
 
             if config.data.journal.requirements.enabled then
-                local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "Icons\\m\\Tx_parchment_02.tga" }
+                local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "textures\\diject\\quest guider\\Tx_parchment_02.dds" }
                 reqLabel.imageScaleX = 0.5
                 reqLabel.imageScaleY = 0.5
                 reqLabel.borderRight = 2
@@ -1359,7 +1359,7 @@ function this.updateJournalMenu()
             end
 
             if config.data.journal.map.enabled then
-                local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "Icons\\m\\Tx_note_02.tga" }
+                local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "textures\\diject\\quest guider\\Tx_note_02.dds" }
                 mapLabel.imageScaleX = 0.5
                 mapLabel.imageScaleY = 0.5
                 mapLabel.color = {0.9, 0.9, 0.9}
