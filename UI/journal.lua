@@ -523,7 +523,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     indexTabBlock.autoHeight = true
     indexTabBlock.autoWidth = false
     indexTabBlock.width = 360
-    indexTabBlock.flowDirection = tes3.flowDirection.leftToRight
+    indexTabBlock.flowDirection = tes3.flowDirection.topToBottom
     indexTabBlock.visible = false
 
     local tabFieldBlock = filedBlockLib.new{parent = indexTabBlock, delimiter = "or", delimiterBorderRight = 6, borderRight = 6}
