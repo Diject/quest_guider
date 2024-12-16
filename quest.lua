@@ -568,7 +568,6 @@ function this.getRequirementPositionData(requirement)
             if not objData then return end
 
             if not objData.positions then
-                out[id] = {name = object.editorName or object.name or object.id or "", positions = {}}
                 return
             end
 
@@ -649,7 +648,7 @@ function this.getRequirementPositionData(requirement)
         for _, linkId in pairs(objectData.links or {}) do
             local obj = tes3.getObject(linkId)
             local objDt = this.getObjectData(linkId)
-            if obj and objDt then
+            if obj and objDt and (objDt.type == 1 or objDt.type == 2) then
                 addPosData(objDt, linkId)
                 outD = out[id]
                 if outD then
