@@ -1,5 +1,5 @@
 local storage = include("diject.quest_guider.storage.localStorage")
-local markerLib = include("diject.map_markers.interop")
+local markerLib = include("diject.mapMarkerLib.interop")
 local stringLib = include("diject.quest_guider.utils.string")
 local colors = include("diject.quest_guider.Types.gradient")
 local dataHandler = include("diject.quest_guider.dataHandler")

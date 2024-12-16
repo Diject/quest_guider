@@ -10,7 +10,7 @@ local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local types = include("diject.quest_guider.types")
 
-local mapMarkerLib = include("diject.map_markers.marker")
+local mapMarkerLib = include("diject.mapMarkerLib.marker")
 
 local config = include("diject.quest_guider.config")
 
