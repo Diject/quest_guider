@@ -5,6 +5,8 @@ local storageName = "Quest_Guider_Config"
 
 local this = {}
 
+this.firstInit = true
+
 ---@class questGuider.config
 this.default = {
     main = {
@@ -89,6 +91,7 @@ this.data = mwse.loadConfig(storageName)
 
 if this.data then
     tableLib.addMissing(this.data, this.default)
+    this.firstInit = false
 else
     this.data = table.deepcopy(this.default)
     mwse.saveConfig(storageName, this.data)

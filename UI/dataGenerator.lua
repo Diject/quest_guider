@@ -2,6 +2,8 @@ local config = include("diject.quest_guider.config")
 local initializer = include("diject.quest_guider.initializer")
 local dataHandler = include("diject.quest_guider.dataHandler")
 
+local quickInitMenu = include("diject.quest_guider.UI.quickInitMenu")
+
 local this = {}
 
 local menuId = {
@@ -73,6 +75,12 @@ function this.createMenu(params)
     buttonBlock.widthProportional = 1
     buttonBlock.childAlignX = 0.5
 
+    local function showQuickInitMenu()
+        if config.firstInit then
+            quickInitMenu.show()
+        end
+    end
+
     local generateBtn = buttonBlock:createButton{ id = menuId.generateBtn }
     generateBtn.text = "Generate"
     generateBtn:register(tes3.uiEvent.mouseClick, function (e)
@@ -96,6 +104,7 @@ function this.createMenu(params)
         end
 
         menu:destroy()
+        showQuickInitMenu()
     end)
 
     local disableBtn = buttonBlock:createButton{ id = menuId.disableBtn }
@@ -104,6 +113,7 @@ function this.createMenu(params)
         config.data.main.enabled = false
         config.save()
         menu:destroy()
+        showQuickInitMenu()
     end)
 
     if params.dataNotExistsMessage or params.dataChangedMessage then
@@ -116,6 +126,7 @@ function this.createMenu(params)
             tes3ui.showNotifyMenu("You will be able to generate the data from the mod settings.")
 
             menu:destroy()
+            showQuickInitMenu()
         end)
     end
 
@@ -123,6 +134,7 @@ function this.createMenu(params)
     cancelBtn.text = "Cancel"
     cancelBtn:register(tes3.uiEvent.mouseClick, function (e)
         menu:destroy()
+        showQuickInitMenu()
     end)
 
     menu:getTopLevelMenu():updateLayout()

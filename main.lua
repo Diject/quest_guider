@@ -9,6 +9,7 @@ local tooltipUI = include("diject.quest_guider.UI.tooltips")
 local journalUI = include("diject.quest_guider.UI.journal")
 local mapUI = include("diject.quest_guider.UI.map")
 local dataGeneratoUI = include("diject.quest_guider.UI.dataGenerator")
+local quickInitMenu = include("diject.quest_guider.UI.quickInitMenu")
 
 
 --- @param e uiActivatedEventData
@@ -130,6 +131,8 @@ local function afterInitCallback(e)
     if config.data.main.enabled and not config.data.init.ignoreDataChanges and dataHandler.compareGameFileData() then
         local isDataEmpty = dataHandler.isGameFileDataEmpty()
         dataGeneratoUI.createMenu{ dataChangedMessage = not isDataEmpty, dataNotExistsMessage = isDataEmpty }
+    elseif config.firstInit then
+        quickInitMenu.show()
     end
     event.unregister(tes3.event.enterFrame, afterInitCallback)
 end
@@ -142,7 +145,7 @@ local function initCallbacks()
     event.register(tes3.event.journal, journalCallback)
     event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
     event.register(tes3.event.cellActivated, cellActivatedCallback)
-    event.register(tes3.event.enterFrame, afterInitCallback)
+    event.register(tes3.event.enterFrame, afterInitCallback, {priority = -278})
 end
 
 --- @param e initializedEventData

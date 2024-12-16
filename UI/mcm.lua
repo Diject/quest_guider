@@ -297,6 +297,9 @@ function this.registerModConfig()
         dataGenGroup:createButton{buttonText = "Generate data for the mod", callback = function()
             include("diject.quest_guider.UI.dataGenerator").createMenu{}
         end}
+        dataGenGroup:createButton{buttonText = "Show quick init menu", callback = function()
+            include("diject.quest_guider.UI.quickInitMenu").show()
+        end}
     end
 
     do
@@ -356,7 +359,7 @@ function this.registerModConfig()
 
         local giverGroup = trackingPage:createCategory{label = "Quest givers"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
-            label = "Mark quest givers on the map (the mod doesn't check if you can take these quests due to the requirements for them)"}
+            label = "Mark quest givers on the map (the mod doesn't check if you can take these quests)"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "hideStarted"}, label = "Hide markers for quests that have already been started/finished"}
         createNumberEdit{self = giverGroup, config = {path = "tracking.giver", name = "namesMax"},
             label = "Maximum number of quest names in the tooltip for a marker", limits = {min = 1, max = 10}, int = true}
