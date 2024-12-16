@@ -115,7 +115,7 @@ end
 
 ---@type table<string, questGuider.ui.markerImage>
 this.markers = {
-    quest = {path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = -4, scale = 1},
+    quest = {path = "diject\\quest guider\\defaultArrow32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5},
 }
 
 

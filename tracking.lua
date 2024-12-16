@@ -24,15 +24,17 @@ local this = {}
 ---@field shiftY integer
 
 ---@type questGuider.tracking.markerImage
-this.localMarkerImageInfo = { path = "diject\\quest guider\\circleMarker16x16.dds",
-        pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds", pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 }
+this.localMarkerImageInfo = { path = "diject\\quest guider\\defaultArrow32x32.dds",
+        pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds", pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 }
 ---@type questGuider.tracking.markerImage
-this.localDoorMarkerImageInfo = { path = "diject\\quest guider\\circleMarker16x16.dds",
-        pathAbove = "diject\\quest guider\\circleMarkerUp16x16.dds", pathBelow = "diject\\quest guider\\circleMarkerDown16x16.dds", shiftX = -4, shiftY = 4, scale = 0.5 }
+this.localDoorMarkerImageInfo = { path = "diject\\quest guider\\defaultDoorArrow32x32.dds",
+        pathAbove = "diject\\quest guider\\defaultDoorArrowUp32x32.dds", pathBelow = "diject\\quest guider\\defaultDoorArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 }
 ---@type questGuider.tracking.markerImage
-this.worldMarkerImageInfo = { path = "diject\\quest guider\\circleMarker8.dds", shiftX = -4, shiftY = 4, scale = 1 }
+this.worldMarkerImageInfo = { path = "diject\\quest guider\\defaultArrow32x32.dds",
+        pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds", pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 }
 ---@type questGuider.tracking.markerImage
-this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark8x16.dds", shiftX = -3, shiftY = 10, scale = 0.75 }
+this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark16x32.dds",
+        pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds", pathBelow = "diject\\quest guider\\exclamationMarkDown32x32.dds", shiftX = -3, shiftY = 12, scale = 0.4 }
 
 ---@class questGuider.tracking.storageData
 ---@field markerByObjectId table<string, questGuider.tracking.objectRecord>?

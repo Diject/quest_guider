@@ -21,8 +21,8 @@ local default = {
             pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
-        doorMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
-            pathBelow = "diject\\quest guider\\defaultArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
+        doorMarker = { path = "diject\\quest guider\\defaultDoorArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultDoorArrowUp32x32.dds",
+            pathBelow = "diject\\quest guider\\defaultDoorArrowDown32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
 
         ---@type questGuider.tracking.markerImage
         worldMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
