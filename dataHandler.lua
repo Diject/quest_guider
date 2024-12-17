@@ -23,7 +23,8 @@ function this.init()
     this.questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
     this.questObjects = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjects")
     this.localVariablesByScriptId = json.loadfile("mods\\diject\\quest_guider\\Data\\localVariables")
-    this.info = dofile("Data Files.MWSE.mods.diject.quest_guider.Data.info")
+    local infoData = loadfile(tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\info.lua")
+    this.info = infoData and infoData() or nil
 
     if this.quests and this.questObjects and this.questByText and this.localVariablesByScriptId and this.info then
         isReady = true
