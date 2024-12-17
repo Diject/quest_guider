@@ -9,7 +9,7 @@ this.logLevel = 0
 ---@return boolean res true if successful. If async always true
 function this.runDataGeneration(async)
     local maxPos = config.data.data.maxPos
-    local dir = string.format("%s\\Quest Guider", tes3.installDirectory)
+    local dir = tes3.installDirectory.."\\Data Files\\MWSE\\lib\\quest_guider"
     local outputDir = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data"
 
     -- by morrowind.ini
