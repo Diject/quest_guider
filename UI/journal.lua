@@ -513,7 +513,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local reqIndexBlock = reqIndexMainBlock:createBlock{ id = requirementsMenu.requirementIndexBlock }
     reqIndexBlock.autoHeight = true
-    reqIndexBlock.width = 250
+    reqIndexBlock.width = 300
     reqIndexBlock.borderLeft = 10
     reqIndexBlock.flowDirection = tes3.flowDirection.topToBottom
 
