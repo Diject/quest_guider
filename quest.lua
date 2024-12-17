@@ -286,8 +286,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     mapped[pattern] = vampireClan[environment.value] and vampireClan[environment.value] or tostring(environment.value)
                 elseif codeStr == "weatherIdVal" then
                     mapped[pattern] = weatherById[environment.value] and weatherById[environment.value] or tostring(environment.value)
-                elseif codeStr == "objNameOrTheActor" then
+                elseif codeStr == "varNameOrTheActor" then
                     mapped[pattern] = getName(environment.variableObj, "the actor")
+                elseif codeStr == "objNameOrTheActor" then
+                    mapped[pattern] = getName(environment.objectObj, "the actor")
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
