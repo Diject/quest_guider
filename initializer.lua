@@ -13,7 +13,8 @@ function this.runDataGeneration(async)
     local outputDir = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data"
 
     -- by morrowind.ini
-    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -o \"%s\" -l %d", dir, maxPos, outputDir, this.logLevel)
+    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -o \"%s\" -l %d",
+        dir, maxPos, tes3.installDirectory, outputDir, this.logLevel)
 
     -- by mod names
     -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -d \"%s\" -o \"%s\" -l %d -f", dir, tes3.installDirectory, outputDir, this.logLevel)
