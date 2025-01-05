@@ -99,5 +99,6 @@ return {
     [types.requirementType.CustomPCSneaking] = { str = "The player is#notContr# sneaking", },
     [types.requirementType.PlayerHealthPercent] = { str = "The player's health fraction is #operator# #value#", },
     [types.requirementType.NPCHealthPercent] = { str = " #varNameOrTheActor#'s health fraction is #operator# #value#", },
-    [types.requirementType.CustomHitOnMe] = { str = " #varNameOrTheActor# was hit by \"#varName#\"", },
+    [types.requirementType.CustomHitOnMe] = { str = "#varNameOrTheActor# was hit by \"#varName#\"", },
+    [types.requirementType.CustomPCInJail] = { str = "The player is#notContr# in jail", },
 }
