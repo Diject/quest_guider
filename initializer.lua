@@ -25,8 +25,9 @@ function this.runDataGeneration(async)
         dir, maxPos, tes3.installDirectory, outputDir, encoding, this.logLevel)
 
     -- by mod names
-    -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -d \"%s\" -o \"%s\" -l %d -f", dir, tes3.installDirectory, outputDir, this.logLevel)
-    -- for _, gameFile in pairs(tes3.dataHandler.nonDynamicData.activeMods) do
+    -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -e %s -d \"%s\" -o \"%s\" -l %d -f",
+    --     dir, maxPos, encoding, tes3.installDirectory, outputDir, this.logLevel)
+    -- for _, gameFile in ipairs(tes3.dataHandler.nonDynamicData.activeMods) do
     --     if gameFile.playerName == "" then
     --         command = string.format("%s \"%s\"", command, gameFile.filename)
     --     end
