@@ -21,8 +21,8 @@ function this.runDataGeneration(async)
     end
 
     -- by morrowind.ini
-    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -o \"%s\" -e %s -l %d",
-        dir, maxPos, tes3.installDirectory, outputDir, encoding, this.logLevel)
+    -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -o \"%s\" -e %s -l %d",
+    --     dir, maxPos, tes3.installDirectory, outputDir, encoding, this.logLevel)
 
     -- by mod names
     -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -e %s -d \"%s\" -o \"%s\" -l %d -f",
@@ -32,6 +32,26 @@ function this.runDataGeneration(async)
     --         command = string.format("%s \"%s\"", command, gameFile.filename)
     --     end
     -- end
+
+    -- by data file
+    local inputData = {
+        logLevel = this.logLevel,
+        directory = tes3.installDirectory,
+        output = outputDir,
+        encoding = encoding,
+        maxPos = maxPos,
+        gameFiles = {},
+    }
+    for _, gameFile in ipairs(tes3.dataHandler.nonDynamicData.activeMods) do
+        if gameFile.playerName == "" then
+            table.insert(inputData.gameFiles, gameFile.filename)
+        end
+    end
+    json.savefile("\\mods\\diject\\quest_guider\\Data\\input", inputData)
+    local inputDataPath = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\input.json"
+    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -i \"%s\" -o \"%s\" -e %s -l %d",
+        dir, maxPos, tes3.installDirectory, inputDataPath, outputDir, encoding, this.logLevel)
+
     log(command)
     if async then
         if os.execute(command) ~= 0 then
