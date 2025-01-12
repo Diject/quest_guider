@@ -2,6 +2,8 @@ include("diject.quest_guider.Data.luaAnnotations")
 
 local this = {}
 
+this.version = 2
+
 ---@type questDataGenerator.quests
 this.quests = {}
 ---@type questDataGenerator.questByTopicText
@@ -15,6 +17,7 @@ local defaultInfo = {version = 0, files = {}, time = 0}
 this.info = table.deepcopy(defaultInfo)
 
 local isReady = false
+local versionChanged = false
 
 ---@return boolean
 function this.init()
@@ -26,14 +29,19 @@ function this.init()
     local infoData = loadfile(tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\info.lua")
     this.info = infoData and infoData() or nil
 
-    if this.quests and this.questObjects and this.questByText and this.localVariablesByScriptId and this.info then
+    if this.quests and this.questObjects and this.questByText and this.localVariablesByScriptId and this.info and
+            this.version == this.info.version then
         isReady = true
+        versionChanged = false
     else
-        this.quests = this.quests or {}
-        this.questObjects = this.questObjects or {}
-        this.questByText = this.questByText or {}
-        this.localVariablesByScriptId = this.localVariablesByScriptId or {}
-        this.info = this.info or table.deepcopy(defaultInfo)
+        this.quests = {}
+        this.questObjects = {}
+        this.questByText = {}
+        this.localVariablesByScriptId = {}
+        this.info = table.deepcopy(defaultInfo)
+        if this.version ~= this.info.version then
+            versionChanged = true
+        end
     end
 
     return isReady
@@ -79,6 +87,10 @@ end
 
 function this.isGameFileDataEmpty()
     return #this.info.files == 0
+end
+
+function this.isVersionChanged()
+    return versionChanged
 end
 
 return this

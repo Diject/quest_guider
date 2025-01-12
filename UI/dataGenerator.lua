@@ -23,6 +23,7 @@ local menuId = {
 ---@class questGuider.dataGenerator.createMenu.params
 ---@field dataChangedMessage boolean|nil
 ---@field dataNotExistsMessage boolean|nil
+---@field versionChangedMessage boolean|nil
 
 ---@param params questGuider.dataGenerator.createMenu.params|nil
 ---@return tes3uiElement
@@ -45,7 +46,16 @@ function this.createMenu(params)
     headerLabel.font = 1
     headerLabel.borderBottom = 10
 
-    if params.dataNotExistsMessage then
+    if params.versionChangedMessage then
+        local block = menu:createBlock{ id = menuId.label1Block }
+        block.autoHeight = true
+        block.autoWidth = true
+        block.borderBottom = 5
+        local label = block:createLabel{ id = menuId.label1 }
+        label.text = "The mod version has changed. Need to re-generate quest data for the mod to work."
+        label.widthProportional = 1
+        label.wrapText = true
+    elseif params.dataNotExistsMessage then
         local block = menu:createBlock{ id = menuId.label1Block }
         block.autoHeight = true
         block.autoWidth = true
