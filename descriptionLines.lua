@@ -1,7 +1,8 @@
 local types = include("diject.quest_guider.types")
 
 return {
-    [types.requirementType.CustomActor] = { str = "Talk to #objectName#", priority = -1000 },
+    [types.requirementType.CustomActor] = { str = "Talk to #objectName#", priority = -999 },
+    [types.requirementType.CustomDialogue] = { str = "Dialogue topic \"#variable#\"", priority = -1000 },
     [types.requirementType.Item] = { str = "The number of item \"#varName#\" is #operator# #value# for #objectName#", },
     [types.requirementType.CustomDisposition] = { str = "Disposition of the actor is #operator# #value#", priority = -1001 },
     [types.requirementType.PreviousDialogChoice] = { str = "#value# dialogue option is selected", priority = -1001 },

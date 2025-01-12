@@ -185,4 +185,6 @@ return {
     CustomPCRace = "PCR",
     CustomVampClan = "VPC",
     CustomRandom = "RND",
+
+    CustomDialogue = "DIA",
 }
