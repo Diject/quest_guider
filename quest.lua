@@ -484,6 +484,11 @@ end
 ---@param requirement questDataGenerator.requirementData
 ---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
 function this.getRequirementPositionData(requirement)
+
+    if requirement.type == types.requirementType.CustomDialogue then
+        return
+    end
+
     ---@type table<string, questGuider.quest.getRequirementPositionData.returnData>
     local out = {}
 
