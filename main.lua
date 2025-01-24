@@ -131,7 +131,8 @@ local function afterInitCallback(e)
     if config.data.main.enabled and not config.data.init.ignoreDataChanges and dataHandler.compareGameFileData() then
         local isDataEmpty = dataHandler.isGameFileDataEmpty()
         local isVersionChanged = dataHandler.isVersionChanged()
-        dataGeneratoUI.createMenu{ dataChangedMessage = not isDataEmpty, dataNotExistsMessage = isDataEmpty, versionChangedMessage = isVersionChanged }
+        dataGeneratoUI.createMenu{ dataChangedMessage = not isDataEmpty, dataNotExistsMessage = isDataEmpty,
+            versionChangedMessage = isVersionChanged and not isDataEmpty }
     elseif config.firstInit then
         quickInitMenu.show()
     end
