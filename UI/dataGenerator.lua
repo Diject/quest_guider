@@ -18,6 +18,7 @@ local menuId = {
     skipBtn = "qGuider_skipBtn",
     disableBtn = "qGuider_disableBtn",
     cancelBtn = "qGuider_cancelBtn",
+    link = "qGuider_modLink",
 }
 
 ---@class questGuider.dataGenerator.createMenu.params
@@ -76,9 +77,14 @@ function this.createMenu(params)
     end
 
     local warningLabel = menu:createLabel{ id = menuId.label2 }
-    warningLabel.text = "Generation will take more than 10 seconds. The game will be frozen until it is completed."
+    warningLabel.text = "Generation usually takes 10-30 seconds. The game will be frozen until it is completed. If there are any problems during this process, visit the mod page on nexusmods.com and read the \"Troubleshooting\" section."
     warningLabel.wrapText = true
     warningLabel.borderBottom = 10
+
+    local modLink = menu:createHyperlink{ id = menuId.link, text = "The mod page on nexusmods.com", confirm = true,
+        url = "https://www.nexusmods.com/morrowind/mods/55593"}
+    modLink.wrapText = true
+    modLink.borderBottom = 10
 
     local buttonBlock = menu:createBlock{ id = menuId.buttonBlock }
     buttonBlock.autoHeight = true
