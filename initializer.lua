@@ -47,7 +47,7 @@ function this.runDataGeneration(async)
             table.insert(inputData.gameFiles, gameFile.filename)
         end
     end
-    json.savefile("\\mods\\diject\\quest_guider\\Data\\input", inputData)
+    json.savefile("mods\\diject\\quest_guider\\Data\\input", inputData)
     local inputDataPath = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\input.json"
     local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -i \"%s\" -o \"%s\" -e %s -l %d",
         dir, maxPos, tes3.installDirectory, inputDataPath, outputDir, encoding, this.logLevel)
