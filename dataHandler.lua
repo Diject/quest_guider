@@ -2,7 +2,7 @@ include("diject.quest_guider.Data.luaAnnotations")
 
 local this = {}
 
-this.version = 2
+this.version = 3
 
 ---@type questDataGenerator.quests
 this.quests = {}
