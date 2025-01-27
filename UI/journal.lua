@@ -24,6 +24,7 @@ local infoMenu = {
     block = "qGuider_info_block",
     headerId = "qGuider_info_header",
     questidId = "qGuider_info_questId",
+    sourceModId = "qGuider_info_sourceMod",
     indexId = "qGuider_info_index",
     nextIndexes = "qGuider_info_nextIndexes",
     currentIndex = "qGuider_info_currentIndex",
@@ -217,7 +218,12 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
     local headerLabel = mainBlock:createLabel{ id = infoMenu.headerId, text = questName }
 
     local questIdStr = questId or "???"
-    local questIdLabel = mainBlock:createLabel{ id = infoMenu.questidId, text = "Quest id: "..questIdStr }
+    local questIdLabel = mainBlock:createLabel{ id = infoMenu.questidId, text = string.format("Quest id: \"%s\"", questIdStr) }
+
+    local sourceMod = ((playerQuests.getQuestData(questId) or {}).record or {}).sourceMod
+    if sourceMod then
+        local sourceModLabel = mainBlock:createLabel{ id = infoMenu.sourceModId, text = string.format("Source mod: \"%s\"", sourceMod) }
+    end
 
     local indexesStr = ""
     local indexes = questLib.getIndexes(questData)
@@ -237,9 +243,10 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
 
     local currentIndex = playerQuests.getCurrentIndex(questId)
     if currentIndex then
-        local currentIndexStr = string.format("Current stage: %d", currentIndex)
+        local currentData = questData[tostring(currentIndex)]
+        local finishedStr = currentData and currentData.finished and " (Finished)" or ""
+        local currentIndexStr = string.format("Current stage: %d%s", currentIndex, finishedStr)
         local currentIndexLabel = mainBlock:createLabel{ id = infoMenu.currentIndex, text = currentIndexStr }
-        currentIndexLabel.borderTop = 10
     end
 
     updateContainerMenu(mainBlock)
@@ -848,7 +855,8 @@ end
 ---@param questId string
 ---@param index integer|string
 ---@param questData questDataGenerator.questData
-function this.drawMapMenu(parent, questId, index, questData)
+---@param hideMap boolean|nil
+function this.drawMapMenu(parent, questId, index, questData, hideMap)
     local mainBlock = parent:createBlock{ id = mapMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.leftToRight
     mainBlock.autoHeight = true
@@ -863,6 +871,7 @@ function this.drawMapMenu(parent, questId, index, questData)
     mapBlock.flowDirection = tes3.flowDirection.topToBottom
     mapBlock.width = 400
     mapBlock.height = 400
+    mapBlock.visible = not hideMap
 
     local imageWidth = tes3.dataHandler.nonDynamicData.mapTexture.width
     local imageHeight = tes3.dataHandler.nonDynamicData.mapTexture.height
@@ -1162,10 +1171,16 @@ function this.drawQuestsMenu(parent)
     return mainBlock
 end
 
+---@param parent tes3uiElement
+---@param questId string
+---@param index integer|string
+---@param questData questDataGenerator.questData
+local function drawRequirementMenu(parent, questId, index, questData)
+    return this.drawMapMenu(parent, questId, index, questData, not config.data.journal.map.enabled)
+end
+
 function this.updateJournalMenu()
-    if not config.data.journal.map.enabled and
-            not config.data.journal.requirements.enabled and
-            not config.data.journal.info.enabled then
+    if not config.data.journal.requirements.enabled and not config.data.journal.info.enabled then
         return
     end
 
@@ -1316,17 +1331,16 @@ function this.updateJournalMenu()
             end
 
             if config.data.journal.requirements.enabled then
-                local reqLabel = block:createImage{ id = journalMenu.requirementsIcon, path = "textures\\diject\\quest guider\\Tx_parchment_02.dds" }
-                reqLabel.imageScaleX = 0.5
-                reqLabel.imageScaleY = 0.5
-                reqLabel.borderRight = 2
-                reqLabel.color = {0.9, 0.9, 0.9}
+                local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "textures\\diject\\quest guider\\journalIcon64x64.dds" }
+                mapLabel.imageScaleX = 0.25
+                mapLabel.imageScaleY = 0.25
+                mapLabel.color = {0.9, 0.9, 0.9}
 
-                makeLabelSelectable(reqLabel)
+                makeLabelSelectable(mapLabel)
 
-
-                reqLabel:register(tes3.uiEvent.help, function (ei)
+                mapLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
+                    tooltip.autoWidth = true
                     if not config.data.journal.requirements.tooltip then
                         if not createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
                             tooltip:destroy()
@@ -1335,48 +1349,7 @@ function this.updateJournalMenu()
                     else
                         createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
                     end
-                    if not this.drawQuestRequirementsMenu(tooltip, questId, questIndex, quest) then
-                        tooltip:destroy()
-                    end
-                end)
-
-                reqLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                    if tes3.worldController.inputController:isShiftDown() then
-                        trackingLib.trackQuestsbyQuestId(questId)
-                        return
-                    end
-
-                    local el, buttonBlock = this.drawContainer("Requirements", createTrackAllButton)
-
-                    if not el or not buttonBlock then return end
-
-                    if not this.drawQuestRequirementsMenu(el, questId, questIndex, quest) then
-                        el:destroy() ---@diagnostic disable-line: need-check-nil
-                        return
-                    end
-                    this.centerToCursor(el)
-                end)
-            end
-
-            if config.data.journal.map.enabled then
-                local mapLabel = block:createImage{ id = journalMenu.mapIcon, path = "textures\\diject\\quest guider\\Tx_note_02.dds" }
-                mapLabel.imageScaleX = 0.5
-                mapLabel.imageScaleY = 0.5
-                mapLabel.color = {0.9, 0.9, 0.9}
-
-                makeLabelSelectable(mapLabel)
-
-                mapLabel:register(tes3.uiEvent.help, function (ei)
-                    local tooltip = tes3ui.createTooltipMenu()
-                    if not config.data.journal.map.tooltip then
-                        if not createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
-                            tooltip:destroy()
-                        end
-                        return
-                    else
-                        createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
-                    end
-                    if not this.drawMapMenu(tooltip, questId, questIndex, quest) then
+                    if not drawRequirementMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
                     end
                 end)
@@ -1386,11 +1359,11 @@ function this.updateJournalMenu()
                         return
                     end
 
-                    local el, buttonBlock = this.drawContainer("Map", createTrackAllButton)
+                    local el, buttonBlock = this.drawContainer("Requirements", createTrackAllButton)
 
                     if not el or not buttonBlock then return end
 
-                    if not this.drawMapMenu(el, questId, questIndex, quest) then
+                    if not drawRequirementMenu(el, questId, questIndex, quest) then
                         el:destroy() ---@diagnostic disable-line: need-check-nil
                         return
                     end

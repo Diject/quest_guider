@@ -3,12 +3,15 @@ local log = include("diject.quest_guider.utils.log")
 
 local storageName = "Quest_Guider_Config"
 
+local version = 2
+
 local this = {}
 
 this.firstInit = true
 
 ---@class questGuider.config
 this.default = {
+    version = version,
     main = {
         enabled = true,
         helpLabels = true,
@@ -21,7 +24,7 @@ this.default = {
             tooltip = true,
         },
         requirements = {
-            enabled = false,
+            enabled = true,
             tooltip = true,
             currentByDefault = true,
             scriptValues = true,
@@ -29,7 +32,7 @@ this.default = {
         },
         map = {
             enabled = true,
-            tooltip = true,
+            tooltip = true, -- deprecated
             maxScale = 3,
         },
         objectNames = 3,
@@ -90,6 +93,12 @@ this.protected = {
 this.data = mwse.loadConfig(storageName)
 
 if this.data then
+    if not this.data.version then -- for old versions
+        if this.data.journal.map.enabled then
+            this.data.journal.requirements.enabled = true
+        end
+    end
+
     tableLib.addMissing(this.data, this.default)
     this.firstInit = false
 else
@@ -99,6 +108,7 @@ end
 
 
 function this.save()
+    this.data.version = version
     mwse.saveConfig(storageName, this.data)
 end
 
