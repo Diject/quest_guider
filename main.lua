@@ -139,6 +139,13 @@ local function afterInitCallback(e)
     event.unregister(tes3.event.enterFrame, afterInitCallback)
 end
 
+local function initIntegrations()
+    if config.data.integration.questLogMenu.enabled and tes3.isLuaModActive("herbert100.quest log menu") then
+        log("Found herbert100's \"Quest Log Menu\"")
+        include("diject.quest_guider.integration.questLogMenu").init()
+    end
+end
+
 local function initCallbacks()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
@@ -155,6 +162,7 @@ local function initializedCallback(e)
     dataHandler.init()
     journalUI.init()
     initCallbacks()
+    initIntegrations()
 end
 event.register(tes3.event.initialized, initializedCallback)
 

@@ -72,6 +72,12 @@ this.default = {
             namesMax = 3,
         },
     },
+    integration = {
+        questLogMenu = {
+            enabled = true,
+            tooltip = true,
+        },
+    },
     init = {
         ignoreDataChanges = false,
     },

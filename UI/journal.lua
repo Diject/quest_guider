@@ -173,7 +173,7 @@ end
 ---@param message string
 ---@param justifyText tes3.justifyText?
 ---@return boolean
-local function createHelpMessage(element, message, justifyText)
+function this.createHelpMessage(element, message, justifyText)
     if not config.data.main.helpLabels then return false end
     local label = element:createLabel{ id = helpMenu.label, text = message }
     label.autoWidth = false
@@ -459,17 +459,24 @@ end
 
 ---@param parent tes3uiElement
 ---@param questId string
----@param index integer|string
+---@param index integer|string|nil
 ---@param questData questDataGenerator.questData
 ---@return boolean|nil
 function this.drawQuestRequirementsMenu(parent, questId, index, questData)
+    local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
+    local currentTopicData = questData[tostring(playerCurrentIndex)]
+    if not currentTopicData then return end
+    local playerCurrentIndexStr = tostring(playerCurrentIndex or "???")
+
+    local hideSelected = false
+    if index == nil then
+        hideSelected = true
+        index = playerCurrentIndex
+    end
     local topicData = questData[tostring(index)]
     if not topicData then return end
     local questName = questData.name or "???"
     local topicIndexStr = tostring(index) or "???"
-    local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
-    local currentTopicData = questData[tostring(playerCurrentIndex)]
-    local playerCurrentIndexStr = tostring(playerCurrentIndex or "???")
 
     local mainBlock = parent:createBlock{ id = requirementsMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.topToBottom
@@ -505,6 +512,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local allLabel = selectedCurrentBlock:createLabel{ id = requirementsMenu.allLabel, text = "All" }
     lstLabel.borderLeft = 20
     allLabel.borderLeft = 20
+
+    if hideSelected then
+        selLabel.visible = false
+    end
 
     makeLabelSelectable(selLabel)
     makeLabelSelectable(lstLabel)
@@ -767,7 +778,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         drawTopicInfo()
     end)
 
-    if config.data.journal.requirements.currentByDefault then
+    if config.data.journal.requirements.currentByDefault or hideSelected then
         lstLabel:triggerEvent(tes3.uiEvent.mouseClick)
     else
         selLabel:triggerEvent(tes3.uiEvent.mouseClick)
@@ -853,7 +864,7 @@ end
 
 ---@param parent tes3uiElement
 ---@param questId string
----@param index integer|string
+---@param index integer|string|nil
 ---@param questData questDataGenerator.questData
 ---@param hideMap boolean|nil
 function this.drawMapMenu(parent, questId, index, questData, hideMap)
@@ -902,6 +913,13 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
     if not innMenuReqBlock then
         mapBlock.visible = false
         return
+    end
+
+    local qIndexForTracking = index
+    if not qIndexForTracking then
+        local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
+        if not playerCurrentIndex then return end
+        qIndexForTracking = playerCurrentIndex
     end
 
 
@@ -993,7 +1011,7 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
                 ---@param e tes3uiEventData
                 local function mouseClick(e)
                     for objId, posDt in pairs(reqData.positionData or {}) do
-                        trackingLib.addMarker{objectId = objId, questId = questId, questStage = index, positionData = posDt}
+                        trackingLib.addMarker{objectId = objId, questId = questId, questStage = qIndexForTracking, positionData = posDt}
                     end
                     if tes3.player.cell.isInterior then
                         trackingLib.addMarkersForInteriorCell(tes3.player.cell)
@@ -1173,11 +1191,110 @@ end
 
 ---@param parent tes3uiElement
 ---@param questId string
----@param index integer|string
+---@param index integer|string|nil
 ---@param questData questDataGenerator.questData
 local function drawRequirementMenu(parent, questId, index, questData)
     return this.drawMapMenu(parent, questId, index, questData, not config.data.journal.map.enabled)
 end
+
+
+---@class questGuider.ui.createContainerButtons.params
+---@field trackCurrentBtn boolean?
+---@field trackDisplayedBtn boolean?
+---@field removeBtn boolean?
+
+---@param questId string lowercase
+---@param menuEl any tes3uiElement
+---@param buttonBlock any tes3uiElement
+---@param params questGuider.ui.createContainerButtons.params? by default all buttons are enabled
+function this.createContainerButtons(questId, menuEl, buttonBlock, params)
+    if not params then
+        params = {trackCurrentBtn = true, trackDisplayedBtn = true, removeBtn = true}
+    end
+
+    if params.trackCurrentBtn ~= false then
+
+        local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track Current" }
+        trackButton:register(tes3.uiEvent.mouseClick, function (e)
+            trackingLib.trackQuestsbyQuestId(questId)
+            local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+            if innMenuReqBlock then
+                local drawFunc = innMenuReqBlock:getLuaData("callback")
+                if drawFunc then
+                    drawFunc(innMenuReqBlock)
+                end
+            end
+        end)
+
+    end
+
+    if params.trackDisplayedBtn ~= false then
+
+        local trackDisplayedButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track displayed" }
+        trackDisplayedButton:register(tes3.uiEvent.mouseClick, function (e)
+            local reqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+            if not reqBlock then return end
+
+            local qIndex = reqBlock:getLuaData("index")
+            if not qIndex then return end
+
+            local objects = {}
+            for _, child in pairs(reqBlock.children) do
+                if child.name == requirementsMenu.requirementLabel then
+                    ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
+                    local requirement = child:getLuaData("requirement")
+                    if not requirement then goto continue end
+
+                    if not requirement.positionData then goto continue end
+
+
+                    for objId, posData in pairs(requirement.positionData) do
+                        trackingLib.addMarker{objectId = objId, positionData = posData, questId = questId, questStage = qIndex}
+                        objects[objId] = true
+                    end
+                end
+                ::continue::
+            end
+            objects = table.keys(objects)
+
+            if #objects > 0 then
+                local names = {}
+                for _, objId in pairs(objects) do
+                    local obj = tes3.getObject(objId)
+                    if not obj then goto continue end
+                    table.insert(names, obj.name)
+                    ::continue::
+                end
+                tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+            end
+
+            local drawFunc = reqBlock:getLuaData("callback")
+            if drawFunc then
+                drawFunc(reqBlock)
+            end
+        end)
+
+    end
+
+    if params.removeBtn ~= false then
+
+        local removeButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Remove" }
+        removeButton:register(tes3.uiEvent.mouseClick, function (e)
+            trackingLib.removeMarker{questId = questId}
+
+            tes3ui.showNotifyMenu("The markers have been removed.")
+
+            local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+            if innMenuReqBlock then
+                local drawFunc = innMenuReqBlock:getLuaData("callback")
+                if drawFunc then
+                    drawFunc(innMenuReqBlock)
+                end
+            end
+        end)
+    end
+end
+
 
 function this.updateJournalMenu()
     if not config.data.journal.requirements.enabled and not config.data.journal.info.enabled then
@@ -1221,76 +1338,7 @@ function this.updateJournalMenu()
             if not quest then goto continue end
 
             local function createTrackAllButton(menuEl, buttonBlock)
-                local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track Current" }
-                trackButton:register(tes3.uiEvent.mouseClick, function (e)
-                    trackingLib.trackQuestsbyQuestId(questId)
-                    local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
-                    if innMenuReqBlock then
-                        local drawFunc = innMenuReqBlock:getLuaData("callback")
-                        if drawFunc then
-                            drawFunc(innMenuReqBlock)
-                        end
-                    end
-                end)
-
-                local trackDisplayedButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track displayed" }
-                trackDisplayedButton:register(tes3.uiEvent.mouseClick, function (e)
-                    local reqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
-                    if not reqBlock then return end
-
-                    local qIndex = reqBlock:getLuaData("index")
-                    if not qIndex then return end
-
-                    local objects = {}
-                    for _, child in pairs(reqBlock.children) do
-                        if child.name == requirementsMenu.requirementLabel then
-                            ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
-                            local requirement = child:getLuaData("requirement")
-                            if not requirement then goto continue end
-
-                            if not requirement.positionData then goto continue end
-
-
-                            for objId, posData in pairs(requirement.positionData) do
-                                trackingLib.addMarker{objectId = objId, positionData = posData, questId = questId, questStage = qIndex}
-                                objects[objId] = true
-                            end
-                        end
-                        ::continue::
-                    end
-                    objects = table.keys(objects)
-
-                    if #objects > 0 then
-                        local names = {}
-                        for _, objId in pairs(objects) do
-                            local obj = tes3.getObject(objId)
-                            if not obj then goto continue end
-                            table.insert(names, obj.name)
-                            ::continue::
-                        end
-                        tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
-                    end
-
-                    local drawFunc = reqBlock:getLuaData("callback")
-                    if drawFunc then
-                        drawFunc(reqBlock)
-                    end
-                end)
-
-                local removeButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Remove" }
-                removeButton:register(tes3.uiEvent.mouseClick, function (e)
-                    trackingLib.removeMarker{questId = questId}
-
-                    tes3ui.showNotifyMenu("The markers have been removed.")
-
-                    local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
-                    if innMenuReqBlock then
-                        local drawFunc = innMenuReqBlock:getLuaData("callback")
-                        if drawFunc then
-                            drawFunc(innMenuReqBlock)
-                        end
-                    end
-                end)
+                this.createContainerButtons(questId, menuEl, buttonBlock)
             end
 
             local block = page:createBlock{ id = journalMenu.requirementBlock }
@@ -1313,12 +1361,12 @@ function this.updateJournalMenu()
                 infoLabel:register(tes3.uiEvent.help, function (ei)
                     local tooltip = tes3ui.createTooltipMenu()
                     if not config.data.journal.info.tooltip then
-                        if not createHelpMessage(tooltip, "Click to open.", tes3.justifyText.left) then
+                        if not this.createHelpMessage(tooltip, "Click to open.", tes3.justifyText.left) then
                             tooltip:destroy()
                         end
                         return
                     else
-                        createHelpMessage(tooltip, "Click to open.")
+                        this.createHelpMessage(tooltip, "Click to open.")
                     end
                     this.drawQuestInfoMenu(tooltip, questId, questIndex, quest)
                 end)
@@ -1342,12 +1390,12 @@ function this.updateJournalMenu()
                     local tooltip = tes3ui.createTooltipMenu()
                     tooltip.autoWidth = true
                     if not config.data.journal.requirements.tooltip then
-                        if not createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
+                        if not this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
                             tooltip:destroy()
                         end
                         return
                     else
-                        createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                        this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
                     end
                     if not drawRequirementMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
@@ -1377,5 +1425,8 @@ function this.updateJournalMenu()
         ::continue::
     end
 end
+
+
+this.drawRequirementMenu = drawRequirementMenu
 
 return this
