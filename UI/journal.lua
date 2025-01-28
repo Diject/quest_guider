@@ -478,7 +478,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local questName = questData.name or "???"
     local topicIndexStr = tostring(index) or "???"
 
-    local mainBlock = parent:createBlock{ id = requirementsMenu.block }
+    local mainBlock = parent:createRect{ id = requirementsMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.topToBottom
     mainBlock.height = 400
     mainBlock.width = 400
