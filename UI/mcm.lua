@@ -290,7 +290,7 @@ function this.registerModConfig()
         local mainPage = template:createPage{label = "Main"}
 
         createLabel{self = mainPage, label = "Quest info, markers and more.", labelColor = tes3.palette.headerColor}
-        createYesNo{self = mainPage, config = {path = "main", name = "enabled"}, label = "Enable the mod"}
+        createYesNo{self = mainPage, config = {path = "main", name = "enabled"}, label = "Enable the mod", restartRequired = true}
 
         local dataGenGroup = mainPage:createCategory{label = "Data generation"}
         createLabel{self = dataGenGroup, label = "The mod requires data that is generated through a separate application"}
@@ -319,22 +319,20 @@ function this.registerModConfig()
 
         createYesNo{self = journalPage, config = {path = "journal", name = "enabled"}, label = "Integrate the mod to the game Journal menu"}
 
-        local infoLabelGroup = journalPage:createCategory{label = "Info about name and stages of a quest"}
+        local infoLabelGroup = journalPage:createCategory{label = "Quest name and it's info"}
         createYesNo{self = infoLabelGroup, config = {path = "journal.info", name = "enabled"}, label = "Enable"}
         createYesNo{self = infoLabelGroup, config = {path = "journal.info", name = "tooltip"}, label = "Show as a tooltip"}
 
-        local mapLabelGroup = journalPage:createCategory{label = "Info about location of quest objects and about requirements"}
-        createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "enabled"}, label = "Enable"}
-        createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "tooltip"}, label = "Show as a tooltip"}
+        local mapLabelGroup = journalPage:createCategory{label = "Quest objects and requirements"}
+        createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "enabled"}, label = "Enable button with requirements"}
+        createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "enabled"}, label = "Also show a map with quest objects"}
+        createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "tooltip"}, label = "Show as a tooltip"}
+
         createNumberEdit{self = mapLabelGroup, config = {path = "journal.map", name = "maxScale"}, label = "Maximum scale value for the map", limits = {min = 1, max = 5}}
 
-        local reqLabelGroup = journalPage:createCategory{label = "Menu about quest requirements"}
-        createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "enabled"},
-            label = "Show a separate icon for the requirements without info about their location"}
-        createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "tooltip"}, label = "Show as a tooltip"}
-        createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "currentByDefault"},
+        createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "currentByDefault"},
             label = "Show info about the current quest stage instead of information about the stage to which this entry corresponds"}
-        createYesNo{self = reqLabelGroup, config = {path = "journal.requirements", name = "scriptValues"}, label = "Show info about local variables of involved scripts"}
+        createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "scriptValues"}, label = "Show info about local variables of involved scripts"}
 
         createNumberEdit{self = journalPage, config = {path = "journal", name = "objectNames"},
             label = "Maximum number of object names in a tooltip or a field", limits = {min = 0, max = 10}}
