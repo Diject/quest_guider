@@ -393,7 +393,8 @@ function this.registerModConfig()
     do
         local otherPage = template:createPage{label = "Other"}
 
-        local integrQLMGroup = otherPage:createCategory{label = "Integration to \"Quest Log Menu\""}
+        local integrQLMGroup = otherPage:createCategory{label = "Integration to \"Quest Log Menu\" (by herbert100)"}
+        integrQLMGroup:createHyperlink{text = "Link to the mod page", url = "https://www.nexusmods.com/morrowind/mods/54203"}
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "enabled"}, label = "Integrate the mod to the \"Quest Log Menu\"",
             restartRequired = true}
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "tooltip"}, label = "Show data as a tooltip for the button in the \"Quest Log Menu\""}
