@@ -9,8 +9,7 @@ local cellLib = include("diject.quest_guider.cell")
 local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local types = include("diject.quest_guider.types")
-
-local mapMarkerLib = include("diject.mapMarkerLib.marker")
+local mapInfo = include("diject.quest_guider.mapInfo")
 
 local config = include("diject.quest_guider.config")
 
@@ -803,17 +802,16 @@ end
 ---@field description string|nil
 
 ---@param params questGuider.ui.createMarker.params
----@param pane tes3uiElement
+---@param widthHeight {width: number, height: number}
 ---@return number x, number y
-local function convertObjectPosToWorldPaneCoordinates(params, pane)
-    local currentZoomX = pane.width /  tes3.dataHandler.nonDynamicData.mapTexture.width
-    local currentZoomY = pane.height / tes3.dataHandler.nonDynamicData.mapTexture.height
+local function convertObjectPosToWorldPaneCoordinates(params, widthHeight)
+    local currentZoomX = widthHeight.width /  tes3.dataHandler.nonDynamicData.mapTexture.width
+    local currentZoomY = widthHeight.height / tes3.dataHandler.nonDynamicData.mapTexture.height
 
-    local zoomBar = mapMarkerLib.menu.uiExpZoomBar
-    local xOffset = 4
+    local xOffset = mapInfo.worldBounds.cellResolution
     local yOffset = 4
-    if zoomBar then
-        xOffset = 0
+    if mapInfo.uiExpansion then
+        xOffset = mapInfo.worldBounds.cellResolution / 2
         yOffset = 0
     else
         if mcp_mapExpansion then
@@ -822,16 +820,27 @@ local function convertObjectPosToWorldPaneCoordinates(params, pane)
         end
     end
 
-    local x = ((-mapMarkerLib.worldBounds.minX + params.x / 8192) * mapMarkerLib.worldBounds.cellResolution + xOffset) * currentZoomX
-    local y = ((-mapMarkerLib.worldBounds.maxY - 1 + params.y / 8192) * mapMarkerLib.worldBounds.cellResolution - yOffset) * currentZoomY
-
+    local x = ((-mapInfo.worldBounds.minX - 1 + params.x / 8192) * mapInfo.worldBounds.cellResolution + xOffset) * currentZoomX
+    local y = ((-mapInfo.worldBounds.maxY - 1 + params.y / 8192) * mapInfo.worldBounds.cellResolution - yOffset) * currentZoomY
     return x, y
 end
 
+
+---@param widthHeight {width: number, height: number}
+---@param coordinates {x: number, y: number}
+---@param markerData questGuider.ui.markerImage
+local function calcMarkerPos(widthHeight, coordinates, markerData)
+    local x, y = convertObjectPosToWorldPaneCoordinates(coordinates, widthHeight)
+    x = x - (markerData.shiftX or 0)
+    y = y + (markerData.shiftY or 0)
+    return x, y
+end
+
+
 ---@param params questGuider.ui.createMarker.params
 ---@return tes3uiElement|nil
----@return number|nil alignX
----@return number|nil alignY
+---@return number|nil x
+---@return number|nil y
 local function createMarker(params)
     if not params.pane then return end
     if not params.markerData or not params.markerData.path then return end
@@ -840,15 +849,14 @@ local function createMarker(params)
 
     if not image then return end
 
-    local x, y = convertObjectPosToWorldPaneCoordinates(params, params.pane)
-
-    local alignX = x / params.pane.width
-    local alignY = -y / params.pane.height
+    local x, y = calcMarkerPos(params.pane, params, params.markerData)
 
     image.autoHeight = true
     image.autoWidth = true
-    image.absolutePosAlignX = math.max(0, math.min(1, alignX))
-    image.absolutePosAlignY = math.max(0, math.min(1, alignY))
+    image.absolutePosAlignX = -2
+    image.absolutePosAlignY = -2
+    image.positionX = math.min(x, params.pane.width)
+    image.positionY = math.max(y, -params.pane.height)
     image.color = params.color or {1, 1, 1}
     image.imageScaleX = params.markerData.scale or 1
     image.imageScaleY = params.markerData.scale or 1
@@ -858,7 +866,7 @@ local function createMarker(params)
     local tooltip = tooltipLib.new{parent = image}
     tooltip:add{name = params.name, description = params.description}
 
-    return image, alignX, alignY
+    return image, x, y
 end
 
 
@@ -898,8 +906,6 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
     mapMarkersBlock.heightProportional = 1
     mapMarkersBlock.childAlignX = 0
     mapMarkersBlock.childAlignY = 1
-    mapMarkersBlock.ignoreLayoutX = true
-    mapMarkersBlock.ignoreLayoutY = true
     mapMarkersBlock.width = imageWidth
     mapMarkersBlock.height = imageHeight
 
@@ -1045,32 +1051,27 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
         end
 
         do
-            local minMaxAlignX = {1, 0}
-            local minMaxAlignY = {1, 0}
+            local minMaxX = {math.huge, -math.huge}
+            local minMaxY = {math.huge, -math.huge}
 
             for _, data in pairs(markersData) do
 
-                local im, alignX, alignY = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
-                    x = data.x, y = data.y, color = data.color,
-                    name = data.objName,
-                    description = data.descr,
-                }
+                local x, y = calcMarkerPos({width = imageWidth, height = imageHeight}, data, this.markers.quest)
 
-                if im then
-                    table.insert(markers, {marker = im, parent = data.parent})
-                    minMaxAlignX[1] = math.min(minMaxAlignX[1], alignX)
-                    minMaxAlignX[2] = math.max(minMaxAlignX[2], alignX)
-                    minMaxAlignY[1] = math.min(minMaxAlignY[1], alignY)
-                    minMaxAlignY[2] = math.max(minMaxAlignY[2], alignY)
-                end
+                minMaxX[1] = math.min(minMaxX[1], x)
+                minMaxX[2] = math.max(minMaxX[2], x)
+                minMaxY[1] = math.min(minMaxY[1], y)
+                minMaxY[2] = math.max(minMaxY[2], y)
+
             end
 
-            local xDiff = minMaxAlignX[2] - minMaxAlignX[1]
-            local yDiff = minMaxAlignY[2] - minMaxAlignY[1]
-            local xCenter = (minMaxAlignX[1] + minMaxAlignX[2]) / 2
-            local yCenter = (minMaxAlignY[1] + minMaxAlignY[2]) / 2
-            local xScale = mapBlock.width / (xDiff * 1.5 * imageWidth)
-            local yScale = mapBlock.height / (yDiff * 1.5 * imageHeight)
+            local xDiff = (minMaxX[2] - minMaxX[1])
+            local yDiff = (minMaxY[2] - minMaxY[1])
+            local xCenter = (minMaxX[1] + minMaxX[2]) / 2
+            local yCenter = (minMaxY[1] + minMaxY[2]) / 2
+            local xScale = xDiff == 0 and math.huge or mapBlock.width / (xDiff * 1.5)
+            local yScale = yDiff == 0 and math.huge or mapBlock.height / (yDiff * 1.5)
+
             local scale = math.max(0.1, math.min(config.data.journal.map.maxScale, xScale, yScale))
 
             mapMarkersBlock.width = imageWidth * scale
@@ -1081,8 +1082,29 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
             image.imageScaleX = scale
             image.imageScaleY = scale
 
-            pane.positionX = math.clamp(-xCenter * pane.width + mapBlock.width / 2, -(pane.width - mapBlock.width), 0)
-            pane.positionY = math.clamp(yCenter * pane.height - mapBlock.height / 2, 0, pane.height - mapBlock.height)
+            minMaxX = {math.huge, -math.huge}
+            minMaxY = {math.huge, -math.huge}
+            for _, data in pairs(markersData) do
+
+                local im, x, y = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
+                    x = data.x, y = data.y, color = data.color,
+                    name = data.objName,
+                    description = data.descr,
+                }
+
+                if im then
+                    table.insert(markers, {marker = im, parent = data.parent})
+                    minMaxX[1] = math.min(minMaxX[1], x)
+                    minMaxX[2] = math.max(minMaxX[2], x)
+                    minMaxY[1] = math.min(minMaxY[1], y)
+                    minMaxY[2] = math.max(minMaxY[2], y)
+                end
+            end
+
+            xCenter = (minMaxX[1] + minMaxX[2]) / 2
+            yCenter = (minMaxY[1] + minMaxY[2]) / 2
+            pane.positionX = math.clamp(-xCenter + mapBlock.width / 2, -(pane.width - mapBlock.width), 0)
+            pane.positionY = math.clamp(-(yCenter + mapBlock.height / 2), 0, pane.height - mapBlock.height)
         end
 
         ::continue::

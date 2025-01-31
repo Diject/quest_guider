@@ -10,6 +10,7 @@ local journalUI = include("diject.quest_guider.UI.journal")
 local mapUI = include("diject.quest_guider.UI.map")
 local dataGeneratoUI = include("diject.quest_guider.UI.dataGenerator")
 local quickInitMenu = include("diject.quest_guider.UI.quickInitMenu")
+local mapInfo = include("diject.quest_guider.mapInfo")
 
 
 --- @param e uiActivatedEventData
@@ -159,12 +160,13 @@ end
 
 --- @param e initializedEventData
 local function initializedCallback(e)
+    mapInfo.init()
     dataHandler.init()
     journalUI.init()
     initCallbacks()
     initIntegrations()
 end
-event.register(tes3.event.initialized, initializedCallback)
+event.register(tes3.event.initialized, initializedCallback, {priority = -278})
 
 --- @param e modConfigReadyEventData
 local function modConfigReadyCallback(e)
