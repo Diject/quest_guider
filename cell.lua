@@ -29,7 +29,7 @@ function this.findExitPos(cell, path, checked, cellPath)
             table.insert(cellPathCopy, door.destination.cell)
 
             if door.destination.cell.isOrBehavesAsExterior then
-                return door.destination.marker.position, pathCopy, cellPathCopy, not door.destination.cell.isInterior
+                return door.destination.marker.position:copy(), pathCopy, cellPathCopy, not door.destination.cell.isInterior
             else
                 local out, destPath, cPath, isEx = this.findExitPos(door.destination.cell, pathCopy, checked, cellPathCopy)
                 if out then return out, destPath, cPath, isEx, checked end
@@ -92,7 +92,7 @@ function this.findExitPositions(cell, checked, res)
     for door in cell:iterateReferences(tes3.objectType.door) do
         if door.destination and not door.deleted and not door.disabled then
             if not door.destination.cell.isInterior then
-                table.insert(res, door.destination.marker.position)
+                table.insert(res, door.destination.marker.position:copy())
             else
                 this.findExitPositions(door.destination.cell, checked, res)
             end
