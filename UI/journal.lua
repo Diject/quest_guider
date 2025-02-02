@@ -634,6 +634,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                         if requirementData then
                             reqBlock:setLuaData("requirementData", requirementData)
                             for _, req in pairs(requirementData) do
+                                local reqType = req.data.type
+
                                 local reqLabel = reqBlock:createLabel{ id = requirementsMenu.requirementLabel, text = req.str }
                                 reqLabel.borderTop = 4
                                 reqLabel.color = this.colors.lightDefault
@@ -645,6 +647,13 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                         reqLabel.color = trackingObj.color
                                         break
                                     end
+                                end
+
+                                if reqType == types.requirementType.Journal then
+                                    local tooltip = tooltipLib.new{parent = reqLabel}
+                                    local currInd = playerQuests.getCurrentIndex(req.data.variable)
+                                    tooltip:add{name = string.format("Your current index of this quest is %s", tostring(currInd or 0)),
+                                        nameColor = this.colors.default}
                                 end
 
                                 if req.positionData then
@@ -681,7 +690,6 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                                 makeLabelSelectable(reqLabel)
 
-                                local reqType = req.data.type
                                 local scriptName = req.data.script
                                 if scriptName and (reqType == types.requirementType.CustomLocal or reqType == types.requirementType.CustomNotLocal) then
                                     if not variableScripts[scriptName] then
