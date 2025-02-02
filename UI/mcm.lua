@@ -3,6 +3,8 @@ local log = include("diject.quest_guider.utils.log")
 
 local markerIconInfo = include("diject.quest_guider.markers")
 
+local tracking = include("diject.quest_guider.tracking")
+
 local mcm = mwse.mcm
 
 local this = {}
@@ -300,6 +302,10 @@ function this.registerModConfig()
         end}
         dataGenGroup:createButton{buttonText = "Show quick init menu", callback = function()
             include("diject.quest_guider.UI.quickInitMenu").show()
+        end}
+        dataGenGroup:createButton{buttonText = "Recreate markers on the map to apply the settings to them", inGameOnly = true, callback = function()
+            if not tes3.player then return end
+            tracking.recreateMarkers()
         end}
     end
 

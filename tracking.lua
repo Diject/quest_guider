@@ -809,4 +809,13 @@ function this.addMarkersForInteriorCell(cell)
     end
 end
 
+
+function this.recreateMarkers()
+    local questIds = table.keys(this.trackedObjectsByQuestId)
+    this.removeMarkers()
+    for _, questId in pairs(questIds) do
+        this.trackQuestsbyQuestId(questId)
+    end
+end
+
 return this
