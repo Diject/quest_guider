@@ -81,6 +81,7 @@ end
 ---@field limits questGuider.mcm.minMax|nil
 ---@field maxForLinkedGroup number|nil
 ---@field int boolean|nil
+---@field incStep number
 
 ---@param params mwseMCMCategory.createTextField.data|questGuider.mcm.createNumberEdit
 ---@return mwseMCMTextField
@@ -219,7 +220,7 @@ local function createNumberEdit(params)
             self.elements.outerContainer.maxWidth = 24
         end,
         callback = function(self)
-            setValue((tonumber(field.elements.inputField.text) or 0) + 1)
+            setValue((tonumber(field.elements.inputField.text) or 0) + (params.incStep or 1))
         end
     }
     buttonBlock:createButton{
@@ -236,7 +237,7 @@ local function createNumberEdit(params)
             self.elements.outerContainer.maxWidth = 24
         end,
         callback = function(self)
-            setValue((tonumber(field.elements.inputField.text) or 0) - 1)
+            setValue((tonumber(field.elements.inputField.text) or 0) - (params.incStep or 1))
         end
     }
 
@@ -327,6 +328,10 @@ function this.registerModConfig()
         createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "enabled"}, label = "Enable button with requirements"}
         createYesNo{self = mapLabelGroup, config = {path = "journal.map", name = "enabled"}, label = "Also show a map with quest objects"}
         createYesNo{self = mapLabelGroup, config = {path = "journal.requirements", name = "tooltip"}, label = "Show as a tooltip"}
+        createNumberEdit{self = mapLabelGroup, config = {path = "journal.map.marker", name = "alpha"},
+            label = "Transparency value for regular markers", limits = {min = 0, max = 1}, incStep = 0.1}
+        createNumberEdit{self = mapLabelGroup, config = {path = "journal.map.marker", name = "zoneAlpha"},
+            label = "Transparency value for the round markers that indicate a region", limits = {min = 0, max = 1}, incStep = 0.1}
 
         createNumberEdit{self = mapLabelGroup, config = {path = "journal.map", name = "maxScale"}, label = "Maximum scale value for the map", limits = {min = 1, max = 5}}
 
@@ -354,6 +359,8 @@ function this.registerModConfig()
             label = "Depth in game cells to which markers for doors in interior cells are looked for. The larger the value and the more adjacent interior cells, the longer it will take to calculate (the game will lag when loading or starting to track in interior cells)",
             limits = {min = 1, max = 30}, int = true
         }
+        createNumberEdit{self = trackingPage, config = {path = "tracking.marker", name = "alpha"},
+            label = "Transparency value for markers", limits = {min = 0, max = 1}, incStep = 0.1}
 
         local approxGroup = trackingPage:createCategory{label = "Approximate position"}
         createYesNo{self = approxGroup, config = {path = "tracking.approx", name = "enabled"}, label = "Instead of the exact location of the object, indicate its approximate location. This option also affects tooltips."}
@@ -362,6 +369,8 @@ function this.registerModConfig()
         createYesNo{self = approxGroup, config = {path = "tracking.approx.interior", name = "enabled"}, label = "Mark quest objects in interiors"}
         createNumberEdit{self = approxGroup, config = {path = "tracking.approx.interior", name = "radius"},
             label = "Interior marker radius within which object can be located. In game units. (1000 game units = 45 feet or 14 meters)", limits = {min = 200, max = 16000}, int = true}
+        createNumberEdit{self = approxGroup, config = {path = "tracking.marker", name = "zoneAlpha"},
+            label = "Transparency value for the markers", limits = {min = 0, max = 1}, incStep = 0.1}
 
         local giverGroup = trackingPage:createCategory{label = "Quest givers"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},

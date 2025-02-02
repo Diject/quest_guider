@@ -34,6 +34,10 @@ this.default = {
             enabled = true,
             tooltip = true, -- deprecated
             maxScale = 3,
+            marker = {
+                alpha = 0.8,
+                zoneAlpha = 0.6,
+            },
         },
         objectNames = 3,
     },
@@ -80,6 +84,10 @@ this.default = {
             enabled = true,
             hideStarted = true,
             namesMax = 3,
+        },
+        marker = {
+            alpha = 0.8,
+            zoneAlpha = 0.25,
         },
     },
     integration = {

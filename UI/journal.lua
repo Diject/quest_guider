@@ -872,6 +872,7 @@ local function createMarker(params)
     image.color = params.color or {1, 1, 1}
     image.imageScaleX = markerScale
     image.imageScaleY = markerScale
+    image.alpha = approxConfig.enabled and config.data.journal.map.marker.zoneAlpha or config.data.journal.map.marker.alpha
 
     image:setLuaData("records", {params})
 

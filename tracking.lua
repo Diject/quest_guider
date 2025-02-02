@@ -38,7 +38,7 @@ this.worldMarkerImageInfo = { path = "diject\\quest guider\\defaultArrow32x32.dd
 this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark16x32.dds",
         pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds", pathBelow = "diject\\quest guider\\exclamationMarkDown32x32.dds", shiftX = -3, shiftY = 12, scale = 0.4 }
 ---@type questGuider.tracking.markerImage
-this.zoneImageInfo = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128, alpha = 0.2 }
+this.zoneImageInfo = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128 }
 
 ---@class questGuider.tracking.storageData
 ---@field markerByObjectId table<string, questGuider.tracking.objectRecord>?
@@ -172,6 +172,7 @@ function this.addMarker(params)
     local objectMarkerData = {}
 
     local localImageInfo = approxConfig.enabled and this.zoneImageInfo or this.localMarkerImageInfo
+    local alpha = approxConfig.enabled and config.data.tracking.marker.zoneAlpha or config.data.tracking.marker.alpha
     objectMarkerData.localMarkerId = objectMarkerData.localMarkerId or markerLib.addRecord{
         path = localImageInfo.path,
         pathAbove = localImageInfo.pathAbove,
@@ -180,7 +181,7 @@ function this.addMarker(params)
         textureShiftX = localImageInfo.shiftX,
         textureShiftY = localImageInfo.shiftY,
         scale = approxConfig.enabled and -2 * approxConfig.interior.radius or localImageInfo.scale,
-        alpha = localImageInfo.alpha,
+        alpha = alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
@@ -191,7 +192,7 @@ function this.addMarker(params)
         textureShiftX = worldImageInfo.shiftX,
         textureShiftY = worldImageInfo.shiftY,
         scale = approxConfig.enabled and -2 * approxConfig.worldMap.radius or worldImageInfo.scale,
-        alpha = worldImageInfo.alpha,
+        alpha = alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
@@ -204,7 +205,7 @@ function this.addMarker(params)
         textureShiftX = doorImageInfo.shiftX,
         textureShiftY = doorImageInfo.shiftY,
         scale = approxConfig.enabled and -2 * approxConfig.interior.radius or doorImageInfo.scale,
-        alpha = doorImageInfo.alpha,
+        alpha = alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }

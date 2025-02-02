@@ -15,7 +15,7 @@ local default = {
         ---@type questGuider.tracking.markerImage
         marker = { path = "diject\\quest guider\\defaultArrow32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
         ---@type questGuider.tracking.markerImage
-        zoneMarker = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128, alpha = 0.5 },
+        zoneMarker = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128, },
     },
     ---@type { localMarker : questGuider.tracking.markerImage?, doorMarker : questGuider.tracking.markerImage?, worldMarker : questGuider.tracking.markerImage?, questGiverMarker : questGuider.tracking.markerImage?, zoneMarker : questGuider.tracking.markerImage? }
     tracking = {
