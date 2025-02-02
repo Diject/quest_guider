@@ -113,6 +113,7 @@ if this.data then
         if this.data.journal.map.enabled then
             this.data.journal.requirements.enabled = true
         end
+        mwse.saveConfig(storageName, this.data)
     end
 
     tableLib.addMissing(this.data, this.default)
