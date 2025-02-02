@@ -142,7 +142,7 @@ end
 
 local function initIntegrations()
     if config.data.integration.questLogMenu.enabled and tes3.isLuaModActive("herbert100.quest log menu") then
-        log("Found herbert100's \"Quest Log Menu\"")
+        log("Found herbert's \"Quest Log Menu\"")
         include("diject.quest_guider.integration.questLogMenu").init()
     end
 end
