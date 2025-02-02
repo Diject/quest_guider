@@ -688,6 +688,8 @@ function this.addMarkersForInteriorCell(cell)
     end
     lastInteriorMarkers = {}
 
+    if config.data.tracking.approx.enabled then return end
+
     ---@type table<tes3reference, {cells : table<string, { cell: tes3cell, depth: integer }>?, hasExit : any, ref : tes3reference}>
     local doors = {}
 
