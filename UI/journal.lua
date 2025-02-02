@@ -116,6 +116,7 @@ end
 ---@type table<string, questGuider.ui.markerImage>
 this.markers = {
     quest = {path = "diject\\quest guider\\defaultArrow32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5},
+    zone = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128},
 }
 
 
@@ -794,6 +795,7 @@ end
 
 ---@class questGuider.ui.createMarker.params
 ---@field pane tes3uiElement
+---@field scale number?
 ---@field markerData questGuider.ui.markerImage
 ---@field x number
 ---@field y number
@@ -808,10 +810,10 @@ local function convertObjectPosToWorldPaneCoordinates(params, widthHeight)
     local currentZoomX = widthHeight.width /  tes3.dataHandler.nonDynamicData.mapTexture.width
     local currentZoomY = widthHeight.height / tes3.dataHandler.nonDynamicData.mapTexture.height
 
-    local xOffset = mapInfo.worldBounds.cellResolution
+    local xOffset = 4
     local yOffset = 4
     if mapInfo.uiExpansion then
-        xOffset = mapInfo.worldBounds.cellResolution / 2
+        xOffset = 0
         yOffset = 0
     else
         if mcp_mapExpansion then
@@ -820,7 +822,7 @@ local function convertObjectPosToWorldPaneCoordinates(params, widthHeight)
         end
     end
 
-    local x = ((-mapInfo.worldBounds.minX - 1 + params.x / 8192) * mapInfo.worldBounds.cellResolution + xOffset) * currentZoomX
+    local x = ((-mapInfo.worldBounds.minX + params.x / 8192) * mapInfo.worldBounds.cellResolution + xOffset) * currentZoomX
     local y = ((-mapInfo.worldBounds.maxY - 1 + params.y / 8192) * mapInfo.worldBounds.cellResolution - yOffset) * currentZoomY
     return x, y
 end
@@ -829,11 +831,12 @@ end
 ---@param widthHeight {width: number, height: number}
 ---@param coordinates {x: number, y: number}
 ---@param markerData questGuider.ui.markerImage
-local function calcMarkerPos(widthHeight, coordinates, markerData)
-    local x, y = convertObjectPosToWorldPaneCoordinates(coordinates, widthHeight)
-    x = x - (markerData.shiftX or 0)
-    y = y + (markerData.shiftY or 0)
-    return x, y
+---@param scale number?
+local function calcMarkerPos(widthHeight, coordinates, markerData, scale)
+    local xw, yw = convertObjectPosToWorldPaneCoordinates(coordinates, widthHeight)
+    x = xw + ((markerData.shiftX * (scale or 1)) or 0)
+    y = yw + ((markerData.shiftY * (scale or 1)) or 0)
+    return x, y, xw, yw
 end
 
 
@@ -841,6 +844,8 @@ end
 ---@return tes3uiElement|nil
 ---@return number|nil x
 ---@return number|nil y
+---@return number|nil xw
+---@return number|nil yw
 local function createMarker(params)
     if not params.pane then return end
     if not params.markerData or not params.markerData.path then return end
@@ -849,7 +854,14 @@ local function createMarker(params)
 
     if not image then return end
 
-    local x, y = calcMarkerPos(params.pane, params, params.markerData)
+    local markerScale = params.markerData.scale or 1
+    local approxConfig = config.data.tracking.approx
+    if approxConfig.enabled then
+        local radius = approxConfig.worldMap.radius
+        markerScale = (mapInfo.worldBounds.cellResolution * (params.scale or 1) * radius / 4096) / params.markerData.scale
+    end
+
+    local x, y, xw, yw = calcMarkerPos(params.pane, params, params.markerData, approxConfig.enabled and markerScale or nil)
 
     image.autoHeight = true
     image.autoWidth = true
@@ -858,15 +870,15 @@ local function createMarker(params)
     image.positionX = math.min(x, params.pane.width)
     image.positionY = math.max(y, -params.pane.height)
     image.color = params.color or {1, 1, 1}
-    image.imageScaleX = params.markerData.scale or 1
-    image.imageScaleY = params.markerData.scale or 1
+    image.imageScaleX = markerScale
+    image.imageScaleY = markerScale
 
     image:setLuaData("records", {params})
 
     local tooltip = tooltipLib.new{parent = image}
     tooltip:add{name = params.name, description = params.description}
 
-    return image, x, y
+    return image, x, y, xw, yw
 end
 
 
@@ -876,6 +888,8 @@ end
 ---@param questData questDataGenerator.questData
 ---@param hideMap boolean|nil
 function this.drawMapMenu(parent, questId, index, questData, hideMap)
+    local approxConfig = config.data.tracking.approx
+
     local mainBlock = parent:createBlock{ id = mapMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.leftToRight
     mainBlock.autoHeight = true
@@ -1069,8 +1083,9 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
             local yDiff = (minMaxY[2] - minMaxY[1])
             local xCenter = (minMaxX[1] + minMaxX[2]) / 2
             local yCenter = (minMaxY[1] + minMaxY[2]) / 2
-            local xScale = xDiff == 0 and math.huge or mapBlock.width / (xDiff * 1.5)
-            local yScale = yDiff == 0 and math.huge or mapBlock.height / (yDiff * 1.5)
+            local additionalBorder = approxConfig.enabled and (mapInfo.worldBounds.cellResolution * approxConfig.worldMap.radius / 4048) or 0
+            local xScale = xDiff == 0 and math.huge or mapBlock.width / ((xDiff + additionalBorder) * 1.5)
+            local yScale = yDiff == 0 and math.huge or mapBlock.height / ((yDiff + additionalBorder) * 1.5)
 
             local scale = math.max(0.1, math.min(config.data.journal.map.maxScale, xScale, yScale))
 
@@ -1086,7 +1101,10 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
             minMaxY = {math.huge, -math.huge}
             for _, data in pairs(markersData) do
 
-                local im, x, y = createMarker{pane = mapMarkersBlock, markerData = this.markers.quest,
+                local im, x, y, xw, yw = createMarker{
+                    pane = mapMarkersBlock,
+                    scale = scale,
+                    markerData = config.data.tracking.approx.enabled and this.markers.zone or this.markers.quest,
                     x = data.x, y = data.y, color = data.color,
                     name = data.objName,
                     description = data.descr,
@@ -1094,10 +1112,10 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
 
                 if im then
                     table.insert(markers, {marker = im, parent = data.parent})
-                    minMaxX[1] = math.min(minMaxX[1], x)
-                    minMaxX[2] = math.max(minMaxX[2], x)
-                    minMaxY[1] = math.min(minMaxY[1], y)
-                    minMaxY[2] = math.max(minMaxY[2], y)
+                    minMaxX[1] = math.min(minMaxX[1], xw)
+                    minMaxX[2] = math.max(minMaxX[2], xw)
+                    minMaxY[1] = math.min(minMaxY[1], yw)
+                    minMaxY[2] = math.max(minMaxY[2], yw)
                 end
             end
 

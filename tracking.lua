@@ -8,6 +8,7 @@ local questLib = include("diject.quest_guider.quest")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local config = include("diject.quest_guider.config")
 local otherTypes = include("diject.quest_guider.Types.other")
+local randomLib = include("diject.quest_guider.utils.random")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -20,6 +21,7 @@ local this = {}
 ---@field pathAbove string|nil
 ---@field pathBelow string|nil
 ---@field scale number
+---@field alpha number? [0, 1]
 ---@field shiftX integer
 ---@field shiftY integer
 
@@ -35,6 +37,8 @@ this.worldMarkerImageInfo = { path = "diject\\quest guider\\defaultArrow32x32.dd
 ---@type questGuider.tracking.markerImage
 this.questGiverImageInfo = { path = "diject\\quest guider\\exclamationMark16x32.dds",
         pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds", pathBelow = "diject\\quest guider\\exclamationMarkDown32x32.dds", shiftX = -3, shiftY = 12, scale = 0.4 }
+---@type questGuider.tracking.markerImage
+this.zoneImageInfo = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128, alpha = 0.2 }
 
 ---@class questGuider.tracking.storageData
 ---@field markerByObjectId table<string, questGuider.tracking.objectRecord>?
@@ -136,6 +140,8 @@ end
 function this.addMarker(params)
     if not initialized then return end
 
+    local approxConfig = config.data.tracking.approx
+
     local objectId = params.objectId
 
     local positionData = params.positionData
@@ -165,34 +171,40 @@ function this.addMarker(params)
     ---@type questGuider.tracking.markerRecord
     local objectMarkerData = {}
 
+    local localImageInfo = approxConfig.enabled and this.zoneImageInfo or this.localMarkerImageInfo
     objectMarkerData.localMarkerId = objectMarkerData.localMarkerId or markerLib.addRecord{
-        path = this.localMarkerImageInfo.path,
-        pathAbove = this.localMarkerImageInfo.pathAbove,
-        pathBelow = this.localMarkerImageInfo.pathBelow,
+        path = localImageInfo.path,
+        pathAbove = localImageInfo.pathAbove,
+        pathBelow = localImageInfo.pathBelow,
         color = objectTrackingData.color,
-        textureShiftX = this.localMarkerImageInfo.shiftX,
-        textureShiftY = this.localMarkerImageInfo.shiftY,
-        scale = this.localMarkerImageInfo.scale,
+        textureShiftX = localImageInfo.shiftX,
+        textureShiftY = localImageInfo.shiftY,
+        scale = approxConfig.enabled and -2 * approxConfig.interior.radius or localImageInfo.scale,
+        alpha = localImageInfo.alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
+    local worldImageInfo = approxConfig.enabled and this.zoneImageInfo or this.worldMarkerImageInfo
     objectMarkerData.worldMarkerId = objectMarkerData.worldMarkerId or markerLib.addRecord{
-        path = this.worldMarkerImageInfo.path,
+        path = worldImageInfo.path,
         color = objectTrackingData.color,
-        textureShiftX = this.worldMarkerImageInfo.shiftX,
-        textureShiftY = this.worldMarkerImageInfo.shiftY,
-        scale = this.worldMarkerImageInfo.scale,
+        textureShiftX = worldImageInfo.shiftX,
+        textureShiftY = worldImageInfo.shiftY,
+        scale = approxConfig.enabled and -2 * approxConfig.worldMap.radius or worldImageInfo.scale,
+        alpha = worldImageInfo.alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
+    local doorImageInfo = approxConfig.enabled and this.zoneImageInfo or this.localDoorMarkerImageInfo
     objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
-        path = this.localDoorMarkerImageInfo.path,
-        pathAbove = this.localDoorMarkerImageInfo.pathAbove,
-        pathBelow = this.localDoorMarkerImageInfo.pathBelow,
+        path = doorImageInfo.path,
+        pathAbove = doorImageInfo.pathAbove,
+        pathBelow = doorImageInfo.pathBelow,
         color = objectTrackingData.color,
-        textureShiftX = this.localDoorMarkerImageInfo.shiftX,
-        textureShiftY = this.localDoorMarkerImageInfo.shiftY,
-        scale = this.localDoorMarkerImageInfo.scale,
+        textureShiftX = doorImageInfo.shiftX,
+        textureShiftY = doorImageInfo.shiftY,
+        scale = approxConfig.enabled and -2 * approxConfig.interior.radius or doorImageInfo.scale,
+        alpha = doorImageInfo.alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
@@ -217,12 +229,12 @@ function this.addMarker(params)
                 if rawData.id then
                     objects[rawData.id] = true
                 end
-            else
+            elseif not approxConfig.enabled or (data.id and approxConfig.interior.enabled) then
                 markerLib.addLocalMarker{
                     record = objectMarkerData.localMarkerId,
                     cell = data.id,
                     position = data.position,
-                    trackOffscreen = true,
+                    trackOffscreen = not approxConfig.enabled,
                 }
             end
         end
@@ -243,7 +255,7 @@ function this.addMarker(params)
             if cell then
 
                 if data.isExitEx and allowWorldMarkers then
-                    local exitPos, path, cellPath, isEx, checkedCells = cellLib.findExitPos(cell)
+                    local exitPos, path = data.exitPos, data.doorPath
 
                     if exitPos then
                         if objectMarkerData.worldMarkerId then
@@ -288,13 +300,41 @@ function this.addMarker(params)
         end
     end
 
-    for objId, _ in pairs(objects) do
-        if objectMarkerData.localMarkerId then
-            markerLib.addLocalMarker{
-                record = objectMarkerData.localMarkerId,
-                objectId = objId,
-                trackOffscreen = true,
-            }
+    if objectMarkerData.localMarkerId then
+
+        for objId, _ in pairs(objects) do
+
+            if not approxConfig.enabled then
+                markerLib.addLocalMarker{
+                    record = objectMarkerData.localMarkerId,
+                    objectId = objId,
+                    trackOffscreen = true,
+                }
+
+            else
+                local objectPoss = questLib.getObjectPositionData(objId)
+                if not objectPoss then goto continue end
+
+                randomLib.setSeedByStringHash(objId)
+                for _, posData in pairs(objectPoss) do
+                    if posData.name then
+                        local pos = tes3vector3.new(posData.pos[1], posData.pos[2], posData.pos[3])
+                        randomLib.changeVectorPosByRandomInRadius(pos, approxConfig.interior.radius * 0.8)
+                        markerLib.addLocalMarker{
+                            record = objectMarkerData.localMarkerId,
+                            cell = posData.name,
+                            position = pos,
+                        }
+                    end
+                end
+
+            end
+
+            ::continue::
+        end
+
+        if approxConfig.enabled then
+            randomLib.resetRandomSeed()
         end
     end
     this.markerByObjectId[objectId] = objectTrackingData

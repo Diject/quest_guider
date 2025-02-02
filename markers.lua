@@ -10,11 +10,14 @@ this.isLoaded = false
 local default = {
     ---@type string
     name = "default",
-    ---@type { marker : questGuider.ui.markerImage }
+    ---@type { marker : questGuider.ui.markerImage?, zoneMarker : questGuider.ui.markerImage? }
     journal = {
+        ---@type questGuider.tracking.markerImage
         marker = { path = "diject\\quest guider\\defaultArrow32x32.dds", shiftX = -8, shiftY = 15, scale = 0.5 },
+        ---@type questGuider.tracking.markerImage
+        zoneMarker = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128, alpha = 0.5 },
     },
-    ---@type { localMarker : questGuider.tracking.markerImage, doorMarker : questGuider.tracking.markerImage, worldMarker : questGuider.tracking.markerImage, questGiverMarker : questGuider.tracking.markerImage }
+    ---@type { localMarker : questGuider.tracking.markerImage?, doorMarker : questGuider.tracking.markerImage?, worldMarker : questGuider.tracking.markerImage?, questGiverMarker : questGuider.tracking.markerImage?, zoneMarker : questGuider.tracking.markerImage? }
     tracking = {
         ---@type questGuider.tracking.markerImage
         localMarker = { path = "diject\\quest guider\\defaultArrow32x32.dds", pathAbove = "diject\\quest guider\\defaultArrowUp32x32.dds",
@@ -31,6 +34,9 @@ local default = {
         ---@type questGuider.tracking.markerImage
         questGiverMarker = { path = "diject\\quest guider\\exclamationMark16x32.dds", pathAbove = "diject\\quest guider\\exclamationMarkUp32x32.dds",
             pathBelow = "diject\\quest guider\\exclamationMarkDown32x32.dds", shiftX = -3, shiftY = 12, scale = 0.4 },
+
+        ---@type questGuider.tracking.markerImage
+        zoneMarker = { path = "diject\\quest guider\\circleZoneMarker128x128.dds", shiftX = -64, shiftY = 64, scale = 128 },
     },
 }
 
@@ -53,6 +59,10 @@ function this.load()
                     res.journal.marker = table.copy(default.journal.marker)
                 end
 
+                if not res.journal.zoneMarker or not res.journal.zoneMarker.path then
+                    res.journal.zoneMarker = table.copy(default.journal.zoneMarker)
+                end
+
                 if not res.tracking.localMarker or not res.tracking.localMarker.path then
                     res.tracking.localMarker = table.copy(default.tracking.localMarker)
                 end
@@ -67,6 +77,10 @@ function this.load()
 
                 if not res.tracking.questGiverMarker or not res.tracking.questGiverMarker.path then
                     res.tracking.questGiverMarker = table.copy(default.tracking.questGiverMarker)
+                end
+
+                if not res.tracking.zoneMarker or not res.tracking.zoneMarker.path then
+                    res.tracking.zoneMarker = table.copy(default.tracking.zoneMarker)
                 end
 
                 this.data[fileWithoutExt] = res
@@ -98,12 +112,14 @@ function this.apply(id)
 
     local journal = include("diject.quest_guider.UI.journal")
     journal.markers.quest = profile.journal.marker
+    journal.markers.zoneMarker = profile.journal.zoneMarker
 
     local tracking = include("diject.quest_guider.tracking")
     tracking.localMarkerImageInfo = profile.tracking.localMarker
     tracking.worldMarkerImageInfo = profile.tracking.worldMarker
     tracking.localDoorMarkerImageInfo = profile.tracking.doorMarker
     tracking.questGiverImageInfo = profile.tracking.questGiverMarker
+    tracking.zoneImageInfo = profile.tracking.zoneMarker
 
     return ret
 end

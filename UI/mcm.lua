@@ -355,6 +355,14 @@ function this.registerModConfig()
             limits = {min = 1, max = 30}, int = true
         }
 
+        local approxGroup = trackingPage:createCategory{label = "Approximate position"}
+        createYesNo{self = approxGroup, config = {path = "tracking.approx", name = "enabled"}, label = "Instead of the exact location of the object, indicate its approximate location. This option also affects tooltips."}
+        createNumberEdit{self = approxGroup, config = {path = "tracking.approx.worldMap", name = "radius"},
+            label = "World map marker radius within which object can be located. In game units. (1000 game units = 45 feet or 14 meters)", limits = {min = 4000, max = 200000}, int = true}
+        createYesNo{self = approxGroup, config = {path = "tracking.approx.interior", name = "enabled"}, label = "Mark quest objects in interiors"}
+        createNumberEdit{self = approxGroup, config = {path = "tracking.approx.interior", name = "radius"},
+            label = "Interior marker radius within which object can be located. In game units. (1000 game units = 45 feet or 14 meters)", limits = {min = 200, max = 16000}, int = true}
+
         local giverGroup = trackingPage:createCategory{label = "Quest givers"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
             label = "Mark quest givers on the map (the mod doesn't check if you can take these quests)"}

@@ -2,6 +2,7 @@ local log = include("diject.quest_guider.utils.log")
 local tableLib = include("diject.quest_guider.utils.table")
 local stringLib = include("diject.quest_guider.utils.string")
 local cellLib = include("diject.quest_guider.cell")
+local randomLib = include("diject.quest_guider.utils.random")
 
 local config = include("diject.quest_guider.config")
 
@@ -485,6 +486,8 @@ end
 ---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
 function this.getRequirementPositionData(requirement)
 
+    local approxConfig = config.data.tracking.approx
+
     if requirement.type == types.requirementType.CustomDialogue then
         return
     end
@@ -713,6 +716,60 @@ function this.getRequirementPositionData(requirement)
     if table.size(out) == 0 then
         return nil
     end
+
+    if not approxConfig.enabled then return out end
+
+    local function changePosition(pos, radius)
+        radius = radius * 0.8
+
+        randomLib.changeVectorPosByRandomInRadius(pos, radius)
+    end
+
+    for id, data in pairs(out) do
+        randomLib.setSeedByStringHash(id)
+
+        for i, posData in ipairs(data.positions or {}) do
+
+            posData.doorPath = nil
+
+            if posData.position then
+                if posData.id then
+                    changePosition(posData.position, approxConfig.interior.radius)
+                    if posData.exitPos then
+                        changePosition(posData.exitPos, approxConfig.worldMap.radius)
+                    end
+                else
+                    changePosition(posData.position, approxConfig.worldMap.radius)
+                end
+            end
+
+            local descr
+            if posData.cellPath then
+
+                if #posData.cellPath > 0 and posData.isExitEx then
+                    local lastIndex = #posData.cellPath
+                    if #posData.cellPath > 1 then
+                        local regionName = posData.cellPath[lastIndex].displayName
+                        regionName = regionName == "" and "???" or regionName
+                        descr = string.format("\"%s\"", regionName)
+                        descr = descr .. string.format(" => \"%s\"", posData.cellPath[lastIndex - 1].editorName)
+                    else
+                        descr = string.format("\"%s\"", posData.cellPath[1].editorName)
+                    end
+                end
+
+            elseif posData.isExitEx then
+                local cell = tes3.getCell{position = posData.position}
+                if cell then
+                    descr = string.format("\"%s\"", cell.displayName)
+                end
+
+            end
+
+            posData.description = descr
+        end
+    end
+    randomLib.resetRandomSeed()
 
     return out
 end

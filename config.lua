@@ -66,6 +66,16 @@ this.default = {
         },
         maxPositions = 20,
         maxCellDepth = 12,
+        approx = {
+            enabled = false,
+            worldMap = {
+                radius = 20000,
+            },
+            interior = {
+                enabled = true,
+                radius = 600,
+            },
+        },
         giver = {
             enabled = true,
             hideStarted = true,
