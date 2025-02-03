@@ -253,6 +253,34 @@ end
 
 
 
+local function createMarkerImageDropdown(parent)
+    ---@type mwseMCMDropdownOption[]
+    local options = {}
+
+    for _, id in pairs(markerIconInfo.getIds()) do
+        local name = markerIconInfo.getName(id) or id
+        ---@type mwseMCMDropdownOption
+        local option = {
+            label = name,
+            value = id,
+            callback = function (self)
+                markerIconInfo.apply(id)
+            end
+        }
+
+        table.insert(options, option)
+    end
+
+    parent:createDropdown{
+        label = "Marker icons. !Will only affect newly created markers - or recreate all markers by clicking the \"recreate markers\" button on the Main tab",
+        options = options,
+        variable = mcm.createTableVariable{
+            id = "iconProfile",
+            table = config.data.main
+        }
+    }
+end
+
 local function onSearch(searchText)
     local text = searchText:lower()
     if text:find("quest") or text:find("guider") or text:find("map") or text:find("marker") then
@@ -414,6 +442,24 @@ function this.registerModConfig()
     end
 
     do
+        local markersPage = template:createPage{label = "Markers"}
+
+        createMarkerImageDropdown(markersPage)
+
+        local mapGroup = markersPage:createCategory{label = "Markers in the map menu"}
+        createNumberEdit{self = mapGroup, config = {path = "tracking.marker", name = "alpha"},
+            label = "Transparency value for regular markers", limits = {min = 0, max = 1}, incStep = 0.1}
+        createNumberEdit{self = mapGroup, config = {path = "tracking.marker", name = "zoneAlpha"},
+            label = "Transparency value for the round markers that indicate a region", limits = {min = 0, max = 1}, incStep = 0.1}
+
+        local journalGroup = markersPage:createCategory{label = "Markers in the journal menu"}
+        createNumberEdit{self = journalGroup, config = {path = "journal.map.marker", name = "alpha"},
+            label = "Transparency value for regular markers", limits = {min = 0, max = 1}, incStep = 0.1}
+        createNumberEdit{self = journalGroup, config = {path = "journal.map.marker", name = "zoneAlpha"},
+            label = "Transparency value for the round markers that indicate a region", limits = {min = 0, max = 1}, incStep = 0.1}
+    end
+
+    do
         local otherPage = template:createPage{label = "Other"}
 
         local integrQLMGroup = otherPage:createCategory{label = "Integration to \"Quest Log Menu\" (by herbert)"}
@@ -422,31 +468,7 @@ function this.registerModConfig()
             restartRequired = true}
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "tooltip"}, label = "Show data as a tooltip for the button in the \"Quest Log Menu\""}
 
-        ---@type mwseMCMDropdownOption[]
-        local options = {}
-
-        for _, id in pairs(markerIconInfo.getIds()) do
-            local name = markerIconInfo.getName(id) or id
-            ---@type mwseMCMDropdownOption
-            local option = {
-                label = name,
-                value = id,
-                callback = function (self)
-                    markerIconInfo.apply(id)
-                end
-            }
-
-            table.insert(options, option)
-        end
-
-        otherPage:createDropdown{
-            label = "Marker icons. !Will only affect newly created markers",
-            options = options,
-            variable = mcm.createTableVariable{
-                id = "iconProfile",
-                table = config.data.main
-            }
-        }
+        createMarkerImageDropdown(otherPage)
 
         createYesNo{self = otherPage, config = {path = "main", name = "helpLabels"}, label = "Show help info in menus"}
     end
