@@ -134,6 +134,29 @@ function this.getNextIndexes(questData, questIndex)
     return nextIndexes
 end
 
+---@param objectData string|questDataGenerator.objectInfo?
+---@return integer?
+function this.getObjectCount(objectData)
+    if objectData and type(objectData) == "string" then
+        objectData = this.getObjectData(objectData)
+    end
+
+    if not objectData then return end
+
+    local count = objectData.inWorld
+
+    for _, linkId in pairs(objectData.links or {}) do
+        local linkData = this.getObjectData(linkId)
+        if linkData then
+            count = count + (linkData.inWorld or 0)
+        end
+    end
+
+    return count
+end
+
+--#################################################################################################
+
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
 ---@field str string
 ---@field priority number
