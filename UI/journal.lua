@@ -1439,12 +1439,12 @@ function this.updateJournalMenu()
                     local tooltip = tes3ui.createTooltipMenu()
                     tooltip.autoWidth = true
                     if not config.data.journal.requirements.tooltip then
-                        if not this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
+                        if not this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track the quest objects.", tes3.justifyText.left) then
                             tooltip:destroy()
                         end
                         return
                     else
-                        this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                        this.createHelpMessage(tooltip, "Click to open. / Shift+Click to track the quest objects.")
                     end
                     if not drawRequirementMenu(tooltip, questId, questIndex, quest) then
                         tooltip:destroy()
