@@ -18,4 +18,17 @@ this.name = {
     [53] = "less or equal",
 }
 
+---@param a any
+---@param b any
+---@param operator integer
+---@return boolean
+function this.check(a, b, operator)
+    return (operator == 48 and a == b) or
+        (operator == 49 and a ~= b) or
+        (operator == 50 and a > b) or
+        (operator == 51 and a >= b) or
+        (operator == 52 and a < b) or
+        (operator == 53 and a <= b)
+end
+
 return this

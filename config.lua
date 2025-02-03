@@ -84,6 +84,7 @@ this.default = {
             enabled = true,
             hideStarted = true,
             namesMax = 3,
+            filter = true,
         },
         marker = {
             alpha = 0.8,

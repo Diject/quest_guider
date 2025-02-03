@@ -545,6 +545,14 @@ function this.createQuestGiverMarkers(cell)
             local questData = questLib.getQuestData(questIdLower)
             if not questData or not questData.name then goto continue end
 
+            if config.data.tracking.giver.filter then
+                local firstIndexStr = questLib.getFirstIndex(questData)
+                if not firstIndexStr then goto continue end
+                if not questLib.checkConditionsForPlayer(questIdLower, firstIndexStr) then
+                    goto continue
+                end
+            end
+
             local playerData = playerQuests.getQuestData(questId)
             if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
                 goto continue

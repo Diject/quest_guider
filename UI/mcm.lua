@@ -410,6 +410,7 @@ function this.registerModConfig()
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
             label = "Mark quest givers on the map (the mod doesn't check if you can take these quests)"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "hideStarted"}, label = "Hide markers for quests that have already been started/finished"}
+        createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "filter"}, label = "Try to hide some of those quests that the player can't take yet"}
         createNumberEdit{self = giverGroup, config = {path = "tracking.giver", name = "namesMax"},
             label = "Maximum number of quest names in the tooltip for a marker", limits = {min = 1, max = 10}, int = true}
     end

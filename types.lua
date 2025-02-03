@@ -188,24 +188,6 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 ---| "this.requirementType.CustomVampClan"
 ---| "this.requirementType.CustomRandom"
 
-this.operator = {}
-
-this.operator.value = require("diject.quest_guider.Types.operator").value
---- @alias questGuider.operator.value
----| "this.operator.value.Equal"
----| "this.operator.value.NotEqual"
----| "this.operator.value.Greater"
----| "this.operator.value.GreaterOrEqual"
----| "this.operator.value.Less"
----| "this.operator.value.LessOrEqual"
-
-this.operator.name = require("diject.quest_guider.Types.operator").name
---- @alias questGuider.operator.name
----| "this.operator.name.Equal"
----| "this.operator.name.NotEqual"
----| "this.operator.name.Greater"
----| "this.operator.name.GreaterOrEqual"
----| "this.operator.name.Less"
----| "this.operator.name.LessOrEqual"
+this.operator = require("diject.quest_guider.Types.operator")
 
 return this

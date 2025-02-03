@@ -93,6 +93,15 @@ function this.getIndexes(questData)
 end
 
 ---@param questData string|questDataGenerator.questData
+---@return string|nil
+function this.getFirstIndex(questData)
+    local indexes = this.getIndexes(questData)
+    if not indexes or #indexes == 0 then return end
+
+    return indexes[1]
+end
+
+---@param questData string|questDataGenerator.questData
 ---@param questIndex integer|string
 ---@return string[]|nil
 function this.getNextIndexes(questData, questIndex)
@@ -774,5 +783,58 @@ function this.getRequirementPositionData(requirement)
     return out
 end
 
+
+---@param questId string
+---@param questIndex integer|string
+---@return boolean?
+function this.checkConditionsForPlayer(questId, questIndex)
+    local questData = this.getQuestData(questId)
+    if not questData then return end
+
+    local indexStr = tostring(questIndex)
+    local stageData = questData[indexStr]
+    if not stageData then return end
+
+    local operator = types.operator
+    local requirements = stageData.requirements or {}
+
+    if #requirements == 0 then return true end
+
+    for _, reqBlock in pairs(stageData.requirements or {}) do
+        local ret = true
+
+        for _, req in pairs(reqBlock) do
+
+            if req.type == types.requirementType.Journal then
+                local plIndex = playerQuests.getCurrentIndex(req.variable) or 0
+                if not operator.check(plIndex, req.value, req.operator) then
+                    ret = false
+                    break
+                end
+
+            elseif (req.type == types.requirementType.CustomActorFaction or req.type == types.requirementType.CustomPCFaction) and req.object == "player" then
+                local faction = tes3.getFaction(req.value)
+                if not operator.check(faction, req.value, req.operator) then
+                    ret = false
+                    break
+                end
+
+            elseif (req.type == types.requirementType.RankRequirement or req.type == types.requirementType.CustomPCRank) and req.object == "player" then
+                local faction = tes3.getFaction(req.variable)
+                if not operator.check(faction, req.value, req.operator) then
+                    ret = false
+                    break
+                end
+            end
+
+        end
+
+        if ret then
+            return true
+        end
+    end
+
+    return false
+end
 
 return this
