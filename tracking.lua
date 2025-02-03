@@ -236,6 +236,7 @@ function this.addMarker(params)
                     cell = data.id,
                     position = data.position,
                     trackOffscreen = not approxConfig.enabled,
+                    insertBefore = approxConfig.enabled,
                 }
             end
         end
@@ -248,6 +249,7 @@ function this.addMarker(params)
                         record = objectMarkerData.worldMarkerId,
                         x = data.exitPos.x,
                         y = data.exitPos.y,
+                        insertBefore = approxConfig.enabled,
                     }
                 end
             end
@@ -325,6 +327,7 @@ function this.addMarker(params)
                             record = objectMarkerData.localMarkerId,
                             cell = posData.name,
                             position = pos,
+                            insertBefore = approxConfig.enabled,
                         }
                     end
                 end
