@@ -3,11 +3,11 @@ local types = include("diject.quest_guider.types")
 return {
     [types.requirementType.CustomActor] = { str = "Talk to #objectName#", priority = -999 },
     [types.requirementType.CustomDialogue] = { str = "Dialogue topic \"#variable#\"", priority = -1000 },
-    [types.requirementType.Item] = { str = "The number of item \"#varName#\"(#variable#) is #operator# #value# for #objectName#", },
+    [types.requirementType.Item] = { str = "The number of item \"#varName#\" (#variable#) is #operator# #value# for #objectName#", },
     [types.requirementType.CustomDisposition] = { str = "Disposition of the actor is #operator# #value#", priority = -1001 },
     [types.requirementType.PreviousDialogChoice] = { str = "#value# dialogue option is selected", priority = -1001 },
     [types.requirementType.CustomPCFaction] = { str = "The player in #valueName# faction", },
-    [types.requirementType.Dead] = { str = "The number of #varName#(#variable#) deaths is #operator# #value#", },
+    [types.requirementType.Dead] = { str = "The number of deaths #varName# (#variable#) is #operator# #value#", },
     [types.requirementType.CustomActorCell] = { str = "Find the actor in #valueName#", priority = -1000 },
     [types.requirementType.NotActorID] = { str = "The actor is#negNotContr# #varName#", priority = -1001 },
     [types.requirementType.CustomPCRank] = { str = "#rankName# rank for #varName#", },
