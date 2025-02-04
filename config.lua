@@ -60,7 +60,7 @@ this.default = {
             npcNames = 3,
         },
         tracking = {
-            maxPositions = 50,
+            maxPositions = 100,
         }
     },
     tracking = {
