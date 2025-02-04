@@ -196,7 +196,7 @@ function this.addMarker(params)
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
-    local doorImageInfo = approxConfig.enabled and this.zoneImageInfo or this.localDoorMarkerImageInfo
+    local doorImageInfo = this.localDoorMarkerImageInfo
     objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
         path = doorImageInfo.path,
         pathAbove = doorImageInfo.pathAbove,
@@ -204,7 +204,7 @@ function this.addMarker(params)
         color = objectTrackingData.color,
         textureShiftX = doorImageInfo.shiftX,
         textureShiftY = doorImageInfo.shiftY,
-        scale = approxConfig.enabled and -2 * approxConfig.interior.radius or doorImageInfo.scale,
+        scale = doorImageInfo.scale,
         alpha = alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
@@ -699,8 +699,6 @@ function this.addMarkersForInteriorCell(cell)
     end
     lastInteriorMarkers = {}
 
-    if config.data.tracking.approx.enabled then return end
-
     ---@type table<tes3reference, {cells : table<string, { cell: tes3cell, depth: integer }>?, hasExit : any, ref : tes3reference}>
     local doors = {}
 
@@ -772,6 +770,10 @@ function this.addMarkersForInteriorCell(cell)
                         lowestDepth = depthData.depth
                     end
                 end
+            end
+
+            if config.data.tracking.approx.enabled and config.data.tracking.approx.interior.minCellDepth > lowestDepth then
+                shouldCreateMarker = false
             end
 
             if shouldCreateMarker then

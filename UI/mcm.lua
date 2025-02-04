@@ -401,6 +401,8 @@ function this.registerModConfig()
         createNumberEdit{self = approxGroup, config = {path = "tracking.approx.worldMap", name = "radius"},
             label = "World map marker radius within which object can be located. In game units. (1000 game units = 45 feet or 14 meters)", limits = {min = 4000, max = 200000}, int = true}
         createYesNo{self = approxGroup, config = {path = "tracking.approx.interior", name = "enabled"}, label = "Mark quest objects in interiors"}
+        createNumberEdit{self = approxGroup, config = {path = "tracking.approx.interior", name = "minCellDepth"},
+            label = "Show markers on doors if the tracked object is located further than the value in interior cells", limits = {min = 0, max = 30}, int = true}
         createNumberEdit{self = approxGroup, config = {path = "tracking.approx.interior", name = "radius"},
             label = "Interior marker radius within which object can be located. In game units. (1000 game units = 45 feet or 14 meters)", limits = {min = 200, max = 16000}, int = true}
         createNumberEdit{self = approxGroup, config = {path = "tracking.marker", name = "zoneAlpha"},

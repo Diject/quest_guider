@@ -78,6 +78,7 @@ this.default = {
             interior = {
                 enabled = true,
                 radius = 600,
+                minCellDepth = 4,
             },
         },
         giver = {
