@@ -108,4 +108,5 @@ return {
     [types.requirementType.CustomParalysis] = { str = "#objectName# is#notContr# paralyzed", priority = -1001 },
     [types.requirementType.CustomInvisible] = { str = "#objectName# is#notContr# invisible", priority = -1001 },
     [types.requirementType.CustomChameleon] = { str = "#objectName# chameleon value is #operator# #value#", priority = -1001 },
+    [types.requirementType.CustomPCRace] = { str = "Race of the player is#notContr# #raceByIntValue#" },
 }

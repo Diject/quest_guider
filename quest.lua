@@ -328,6 +328,9 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     mapped[pattern] = getName(environment.variableObj, "the actor")
                 elseif codeStr == "objNameOrTheActor" then
                     mapped[pattern] = getName(environment.objectObj, "the actor")
+                elseif codeStr == "raceByIntValue" then
+                    local race = tes3.dataHandler.nonDynamicData.races[environment.value]
+                    mapped[pattern] = race and race.name or "???"
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
