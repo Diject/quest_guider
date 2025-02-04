@@ -31,17 +31,15 @@ function this.drawObjectTooltip(parent, objectId)
 
     local involvedNames = {}
     if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
-        if objectInfo.type == 1 then
-            for _, stageData in pairs(objectInfo.stages or {}) do
-                local oldIndex = involvedQuests[stageData.id] or 0
-                involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
-            end
+        for _, stageData in pairs(objectInfo.stages or {}) do
+            local oldIndex = involvedQuests[stageData.id] or 0
+            involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
         end
 
         for _, objId in pairs(objectInfo.contains or {}) do
 
             local objDt = questLib.getObjectData(objId)
-            if not objDt or objDt.type > 2 then goto continue end
+            if not objDt or objDt.type > 3 then goto continue end
 
             if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
 
@@ -165,7 +163,7 @@ function this.drawDoorTooltip(parent, reference)
             local objData = questLib.getObjectData(objId)
             if not objData then goto continue end
 
-            if objData.starts and objData.type == 1 then
+            if objData.starts then
                 startsQuest[objId] = objData.starts
             end
 
@@ -192,24 +190,21 @@ function this.drawDoorTooltip(parent, reference)
 
             if not valid then goto continue end
 
-            if objData.type == 2 then
-                for _, oId in pairs(objData.contains or {}) do
+            questObjects[objId] = objData
+            for _, oId in pairs(objData.contains or {}) do
 
-                    local objDt = questLib.getObjectData(oId)
-                    if not objDt or objDt.type ~= 1 then goto continue end
+                local objDt = questLib.getObjectData(oId)
+                if not objDt then goto continue end
 
-                    if objDt.starts then
-                        startsQuest[oId] = objDt.starts
-                    end
-
-                    if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
-
-                    questObjects[oId] = objData
-
-                    ::continue::
+                if objDt.starts then
+                    startsQuest[oId] = objDt.starts
                 end
-            elseif objData.type == 1 then
-                questObjects[objId] = objData
+
+                if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
+
+                questObjects[oId] = objData
+
+                ::continue::
             end
 
             ::continue::
