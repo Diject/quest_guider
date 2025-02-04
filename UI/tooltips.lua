@@ -28,12 +28,32 @@ function this.drawObjectTooltip(parent, objectId)
     if not objectInfo then return end
 
     local involvedQuests = {}
-    for _, stageData in pairs(objectInfo.stages) do
-        local oldIndex = involvedQuests[stageData.id] or 0
-        involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
-    end
 
     local involvedNames = {}
+    if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
+        if objectInfo.type == 1 then
+            for _, stageData in pairs(objectInfo.stages or {}) do
+                local oldIndex = involvedQuests[stageData.id] or 0
+                involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
+            end
+        end
+
+        for _, objId in pairs(objectInfo.contains or {}) do
+
+            local objDt = questLib.getObjectData(objId)
+            if not objDt or objDt.type > 2 then goto continue end
+
+            if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
+
+            for _, stageData in pairs(objDt.stages or {}) do
+                local oldIndex = involvedQuests[stageData.id] or 0
+                involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
+            end
+
+            ::continue::
+        end
+    end
+
     for questId, maxIndex in pairs(involvedQuests) do
         local questData = questLib.getQuestData(questId)
         if not questData or not questData.name then goto continue end
@@ -136,44 +156,63 @@ function this.drawDoorTooltip(parent, reference)
     findInnerCells(reference.destination.cell)
 
     local startsQuest = {}
+    ---@type table<string, questDataGenerator.objectInfo>
     local questObjects = {}
 
     for _, cell in pairs(innerCells) do
         for ref in cell:iterateReferences() do
-            local objId = ref.baseObject.id
+            local objId = ref.baseObject.id:lower()
             local objData = questLib.getObjectData(objId)
-            if objData then
+            if not objData then goto continue end
 
-                if objData.starts then
-                    startsQuest[objId] = objData.starts
-                end
-
-                if objData.inWorld < config.data.tooltip.tracking.maxPositions then
-                    local valid = false
-
-                    if config.data.tracking.giver.hideStarted then
-                        local quests = {}
-                        for _, stage in pairs(objData.stages) do
-                            local oldIndex = quests[stage.id] or 0
-                            quests[stage.id] = math.max(oldIndex, stage.index)
-                        end
-                        for qId, maxIndex in pairs(quests) do
-                            local playerData = playerQuests.getQuestData(qId)
-                            if not playerData or playerData.index <= maxIndex then
-                                valid = true
-                                break
-                            end
-                        end
-                    else
-                        valid = true
-                    end
-
-                    if valid then
-                        questObjects[objId] = objData
-                    end
-                end
-
+            if objData.starts and objData.type == 1 then
+                startsQuest[objId] = objData.starts
             end
+
+            if objData.total > config.data.tooltip.tracking.maxPositions then goto continue end
+
+            local valid = false
+
+            if config.data.tracking.giver.hideStarted then
+                local quests = {}
+                for _, stage in pairs(objData.stages) do
+                    local oldIndex = quests[stage.id] or 0
+                    quests[stage.id] = math.max(oldIndex, stage.index)
+                end
+                for qId, maxIndex in pairs(quests) do
+                    local playerData = playerQuests.getQuestData(qId)
+                    if not playerData or playerData.index <= maxIndex then
+                        valid = true
+                        break
+                    end
+                end
+            else
+                valid = true
+            end
+
+            if not valid then goto continue end
+
+            if objData.type == 2 then
+                for _, oId in pairs(objData.contains or {}) do
+
+                    local objDt = questLib.getObjectData(oId)
+                    if not objDt or objDt.type ~= 1 then goto continue end
+
+                    if objDt.starts then
+                        startsQuest[oId] = objDt.starts
+                    end
+
+                    if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
+
+                    questObjects[oId] = objData
+
+                    ::continue::
+                end
+            elseif objData.type == 1 then
+                questObjects[objId] = objData
+            end
+
+            ::continue::
         end
     end
 
@@ -233,18 +272,11 @@ function this.drawDoorTooltip(parent, reference)
         local qNPCsNameTable = {}
         for objId, data in pairs(questObjects) do
 
-            if data.type == 1 then
-                local obj = tes3.getObject(objId)
-                if not obj then goto continue end
-                if obj.objectType == tes3.objectType.npc or obj.objectType == tes3.objectType.creature then
-                    qNPCsNameTable[obj.id] = obj.name
-                else
-                    qObjectsNameTable[obj.id] = obj.name
-                end
-
-            elseif data.type == 2 and data.parent then
-                local obj = tes3.getObject(data.parent)
-                if not obj then goto continue end
+            local obj = tes3.getObject(objId)
+            if not obj then goto continue end
+            if obj.objectType == tes3.objectType.npc or obj.objectType == tes3.objectType.creature then
+                qNPCsNameTable[obj.id] = obj.name
+            else
                 qObjectsNameTable[obj.id] = obj.name
             end
 
