@@ -88,7 +88,9 @@ function this.load()
         end
     end
 
-    this.data["default"] = table.deepcopy(default)
+    if not this.data["default"] then
+        this.data["default"] = table.deepcopy(default)
+    end
 
     this.isLoaded = true
 end
