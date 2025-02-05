@@ -205,7 +205,7 @@ function this.addMarker(params)
         textureShiftX = doorImageInfo.shiftX,
         textureShiftY = doorImageInfo.shiftY,
         scale = doorImageInfo.scale,
-        alpha = alpha,
+        alpha = config.data.tracking.marker.alpha,
         name = positionData.name,
         description = string.format("Quest: \"%s\"", questData.name or "")
     }
@@ -752,7 +752,7 @@ function this.addMarkersForInteriorCell(cell)
             lowestDepthHashTable[1] = true
         else
             local lowestDepth = depths[1]
-            for i = 1, math.clamp(#depths, 1, config.protected.tracking.interior.depthConut) do
+            for i = 1, math.clamp(#depths, 1, config.data.tracking.approx.enabled and 1 or config.protected.tracking.interior.depthConut) do
                 if lowestDepth + config.protected.tracking.interior.depthMaxDifference >= depths[i] then
                     lowestDepthHashTable[depths[i]] = true
                 end
