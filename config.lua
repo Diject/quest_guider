@@ -35,7 +35,7 @@ this.default = {
             tooltip = true, -- deprecated
             maxScale = 3,
             marker = {
-                alpha = 0.8,
+                alpha = 0.9,
                 zoneAlpha = 0.6,
             },
         },
@@ -88,7 +88,7 @@ this.default = {
             filter = true,
         },
         marker = {
-            alpha = 0.8,
+            alpha = 0.9,
             zoneAlpha = 0.25,
         },
     },
