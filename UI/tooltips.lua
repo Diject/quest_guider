@@ -30,12 +30,12 @@ function this.drawObjectTooltip(parent, objectId)
     local involvedQuests = {}
 
     local involvedNames = {}
-    if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
-        for _, stageData in pairs(objectInfo.stages or {}) do
-            local oldIndex = involvedQuests[stageData.id] or 0
-            involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
-        end
+    for _, stageData in pairs(objectInfo.stages or {}) do
+        local oldIndex = involvedQuests[stageData.id] or 0
+        involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
+    end
 
+    if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
         for _, objId in pairs(objectInfo.contains or {}) do
 
             local objDt = questLib.getObjectData(objId)
