@@ -155,6 +155,28 @@ function this.getObjectCount(objectData)
     return count
 end
 
+---@param tb string[] table with object ids
+---@return table<string, string> out name by object id
+---@return integer count
+function this.getObjectNamesFromTable(tb)
+    local out = {}
+    local count = 0
+    for _, id in pairs(tb or {}) do
+        local dt = dataHandler.questObjects[id]
+        if dt and (dt.type <= 2) then
+            local obj = tes3.getObject(id)
+            if obj and obj.name then
+                out[id] = obj.name
+            else
+                out[id] = id
+            end
+            count = count + 1
+        end
+    end
+
+    return out, count
+end
+
 --#################################################################################################
 
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
@@ -186,8 +208,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
 
     local objectObj
 
-    for _, requirement in pairs(reqBlock) do
-
+    ---@param requirement questDataGenerator.requirementData
+    local function processRequirement(requirement)
         if disallowedRequirementTypes[requirement.type] then goto continue end
 
         if requirement.type == types.requirementType.Journal and requirement.variable == questId then
@@ -346,23 +368,26 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     if environment.script then
                         local scrData = dataHandler.questObjects[environment.script]
                         if scrData and scrData.links then
-                            local objs = {}
+                            local objs, count = this.getObjectNamesFromTable(scrData.links)
 
-                            local haveObject = false
-                            for _, id in pairs(scrData.links) do
-                                local linkData = dataHandler.questObjects[id]
-                                if linkData and (linkData.type == 1 or linkData.type == 2) then
-                                    local obj = tes3.getObject(id)
-                                    if obj and obj.name then
-                                        objs[id] = obj.name
-                                    else
-                                        objs[id] = id
-                                    end
-                                    haveObject = true
-                                end
+                            if count > 0 then
+                                res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
                             end
+                        end
+                    end
 
-                            if haveObject then
+                    if res == "" then
+                        res = "???"
+                    end
+                    mapped[pattern] = res
+                elseif codeStr == "objectsInScript" then
+                    local res = ""
+                    if environment.value then
+                        local scrData = dataHandler.questObjects[environment.value]
+                        if scrData and scrData.contains then
+                            local objs, count = this.getObjectNamesFromTable(scrData.contains)
+
+                            if count > 0 then
                                 res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
                             end
                         end
@@ -421,7 +446,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             if scrData and scrData.links then
                 for _, id in pairs(scrData.links) do
                     local linkData = dataHandler.questObjects[id]
-                    if linkData and (linkData.type == 1 or linkData.type == 2) then
+                    if linkData and (linkData.type <= 2) then
                         objects[id] = id
                     end
                 end
@@ -436,7 +461,22 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
 
         table.insert(out, reqOut)
 
+        if requirement.type == types.requirementType.CustomScript and environment.script then
+            local scrData = dataHandler.questObjects[environment.script]
+            if scrData and scrData.contains then
+                local objs, count = this.getObjectNamesFromTable(scrData.contains)
+
+                if count > 0 then
+                    processRequirement({type = "SCR1", operator = 48, value = environment.script})
+                end
+            end
+        end
+
         ::continue::
+    end
+
+    for _, requirement in pairs(reqBlock) do
+        processRequirement(requirement)
     end
 
     table.sort(out, function (a, b)
@@ -565,39 +605,45 @@ function this.getRequirementPositionData(requirement)
         end
     end
 
-    for _, req in pairs(requirements) do
-        for name, value in pairs(req) do
-            if type(value) ~= "string" then
-                goto continue
-            end
+    local function fillDataForScriptByTableName(scriptId, tableName)
+        local scrData = dataHandler.questObjects[scriptId]
+        if not scrData or not scrData[tableName] or not tes3.getScript(scriptId) then return end
 
-            if name == "script" then
-                local scrData = dataHandler.questObjects[value]
-                if scrData and scrData.links and tes3.getScript(value) then
-                    for _, id in pairs(scrData.links) do
-                        local linkData = dataHandler.questObjects[id]
-                        if linkData and (linkData.type == 1 or linkData.type == 2) then
-                            local obj = tes3.getObject(id)
-                            if obj then
-                                objects[obj] = id
-                            end
-                        end
-                    end
+        for _, id in pairs(scrData[tableName]) do
+            local linkData = dataHandler.questObjects[id]
+            if linkData and (linkData.type <= 2) then
+                local obj = tes3.getObject(id)
+                if obj then
+                    objects[obj] = id
+                end
+            end
+        end
+    end
+
+    if requirement.type == types.requirementType.CustomScript and requirement.script then
+        fillDataForScriptByTableName(requirement.script, "links")
+
+    elseif requirement.type == "SCR1" and requirement.value then
+        fillDataForScriptByTableName(requirement.value, "contains")
+
+    else
+        for _, req in pairs(requirements) do
+            for name, value in pairs(req) do
+                if type(value) ~= "string" then
+                    goto continue
                 end
 
-                goto continue
-            end
+                local obj = tes3.getObject(value)
+                if obj then
+                    objects[obj] = value
+                end
+                local cell = tes3.getCell{id = value}
+                if cell then
+                    cells[cell] = value
+                end
 
-            local obj = tes3.getObject(value)
-            if obj then
-                objects[obj] = value
+                ::continue::
             end
-            local cell = tes3.getCell{id = value}
-            if cell then
-                cells[cell] = value
-            end
-
-            ::continue::
         end
     end
 
@@ -698,7 +744,7 @@ function this.getRequirementPositionData(requirement)
         for _, linkId in pairs(objectData.links or {}) do
             local obj = tes3.getObject(linkId)
             local objDt = this.getObjectData(linkId)
-            if obj and objDt and (objDt.type == 1 or objDt.type == 2) then
+            if obj and objDt and (objDt.type <= 3) then
                 addPosData(objDt, linkId)
                 outD = out[id]
                 if outD then
