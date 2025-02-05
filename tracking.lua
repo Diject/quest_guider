@@ -459,9 +459,8 @@ function this.removeMarkers()
     for _, qId in pairs(questIds) do
         this.removeMarker{ questId = qId }
     end
-
-    this.trackedObjectsByQuestId = {}
-    this.markerByObjectId = {}
+    table.clear(this.trackedObjectsByQuestId)
+    table.clear(this.markerByObjectId)
 end
 
 ---@param trackedObjectId string
