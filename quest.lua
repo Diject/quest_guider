@@ -564,7 +564,7 @@ end
 ---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
 function this.getRequirementPositionData(requirement)
 
-    local approxConfig = config.data.tracking.approx
+    local trackingConfig = config.data.tracking
 
     if requirement.type == types.requirementType.CustomDialogue then
         return
@@ -747,7 +747,7 @@ function this.getRequirementPositionData(requirement)
         for _, linkData in pairs(objectData.links or {}) do
             local obj = tes3.getObject(linkData[1])
             local objDt = this.getObjectData(linkData[1])
-            if obj and objDt and (objDt.type <= 3) then
+            if obj and objDt and (objDt.type <= 2) and linkData[2] >= trackingConfig.minChance then
                 addPosData(objDt, linkData[1])
                 outD = out[id]
                 if outD then
@@ -801,6 +801,8 @@ function this.getRequirementPositionData(requirement)
         return nil
     end
 
+
+    local approxConfig = trackingConfig.approx
     if not approxConfig.enabled then return out end
 
     local function changePosition(pos, radius)
