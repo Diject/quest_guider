@@ -612,12 +612,12 @@ function this.getRequirementPositionData(requirement)
         local scrData = dataHandler.questObjects[scriptId]
         if not scrData or not scrData[tableName] or not tes3.getScript(scriptId) then return end
 
-        for _, id in pairs(scrData[tableName]) do
-            local linkData = dataHandler.questObjects[id]
+        for _, linkDt in pairs(scrData[tableName]) do
+            local linkData = dataHandler.questObjects[linkDt[1]]
             if linkData and (linkData.type <= 2) then
-                local obj = tes3.getObject(id)
+                local obj = tes3.getObject(linkDt[1])
                 if obj then
-                    objects[obj] = id
+                    objects[obj] = linkDt[1]
                 end
             end
         end
