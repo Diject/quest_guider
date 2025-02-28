@@ -61,6 +61,7 @@ this.default = {
         },
         tracking = {
             maxPositions = 100,
+            minChance = 0.1,
         }
     },
     tracking = {
