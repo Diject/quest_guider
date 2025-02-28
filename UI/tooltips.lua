@@ -35,13 +35,13 @@ function this.drawObjectTooltip(parent, objectId)
         involvedQuests[stageData.id] = math.max(oldIndex, stageData.index)
     end
 
-    if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
+    if objectInfo.norm and objectInfo.norm <= config.data.tooltip.tracking.maxPositions then
         for _, objIdDt in pairs(objectInfo.contains or {}) do
 
             local objDt = questLib.getObjectData(objIdDt[1])
             if not objDt or objDt.type > 3 then goto continue end
 
-            if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
+            if objDt.norm > config.data.tooltip.tracking.maxPositions then goto continue end
 
             for _, stageData in pairs(objDt.stages or {}) do
                 local oldIndex = involvedQuests[stageData.id] or 0
@@ -167,7 +167,7 @@ function this.drawDoorTooltip(parent, reference)
                 startsQuest[objId] = objData.starts
             end
 
-            if objData.total > config.data.tooltip.tracking.maxPositions then goto continue end
+            if objData.norm > config.data.tooltip.tracking.maxPositions then goto continue end
 
             local valid = false
 
@@ -201,7 +201,7 @@ function this.drawDoorTooltip(parent, reference)
                     startsQuest[oId] = objDt.starts
                 end
 
-                if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
+                if objDt.norm > config.data.tooltip.tracking.maxPositions then goto continue end
 
                 questObjects[oId] = objData
 
