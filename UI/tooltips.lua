@@ -36,9 +36,9 @@ function this.drawObjectTooltip(parent, objectId)
     end
 
     if objectInfo.total and objectInfo.total <= config.data.tooltip.tracking.maxPositions then
-        for _, objId in pairs(objectInfo.contains or {}) do
+        for _, objIdDt in pairs(objectInfo.contains or {}) do
 
-            local objDt = questLib.getObjectData(objId)
+            local objDt = questLib.getObjectData(objIdDt[1])
             if not objDt or objDt.type > 3 then goto continue end
 
             if objDt.total > config.data.tooltip.tracking.maxPositions then goto continue end
@@ -191,8 +191,9 @@ function this.drawDoorTooltip(parent, reference)
             if not valid then goto continue end
 
             questObjects[objId] = objData
-            for _, oId in pairs(objData.contains or {}) do
+            for _, oDt in pairs(objData.contains or {}) do
 
+                local oId = oDt[1]
                 local objDt = questLib.getObjectData(oId)
                 if not objDt then goto continue end
 

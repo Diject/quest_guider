@@ -145,8 +145,8 @@ function this.getObjectCount(objectData)
 
     local count = objectData.inWorld
 
-    for _, linkId in pairs(objectData.links or {}) do
-        local linkData = this.getObjectData(linkId)
+    for _, linkArr in pairs(objectData.links or {}) do
+        local linkData = this.getObjectData(linkArr[1])
         if linkData then
             count = count + (linkData.inWorld or 0)
         end
@@ -155,13 +155,14 @@ function this.getObjectCount(objectData)
     return count
 end
 
----@param tb string[] table with object ids
+---@param tb {[1] : string} table with object ids
 ---@return table<string, string> out name by object id
 ---@return integer count
-function this.getObjectNamesFromTable(tb)
+function this.getObjectNamesFromLinkTable(tb)
     local out = {}
     local count = 0
-    for _, id in pairs(tb or {}) do
+    for _, tbDt in pairs(tb or {}) do
+        local id = tbDt[1]
         local dt = dataHandler.questObjects[id]
         if dt and (dt.type <= 2) then
             local obj = tes3.getObject(id)
@@ -353,6 +354,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                 elseif codeStr == "raceByIntValue" then
                     local race = tes3.dataHandler.nonDynamicData.races[environment.value]
                     mapped[pattern] = race and race.name or "???"
+                elseif codeStr == "dialogueVariable" then
+                    mapped[pattern] = environment.variableStr:sub(7)
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
@@ -368,7 +371,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     if environment.script then
                         local scrData = dataHandler.questObjects[environment.script]
                         if scrData and scrData.links then
-                            local objs, count = this.getObjectNamesFromTable(scrData.links)
+                            local objs, count = this.getObjectNamesFromLinkTable(scrData.links)
 
                             if count > 0 then
                                 res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
@@ -385,7 +388,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     if environment.value then
                         local scrData = dataHandler.questObjects[environment.value]
                         if scrData and scrData.contains then
-                            local objs, count = this.getObjectNamesFromTable(scrData.contains)
+                            local objs, count = this.getObjectNamesFromLinkTable(scrData.contains)
 
                             if count > 0 then
                                 res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
@@ -444,10 +447,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
         if environment.script then
             local scrData = dataHandler.questObjects[environment.script]
             if scrData and scrData.links then
-                for _, id in pairs(scrData.links) do
-                    local linkData = dataHandler.questObjects[id]
+                for _, idDt in pairs(scrData.links) do
+                    local linkData = dataHandler.questObjects[idDt[1]]
                     if linkData and (linkData.type <= 2) then
-                        objects[id] = id
+                        objects[idDt[1]] = idDt[1]
                     end
                 end
             end
@@ -464,7 +467,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
         if requirement.type == types.requirementType.CustomScript and environment.script then
             local scrData = dataHandler.questObjects[environment.script]
             if scrData and scrData.contains then
-                local objs, count = this.getObjectNamesFromTable(scrData.contains)
+                local objs, count = this.getObjectNamesFromLinkTable(scrData.contains)
 
                 if count > 0 then
                     processRequirement({type = "SCR1", operator = 48, value = environment.script})
@@ -741,11 +744,11 @@ function this.getRequirementPositionData(requirement)
             outD.inWorld = objectData.inWorld
         end
 
-        for _, linkId in pairs(objectData.links or {}) do
-            local obj = tes3.getObject(linkId)
-            local objDt = this.getObjectData(linkId)
+        for _, linkData in pairs(objectData.links or {}) do
+            local obj = tes3.getObject(linkData[1])
+            local objDt = this.getObjectData(linkData[1])
             if obj and objDt and (objDt.type <= 3) then
-                addPosData(objDt, linkId)
+                addPosData(objDt, linkData[1])
                 outD = out[id]
                 if outD then
                     outD.inWorld = (outD.inWorld or 0) + objectData.inWorld
