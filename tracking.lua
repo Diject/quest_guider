@@ -16,6 +16,8 @@ local storageLabel = "tracking"
 
 local this = {}
 
+this.mapMarkerLibVersion = markerLib and (markerLib.version or 1) or -1
+
 ---@class questGuider.tracking.markerImage
 ---@field path string
 ---@field pathAbove string|nil
@@ -58,6 +60,7 @@ this.trackedQuestGivers = {}
 ---@field localMarkerId string|nil
 ---@field localDoorMarkerId string|nil
 ---@field worldMarkerId string|nil
+---@field disabled boolean?
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
@@ -815,6 +818,88 @@ function this.addMarkersForInteriorCell(cell)
 
         ::continue::
     end
+end
+
+
+---@class questGuider.tracking.disableMarker
+---@field questId string? should be lowercase
+---@field objectId string? should be lowercase
+---@field toggle boolean?
+---@field value boolean?
+
+---@param params questGuider.tracking.disableMarker
+function this.setDisableMarkerState(params)
+    local markerDataHashTable = {}
+
+    for objId, objData in pairs(this.markerByObjectId) do
+        if params.objectId and objId ~= params.objectId then goto continue end
+
+        for qId, markerData in pairs(objData.markers) do
+            if params.questId and qId ~= params.questId then goto continue end
+
+            markerDataHashTable[markerData.data] = true
+
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    for qId, qData in pairs(this.trackedObjectsByQuestId) do
+        if params.questId and params.questId ~= qId then goto continue end
+
+        for objId, _ in pairs(qData.objects) do
+            if params.objectId and objId ~= params.objectId then goto continue end
+
+            local objData = this.markerByObjectId[objId]
+            if not objData then goto continue end
+
+            for _, markerData in pairs(objData.markers) do
+                markerDataHashTable[markerData.data] = true
+            end
+
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    ---@param markerData questGuider.tracking.markerRecord
+    local function setDisabledState(markerData)
+        markerData.disabled = params.toggle == true and not markerData.disabled or params.value
+        if markerData.disabled == nil then markerData.disabled = false end
+
+        if this.mapMarkerLibVersion >= 3 then
+            local localDoorMarkerRec = markerLib.record.get(markerData.localDoorMarkerId)
+            local localMarkerRec = markerLib.record.get(markerData.localMarkerId)
+            local worldMarkerRec = markerLib.record.get(markerData.worldMarkerId)
+
+            if localDoorMarkerRec then localDoorMarkerRec:hide(markerData.disabled) end
+            if localMarkerRec then localMarkerRec:hide(markerData.disabled) end
+            if worldMarkerRec then worldMarkerRec:hide(markerData.disabled) end
+        end
+    end
+
+    for markerData, _ in pairs(markerDataHashTable) do
+        setDisabledState(markerData)
+    end
+end
+
+
+---@class questGuider.tracking.getDisabledState
+---@field questId string should be lowercase
+---@field objectId string should be lowercase
+
+---@param params questGuider.tracking.getDisabledState
+---@return boolean?
+function this.getDisabledState(params)
+    if not params or not params.objectId or not params.questId then return end
+
+    local objData = this.markerByObjectId[params.objectId]
+    local objQuestTrackingData = objData and objData.markers[params.questId]
+    local disabledState = objQuestTrackingData and objQuestTrackingData.data.disabled
+
+    return disabledState
 end
 
 

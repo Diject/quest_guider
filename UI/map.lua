@@ -79,6 +79,15 @@ function this.updateMapMenu()
         qNameLabel.borderLeft = 10
 
         qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
+            if tes3.worldController.inputController:isShiftDown() then
+                local _, randObjId = table.choice(trackingData.objects)
+                if randObjId then
+                    local randObjDisState = trackingLib.getDisabledState{ questId = questId, objectId = randObjId}
+                    trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = questId }
+                end
+                trackingLib.updateMarkers(true)
+                return
+            end
             tes3.messageBox{
                 message = "Remove markers for this quest?",
                 buttons = { "Yes", "No" },
@@ -96,7 +105,11 @@ function this.updateMapMenu()
         if config.data.main.helpLabels then
             local tooltip = tooltipLib.new{parent = qNameLabel}
             if config.data.main.helpLabels then
-                tooltip:add{name = "Click to remove."}
+                local text = "Click to remove."
+                if trackingLib.mapMarkerLibVersion >= 3 then
+                    text = text.." Shift+Click to enable/disable."
+                end
+                tooltip:add{name = text}
             end
         end
 
@@ -113,7 +126,7 @@ function this.updateMapMenu()
                         qData.text = journalInfo.text
                         text = qData.text
                     end
-                    tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(text) }
+                    tooltip:add{ name = questData.name, description = questLib.removeSpecialCharactersFromJournalText(text) }
                 end
             end
         end
@@ -125,7 +138,13 @@ function this.updateMapMenu()
             local objectMarkerData = trackingLib.markerByObjectId[objId]
             if not objectMarkerData then goto continue end
 
-            local markerColor = table.copy(objectMarkerData.color)
+            local disabledState = false
+            local markerRecordData = objectMarkerData.markers[questId] and objectMarkerData.markers[questId].data
+            if markerRecordData then
+                disabledState = markerRecordData.disabled or false
+            end
+
+            local markerColor = table.copy(disabledState and tes3ui.getPalette(tes3.palette.journalFinishedQuestOverColor) or objectMarkerData.color)
 
             local qDescrLabel = block:createLabel{ id = mapAddon.questObjLabel, text = objName }
             qDescrLabel.widthProportional = 1
@@ -136,15 +155,24 @@ function this.updateMapMenu()
             if config.data.main.helpLabels then
                 local tooltip = tooltipLib.new{parent = qDescrLabel}
                 if config.data.main.helpLabels then
-                    tooltip:add{name = "Click to remove."}
+                    local text = "Click to remove."
+                    if trackingLib.mapMarkerLibVersion >= 3 then
+                        text = text.." Shift+Click to enable/disable."
+                    end
+                    tooltip:add{name = text}
                 end
             end
 
+            local lastDisabledState = disabledState
             qDescrLabel:register(tes3.uiEvent.mouseOver, function (e)
                 local color = {1, 1, 1}
                 qDescrLabel.color = color
 
                 trackingLib.changeObjectMarkerColor(objId, color, 100)
+                if trackingLib.mapMarkerLibVersion >= 3 then
+                    lastDisabledState = trackingLib.getDisabledState{ objectId = objId, questId = questId }
+                    trackingLib.setDisableMarkerState{ value = false,  objectId = objId, questId = questId }
+                end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
             end)
@@ -152,11 +180,20 @@ function this.updateMapMenu()
             qDescrLabel:register(tes3.uiEvent.mouseLeave, function (e)
                 qDescrLabel.color = markerColor
                 trackingLib.changeObjectMarkerColor(objId, markerColor, 0)
+                if trackingLib.mapMarkerLibVersion >= 3 then
+                    trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId }
+                end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
             end)
 
             qDescrLabel:register(tes3.uiEvent.mouseClick, function (e)
+                if tes3.worldController.inputController:isShiftDown() then
+                    trackingLib.setDisableMarkerState{ value = not lastDisabledState, objectId = objId, questId = questId }
+                    trackingLib.updateMarkers(true)
+                    return
+                end
+
                 tes3.messageBox{
                     message = "Remove the marker?",
                     buttons = { "Yes", "No" },
