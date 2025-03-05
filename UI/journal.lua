@@ -10,6 +10,7 @@ local trackingLib = include("diject.quest_guider.tracking")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local types = include("diject.quest_guider.types")
 local mapInfo = include("diject.quest_guider.mapInfo")
+local menuContainer = include("diject.quest_guider.UI.menuContainer")
 
 local config = include("diject.quest_guider.config")
 
@@ -73,9 +74,6 @@ local mapMenu = {
 }
 
 local containerMenu = {
-    id = "qGuider_container",
-    buttonBlock = "qGuider_container_btnBlock",
-    closeBtn = "qGuider_container_closeBtn",
     trackBtn = "qGuider_container_trackBtn",
 }
 
@@ -120,54 +118,9 @@ this.markers = {
 }
 
 
----@param mainBlock tes3uiElement
----@param scrollBlock tes3uiElement|nil
-local function updateContainerMenu(mainBlock, scrollBlock)
-    local topMenu = mainBlock:getTopLevelMenu()
-    topMenu:updateLayout()
-    if scrollBlock and scrollBlock.widget then
-        scrollBlock.widget:contentsChanged()
-    end
+local updateContainerMenu = menuContainer.updateContainerMenu
 
-    if topMenu.name == "qGuider_container" then
-        topMenu.maxWidth = nil
-        topMenu.maxHeight = nil
-        topMenu.minWidth = nil
-        topMenu.minHeight = nil
-        topMenu.height = mainBlock.height + 74
-        topMenu.width = mainBlock.width + 24
-        topMenu.maxWidth = topMenu.width
-        topMenu.maxHeight = topMenu.height
-        topMenu.minWidth = topMenu.width
-        topMenu.minHeight = topMenu.height
-        topMenu:updateLayout()
-        if scrollBlock and scrollBlock.widget then
-            scrollBlock.widget:contentsChanged()
-        end
-    end
-end
-
-local function isColorsEqual(color1, color2)
-    if not color1 or not color2 then return end
-    return color1[1] == color2[1] and color1[2] == color2[2] and color1[3] == color2[3]
-end
-
----@param element tes3uiElement
----@param color number[]|nil
-local function makeLabelSelectable(element, color)
-    local originalColor
-    element:registerAfter(tes3.uiEvent.mouseOver, function (e)
-        if not isColorsEqual(element.color, {1, 1, 1}) then
-            originalColor = table.copy(element.color)
-            element.color = color or {1, 1, 1}
-            element:getTopLevelMenu():updateLayout()
-        end
-    end)
-    element:registerAfter(tes3.uiEvent.mouseLeave, function (e)
-        element.color = originalColor or element.color
-        element:getTopLevelMenu():updateLayout()
-    end)
-end
+local makeLabelSelectable = include("diject.quest_guider.UI.utils").makeLabelSelectable
 
 ---@param element tes3uiElement
 ---@param message string
@@ -184,21 +137,6 @@ function this.createHelpMessage(element, message, justifyText)
     return true
 end
 
----@param element tes3uiElement
-function this.centerToCursor(element)
-    local width, height = tes3.getViewportSize()
-    local scale = tes3ui.getViewportScale()
-    width = width / scale
-    height = height / scale
-    local halfWidth = width / 2
-    local halfHeight = height / 2
-    local curPos = tes3.getCursorPosition()
-
-    element.positionX = math.clamp(curPos.x - element.width / 2, -halfWidth, halfWidth - element.width)
-    element.positionY = math.clamp(curPos.y + 10, -halfHeight + element.height, halfHeight)
-
-    element:getTopLevelMenu():updateLayout()
-end
 
 ---@param parent tes3uiElement
 ---@param questId string
@@ -1150,35 +1088,6 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
 end
 
 
----@param label string
----@param callback fun( menu : tes3uiElement, buttonBlock : tes3uiElement)?
-function this.drawContainer(label, callback)
-    local element = tes3ui.createMenu{ id = containerMenu.id, dragFrame = true, }
-    element.text = label
-    local frame = element:findChild("PartDragMenu_drag_frame")
-    if not frame then return end
-    local buttonBlock = frame:createBlock{ id = containerMenu.buttonBlock }
-    buttonBlock.autoHeight = true
-    buttonBlock.autoWidth = true
-    buttonBlock.flowDirection = tes3.flowDirection.leftToRight
-    buttonBlock.widthProportional = 1
-    buttonBlock.borderTop = 2
-    buttonBlock.borderBottom = 1
-    buttonBlock.childAlignX = 1
-
-    if callback then
-        callback(element, buttonBlock)
-    end
-
-    local closeButton = buttonBlock:createButton{ id = containerMenu.closeBtn, text = "Close"}
-    closeButton:register(tes3.uiEvent.mouseClick, function (e)
-        element:destroy()
-    end)
-
-    return element, buttonBlock
-end
-
-
 ---TODO
 ---@param parent tes3uiElement
 ---@return tes3uiElement|nil
@@ -1421,9 +1330,9 @@ function this.updateJournalMenu()
                 end)
 
                 infoLabel:register(tes3.uiEvent.mouseClick, function (ei)
-                    local el = this.drawContainer("Info")
+                    local el = menuContainer.draw("Info")
                     this.drawQuestInfoMenu(el, questId, questIndex, quest)
-                    this.centerToCursor(el)
+                    menuContainer.centerToCursor(el)
                 end)
             end
 
@@ -1456,7 +1365,7 @@ function this.updateJournalMenu()
                         return
                     end
 
-                    local el, buttonBlock = this.drawContainer("Requirements", createTrackAllButton)
+                    local el, buttonBlock = menuContainer.draw("Requirements", createTrackAllButton)
 
                     if not el or not buttonBlock then return end
 
@@ -1464,7 +1373,7 @@ function this.updateJournalMenu()
                         el:destroy() ---@diagnostic disable-line: need-check-nil
                         return
                     end
-                    this.centerToCursor(el)
+                    menuContainer.centerToCursor(el)
                 end)
             end
 

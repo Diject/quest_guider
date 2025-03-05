@@ -3,6 +3,7 @@ local config = include("diject.quest_guider.config")
 local journalUI = include("diject.quest_guider.UI.journal")
 local trackingLib = include("diject.quest_guider.tracking")
 local questLib = include("diject.quest_guider.quest")
+local menuContainer = include("diject.quest_guider.UI.menuContainer")
 
 local priority = -278
 local buttonId = "qGuider_QLMBtn"
@@ -93,7 +94,7 @@ local function onQLMKeyCallback(e)
                 journalUI.createContainerButtons(questId, menuEl, buttonBlock, {trackDisplayedBtn = false})
             end
 
-            local el, buttonBlock = journalUI.drawContainer("Requirements", createContainerButtons)
+            local el, buttonBlock = menuContainer.draw("Requirements", createContainerButtons)
 
             if not el or not buttonBlock then return end
 
@@ -101,7 +102,7 @@ local function onQLMKeyCallback(e)
                 el:destroy()
                 return
             end
-            journalUI.centerToCursor(el)
+            menuContainer.centerToCursor(el)
         end)
     end}
 
