@@ -403,14 +403,18 @@ end
 function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local playerCurrentIndex = playerQuests.getCurrentIndex(questId)
     local currentTopicData = questData[tostring(playerCurrentIndex)]
-    if not currentTopicData then return end
     local playerCurrentIndexStr = tostring(playerCurrentIndex or "???")
 
     local hideSelected = false
-    if index == nil then
+    local hideCurrent = false
+    if not currentTopicData then
+        hideSelected = true
+        hideCurrent = true
+    elseif index == nil then
         hideSelected = true
         index = playerCurrentIndex
     end
+
     local topicData = questData[tostring(index)]
     if not topicData then return end
     local questName = questData.name or "???"
@@ -453,6 +457,10 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     if hideSelected then
         selLabel.visible = false
+    end
+
+    if hideCurrent then
+        lstLabel.visible = false
     end
 
     makeLabelSelectable(selLabel)
@@ -724,7 +732,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         drawTopicInfo()
     end)
 
-    if config.data.journal.requirements.currentByDefault or hideSelected then
+    if hideSelected and hideCurrent then
+        allLabel:triggerEvent(tes3.uiEvent.mouseClick)
+    elseif config.data.journal.requirements.currentByDefault or hideSelected then
         lstLabel:triggerEvent(tes3.uiEvent.mouseClick)
     else
         selLabel:triggerEvent(tes3.uiEvent.mouseClick)

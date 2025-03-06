@@ -577,7 +577,11 @@ function this.createQuestGiverMarkers(cell)
             priority = -100,
             temporary = true,
             name = ref.baseObject.name,
-            description = stringLib.getValueEnumString(questNames, config.data.tracking.giver.namesMax, "Starts %s")
+            description = stringLib.getValueEnumString(questNames, config.data.tracking.giver.namesMax,
+                config.data.main.helpLabels and "Starts %s. Click for info." or "Starts %s"),
+            onClickCallback = function (e)
+                include("diject.quest_guider.UI.questListOfObject").show{ objectId = objectId, showInvolved = false }
+            end
         }
 
         markerLib.addLocalMarker{
