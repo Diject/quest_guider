@@ -790,8 +790,8 @@ end
 ---@param scale number?
 local function calcMarkerPos(widthHeight, coordinates, markerData, scale)
     local xw, yw = convertObjectPosToWorldPaneCoordinates(coordinates, widthHeight)
-    x = xw + ((markerData.shiftX * (scale or 1)) or 0)
-    y = yw + ((markerData.shiftY * (scale or 1)) or 0)
+    local x = xw + ((markerData.shiftX * (scale or 1)) or 0)
+    local y = yw + ((markerData.shiftY * (scale or 1)) or 0)
     return x, y, xw, yw
 end
 
