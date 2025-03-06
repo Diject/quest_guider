@@ -598,6 +598,45 @@ function this.createQuestGiverMarkers(cell)
 end
 
 
+function this.updateQuestGiverMarkers()
+    for objId, recordId in pairs(this.trackedQuestGivers) do
+        local objectData = questLib.getObjectData(objId)
+
+        local valid = false
+
+        for _, questId in pairs((objectData or {}).starts or {}) do
+            local questData = questLib.getQuestData(questId)
+            if not questData or not questData.name then goto continue end
+
+            if config.data.tracking.giver.filter then
+                local firstIndexStr = questLib.getFirstIndex(questData)
+                if not firstIndexStr then goto continue end
+                if not questLib.checkConditionsForPlayer(questId, firstIndexStr) then
+                    goto continue
+                end
+            end
+
+            local playerData = playerQuests.getQuestData(questId)
+            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
+                goto continue
+            end
+
+            valid = true
+            if valid then
+                break;
+            end
+
+            ::continue::
+        end
+
+        if not valid then
+            markerLib.removeRecord(recordId)
+            this.trackedQuestGivers[objId] = nil
+        end
+    end
+end
+
+
 ---@param questId string should be lowercase
 ---@param e journalEventData
 function this.trackQuestFromCallback(questId, e)

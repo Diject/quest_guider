@@ -47,6 +47,10 @@ local function journalCallback(e)
 
     playerQuests.updateIndex(questId, e.index)
 
+    if config.data.tracking.giver.enabled and e.new then
+        tracking.updateQuestGiverMarkers()
+    end
+
     if config.data.tracking.quest.enabled then
         tracking.trackQuestFromCallback(questId, e)
     end
