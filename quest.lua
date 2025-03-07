@@ -207,7 +207,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
     ---@type questGuider.quest.getDescriptionDataFromBlock.return
     local out = {}
 
-    local objectObj
+    ---@type table<string, boolean>
+    local checkedDialogObjects = {}
 
     ---@param requirement questDataGenerator.requirementData
     local function processRequirement(requirement)
@@ -235,7 +236,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             script = script,
             skill = skill,
             attribute = attribute,
-            objectObj = objectObj,
+            objectObj = nil,
             variableObj = nil,
             valueObj = nil,
             variableQuestName = "???",
@@ -245,7 +246,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             magicEffectConsts = magicEffectConsts,
         }
         if object then
-            objectObj = tes3.getObject(object)
+            local objectObj = tes3.getObject(object)
             environment.objectObj = objectObj
         end
         if value then
@@ -475,6 +476,32 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             end
         end
 
+        local function addDialogueData(objId)
+            if not objId or checkedDialogObjects[objId] then return end
+            checkedDialogObjects[objId] = true
+
+            local objData = dataHandler.questObjects[objId]
+            if not objData or objData.type > 2 then return end
+
+            for _, linkDt in pairs(objData.links or {}) do
+                local linkName = linkDt[1]
+                local linkData = dataHandler.questObjects[linkName]
+                if not linkData then goto continue end
+
+                if linkData.type == 3 then
+                    processRequirement({type = "DIAO", operator = 48, object = objId, variable = linkName})
+                end
+
+                ::continue::
+            end
+        end
+
+        if requirement.type ~= "DIAO" then
+            addDialogueData(environment.object)
+            addDialogueData(environment.value)
+            addDialogueData(environment.variable)
+        end
+
         ::continue::
     end
 
@@ -636,10 +663,24 @@ function this.getRequirementPositionData(requirement)
                 local obj = tes3.getObject(value)
                 if obj then
                     objects[obj] = value
+                    goto continue
                 end
+
                 local cell = tes3.getCell{id = value}
                 if cell then
                     cells[cell] = value
+                    goto continue
+                end
+
+                if string.sub(value, 1, 6) == "#dia: " then
+                    local diaData = this.getObjectData(value)
+                    for _, linkData in pairs((diaData or {}).links) do
+                        local obj1 = tes3.getObject(linkData[1])
+                        if obj1 then
+                            objects[obj1] = linkData[1]
+                        end
+                    end
+                    goto continue
                 end
 
                 ::continue::
