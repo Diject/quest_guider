@@ -415,16 +415,16 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         index = playerCurrentIndex
     end
 
-    local topicData = questData[tostring(index)]
-    if not topicData then return end
     local questName = questData.name or "???"
-    local topicIndexStr = tostring(index) or "???"
+    local topicIndexStr = tostring(index or "???")
 
     local mainBlock = parent:createRect{ id = requirementsMenu.block }
     mainBlock.flowDirection = tes3.flowDirection.topToBottom
     mainBlock.height = 400
     mainBlock.width = 400
     mainBlock.visible = false
+
+    mainBlock:setLuaData("questId", questId)
 
     local scrollBlock = mainBlock:createVerticalScrollPane{ id = requirementsMenu.scroll }
     scrollBlock.heightProportional = 1
@@ -1098,65 +1098,6 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
 end
 
 
----TODO
----@param parent tes3uiElement
----@return tes3uiElement|nil
-function this.drawQuestsMenu(parent)
-    if not parent then return end
-
-    local playerQuestData = questLib.getPlayerQuestData()
-
-    if not playerQuestData then return end
-
-    local mainBlock = parent:createBlock{ id = "qGuider_quests_block" }
-    mainBlock.flowDirection = tes3.flowDirection.leftToRight
-    mainBlock.autoHeight = true
-    mainBlock.autoWidth = true
-
-    local infoBlock = mainBlock:createBlock{ id = "qGuider_quests_infoBlock" }
-    infoBlock.flowDirection = tes3.flowDirection.topToBottom
-    infoBlock.autoHeight = true
-    infoBlock.maxHeight = 600
-    infoBlock.width = 500
-
-    local listBlock = mainBlock:createBlock{ id = "qGuider_quests_listBlock" }
-    listBlock.flowDirection = tes3.flowDirection.topToBottom
-    listBlock.autoHeight = true
-    listBlock.autoWidth = true
-
-    local filterBlock = listBlock:createBlock{ id = "qGuider_quests_filterBlock" }
-    filterBlock.flowDirection = tes3.flowDirection.topToBottom
-    filterBlock.autoHeight = true
-    filterBlock.autoWidth = true
-
-    local filterTextInput = filterBlock:createTextInput{ id = "qGuider_quests_filterTextInput" }
-    filterTextInput.width = 200
-    filterTextInput.autoHeight = true
-
-    local questPane = listBlock:createVerticalScrollPane{ id = "qGuider_quests_questPane" }
-    questPane.heightProportional = nil
-    questPane.widthProportional = nil
-    questPane.height = 580
-    questPane.width = 200
-
-    table.sort(playerQuestData, function (a, b)
-        return (a.name or " ") > (b.name or " ")
-    end)
-
-    for _, qData in ipairs(playerQuestData) do
-        local border = questPane:createThinBorder{}
-        border.autoWidth = true
-        border.autoHeight = true
-
-        local questName = qData.name or string.format(" id \"%s\"", qData.id)
-        local label = border:createLabel{ id = "qGuider_quests_questLabel", text = questName }
-    end
-
-    updateContainerMenu(mainBlock)
-
-    return mainBlock
-end
-
 ---@param parent tes3uiElement
 ---@param questId string
 ---@param index integer|string|nil
@@ -1166,12 +1107,166 @@ local function drawRequirementMenu(parent, questId, index, questData)
 end
 
 
+local ffi = require("ffi")
+
+ffi.cdef[[
+    char *strstr(const char *haystack, const char *needle);
+]]
+
+local function search_with_ffi_optimized(data, word, byName, includeFinished)
+    local word_c = ffi.cast("const char*", word)
+    local results = {}
+
+    for _, dt in ipairs(data) do
+        if dt.isFinished and not includeFinished then goto continue end
+
+        local field
+        if byName then
+            field = dt.name
+        else
+            field = dt.id
+        end
+
+        local str = (field or ""):lower()
+        local str_c = ffi.cast("const char*", str)
+        if ffi.C.strstr(str_c, word_c) ~= nil then
+            table.insert(results, dt)
+        end
+
+        ::continue::
+    end
+    return results
+end
+
+---@param parent tes3uiElement
+---@return tes3uiElement|nil
+function this.drawQuestsMenu(parent)
+    if not parent then return end
+
+    local playerQuestData = questLib.getPlayerQuestData()
+
+    if not playerQuestData then return end
+
+    local mainBlock = parent:createRect{ id = "qGuider_quests_block" }
+    mainBlock.flowDirection = tes3.flowDirection.topToBottom
+    mainBlock.autoHeight = true
+    mainBlock.autoWidth = true
+
+    local filterBlock = mainBlock:createBlock{ id = "qGuider_quests_filterBlock" }
+    filterBlock.flowDirection = tes3.flowDirection.leftToRight
+    filterBlock.autoHeight = true
+    filterBlock.autoWidth = true
+
+    local filterTextBorder = filterBlock:createThinBorder{ id = "qGuider_quests_filterTextInputBorder" }
+    filterTextBorder.width = 300
+    filterTextBorder.height = 25
+
+    local filterTextInput = filterTextBorder:createTextInput{ id = "qGuider_quests_filterTextInput", autoFocus = true }
+    filterTextInput.widthProportional = 1
+    filterTextInput.heightProportional = 1
+
+    local filterBtn = filterBlock:createButton{ id = "qGuider_quests_filterBtn", text = "Search" }
+
+    local filterByName = true
+    local filterTypeBtn = filterBlock:createButton{ id = "qGuider_quests_filterTypeBtn", text = "by name" }
+    filterTypeBtn:register(tes3.uiEvent.mouseClick, function (e)
+        filterByName = not filterByName
+        if filterByName then
+            e.source.text = "by name"
+        else
+            e.source.text = "by id"
+        end
+    end)
+
+    local showFinished = true
+    local displayFinishedBtn = filterBlock:createButton{ id = "qGuider_quests_displayFinishedBtn", text = "display finished quests" }
+    displayFinishedBtn.borderLeft = 20
+    displayFinishedBtn:register(tes3.uiEvent.mouseClick, function (e)
+        showFinished = not showFinished
+        if showFinished then
+            e.source.text = "display finished quests"
+        else
+            e.source.text = "don't display finished quests"
+        end
+
+        filterBtn:triggerEvent(tes3.uiEvent.mouseClick)
+    end)
+
+    local mainSubBlock = mainBlock:createBlock{ id = "qGuider_quests_subBlock" }
+    mainSubBlock.flowDirection = tes3.flowDirection.leftToRight
+    mainSubBlock.autoHeight = true
+    mainSubBlock.autoWidth = true
+
+    local infoBlock = mainSubBlock:createBlock{ id = "qGuider_quests_infoBlock" }
+    infoBlock.flowDirection = tes3.flowDirection.topToBottom
+    infoBlock.height = 440
+    infoBlock.width = 800
+
+    local listBlock = mainSubBlock:createBlock{ id = "qGuider_quests_listBlock" }
+    listBlock.flowDirection = tes3.flowDirection.topToBottom
+    listBlock.height = 400
+    listBlock.width = 300
+
+    local questScroll = listBlock:createVerticalScrollPane{ id = "qGuider_quests_questPane" }
+    questScroll.heightProportional = 1
+    questScroll.widthProportional = 1
+
+    local questPaneContent = questScroll:getContentElement()
+
+    table.sort(playerQuestData, function (a, b)
+        return (a.name or ("_"..a.id)) < (b.name or ("_"..b.id))
+    end)
+
+    filterBtn:register(tes3.uiEvent.mouseClick, function (e)
+        questPaneContent:destroyChildren()
+        infoBlock:destroyChildren()
+
+        local res = search_with_ffi_optimized(playerQuestData, (filterTextInput.text or ""):lower(), filterByName, showFinished)
+        for _, qData in ipairs(res) do
+            local questName = qData.name or string.format("id: \"%s\"", qData.id)
+            local label = questPaneContent:createLabel{ id = "qGuider_quests_questLabel", text = questName }
+            makeLabelSelectable(label)
+
+            label:register(tes3.uiEvent.mouseClick, function (e)
+                infoBlock:destroyChildren()
+                drawRequirementMenu(infoBlock, qData.id, nil, questLib.getQuestData(qData.id) or {})
+            end)
+
+            label:register(tes3.uiEvent.help, function (e)
+                local tooltip = tes3ui.createTooltipMenu()
+                tooltip.autoHeight = true
+                tooltip.autoWidth = true
+                tooltip.maxWidth = 400
+
+                local tooltipContent = tooltip:getContentElement()
+                tooltipContent.autoHeight = true
+                tooltipContent.autoWidth = true
+                tooltipContent.maxWidth = 400
+
+                local text = string.format("\"%s\", id: \"%s\"", qData.name or "", qData.id)
+                local nameLabel = tooltip:createLabel{ id = "qGuider_quests_tooltipLabel", text = text }
+                nameLabel.widthProportional = 1
+                nameLabel.autoHeight = true
+                nameLabel.wrapText = true
+            end)
+        end
+
+        updateContainerMenu(mainSubBlock, questScroll)
+    end)
+
+    updateContainerMenu(mainSubBlock, questScroll, mainSubBlock)
+    menuContainer.centerToScreen(mainSubBlock:getTopLevelMenu())
+
+    return mainSubBlock
+end
+
+
 ---@class questGuider.ui.createContainerButtons.params
 ---@field trackCurrentBtn boolean?
 ---@field trackDisplayedBtn boolean?
 ---@field removeBtn boolean?
 
----@param questId string lowercase
+---@param questId string? lowercase
 ---@param menuEl any tes3uiElement
 ---@param buttonBlock any tes3uiElement
 ---@param params questGuider.ui.createContainerButtons.params? by default all buttons are enabled
@@ -1180,11 +1275,28 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
         params = {trackCurrentBtn = true, trackDisplayedBtn = true, removeBtn = true}
     end
 
+    local function getQuestId()
+        if questId then
+            return questId
+        else
+            local topMenu = menuEl:getTopLevelMenu()
+            local reqMenuBlock = topMenu:findChild(requirementsMenu.block)
+            if not reqMenuBlock then return end
+
+            local qId = reqMenuBlock:getLuaData("questId")
+
+            return qId
+        end
+    end
+
     if params.trackCurrentBtn ~= false then
 
         local trackButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Track Current" }
         trackButton:register(tes3.uiEvent.mouseClick, function (e)
-            trackingLib.trackQuestsbyQuestId(questId)
+            local qId = getQuestId()
+            if not qId then return end
+
+            trackingLib.trackQuestsbyQuestId(qId)
             local innMenuReqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
             if innMenuReqBlock then
                 local drawFunc = innMenuReqBlock:getLuaData("callback")
@@ -1192,8 +1304,9 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
                     drawFunc(innMenuReqBlock)
                 end
             end
-        end)
 
+            trackingLib.updateMarkers(true)
+        end)
     end
 
     if params.trackDisplayedBtn ~= false then
@@ -1206,6 +1319,9 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
             local qIndex = reqBlock:getLuaData("index")
             if not qIndex then return end
 
+            local qId = getQuestId()
+            if not qId then return end
+
             local objects = {}
             for _, child in pairs(reqBlock.children) do
                 if child.name == requirementsMenu.requirementLabel then
@@ -1217,7 +1333,7 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
 
 
                     for objId, posData in pairs(requirement.positionData) do
-                        trackingLib.addMarker{objectId = objId, positionData = posData, questId = questId, questStage = qIndex}
+                        trackingLib.addMarker{objectId = objId, positionData = posData, questId = qId, questStage = qIndex}
                         objects[objId] = true
                     end
                 end
@@ -1240,6 +1356,8 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
             if drawFunc then
                 drawFunc(reqBlock)
             end
+
+            trackingLib.updateMarkers(true)
         end)
 
     end
@@ -1248,7 +1366,10 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
 
         local removeButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Remove" }
         removeButton:register(tes3.uiEvent.mouseClick, function (e)
-            trackingLib.removeMarker{questId = questId}
+            local qId = getQuestId()
+            if not qId then return end
+
+            trackingLib.removeMarker{questId = qId}
 
             tes3ui.showNotifyMenu("The markers have been removed.")
 
@@ -1259,6 +1380,8 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
                     drawFunc(innMenuReqBlock)
                 end
             end
+
+            trackingLib.updateMarkers(true)
         end)
     end
 end
@@ -1274,6 +1397,33 @@ function this.updateJournalMenu()
 
     if menu:findChild(journalMenu.requirementBlock) then
         return
+    end
+
+    do
+        local bookmarkTopics = menu:findChild("MenuJournal_button_bookmark_topics")
+        if bookmarkTopics then
+            local bookmarkPanel = bookmarkTopics.parent
+
+            local questsImage = bookmarkPanel:createImage{ id = nil, path = "textures\\diject\\quest guider\\journalIcon64x64.dds" }
+            questsImage.imageScaleX = 0.25
+            questsImage.imageScaleY = 0.25
+            questsImage.color = {0.9, 0.9, 0.9}
+
+            makeLabelSelectable(questsImage)
+
+            questsImage:reorder{ after = bookmarkTopics }
+
+            questsImage:register(tes3.uiEvent.mouseClick, function (e)
+                local el, buttonBlock = menuContainer.draw("Quests", function (menuEl, buttonBlock)
+                    this.createContainerButtons(nil, menuEl, buttonBlock, { trackCurrentBtn = false })
+                end)
+                if not el then return end
+
+                this.drawQuestsMenu(el)
+
+                el:getTopLevelMenu():updateLayout()
+            end)
+        end
     end
 
     for _, pageName in pairs({"MenuBook_page_1", "MenuBook_page_2"}) do

@@ -56,9 +56,17 @@ end
 
 ---@param mainBlock tes3uiElement
 ---@param scrollBlock tes3uiElement|nil
-function this.updateContainerMenu(mainBlock, scrollBlock)
+---@param defaultMainBlock tes3uiElement?
+function this.updateContainerMenu(mainBlock, scrollBlock, defaultMainBlock)
     local topMenu = mainBlock:getTopLevelMenu()
     topMenu:updateLayout()
+
+    if defaultMainBlock then
+        topMenu:setLuaData("mainBlock", defaultMainBlock)
+    end
+
+    mainBlock = topMenu:getLuaData("mainBlock") or mainBlock
+
     if scrollBlock and scrollBlock.widget then
         scrollBlock.widget:contentsChanged()
     end
@@ -79,6 +87,15 @@ function this.updateContainerMenu(mainBlock, scrollBlock)
             scrollBlock.widget:contentsChanged()
         end
     end
+end
+
+
+---@param element tes3uiElement
+function this.centerToScreen(element)
+    element.positionX = -element.width / 2
+    element.positionY = element.height / 2
+
+    element:getTopLevelMenu():updateLayout()
 end
 
 

@@ -519,10 +519,7 @@ function this.getPlayerQuestData()
         diaOutData.id = dialogueId
         diaOutData.name = storageData.name
         diaOutData.activeStage = dialogue.journalIndex
-        diaOutData.isFinished = dialogue.journalIndex and storageData[tostring(dialogue.journalIndex)].finished or nil
-
-        -- TODO
-        -- diaOutData.isReachable = math.random() > 0.25 and true or false
+        diaOutData.isFinished = dialogue.journalIndex and storageData[tostring(dialogue.journalIndex)] and storageData[tostring(dialogue.journalIndex)].finished or nil
 
         table.insert(out, diaOutData)
 
