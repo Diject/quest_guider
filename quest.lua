@@ -173,9 +173,9 @@ end
 
 
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
----@field str string
+---@field str string description
 ---@field priority number
----@field objects table<string, string>|nil
+---@field objects table<string, string>|nil index and value are the same
 ---@field positionData table<string, questGuider.quest.getRequirementPositionData.returnData>?
 ---@field data questDataGenerator.requirementData
 
@@ -183,9 +183,12 @@ end
 
 ---@param reqBlock table<integer, questDataGenerator.requirementData>
 ---@param questId string?
+---@param customConfig questGuider.config?
 ---@return questGuider.quest.getDescriptionDataFromBlock.return|nil
-function this.getDescriptionDataFromDataBlock(reqBlock, questId)
+function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
     if not reqBlock then return end
+
+    local configData = customConfig or config.data
 
     local function getName(obj, default)
         if obj and obj.id == "player" then
@@ -369,7 +372,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                             local objs, count = this.getObjectNamesFromLinkTable(scrData.links)
 
                             if count > 0 then
-                                res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
+                                res = stringLib.getValueEnumString(objs, configData.journal.objectNames, "%s")
                             end
                         end
                     end
@@ -386,7 +389,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                             local objs, count = this.getObjectNamesFromLinkTable(scrData.contains)
 
                             if count > 0 then
-                                res = stringLib.getValueEnumString(objs, config.data.journal.objectNames, "%s")
+                                res = stringLib.getValueEnumString(objs, configData.journal.objectNames, "%s")
                             end
                         end
                     end
@@ -455,7 +458,7 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             reqOut.objects = objects
         end
 
-        reqOut.positionData = this.getRequirementPositionData(requirement)
+        reqOut.positionData = this.getRequirementPositionData(requirement, configData)
 
         table.insert(out, reqOut)
 
@@ -630,25 +633,28 @@ end
 
 
 ---@class questGuider.quest.getRequirementPositionData.positionData
----@field description string
----@field id string? cell id
----@field position tes3vector3?
----@field exitPos tes3vector3?
----@field doorPath tes3travelDestinationNode[]?
----@field cellPath tes3cell[]?
+---@field description string 
+---@field id string? cell id of the position
+---@field position tes3vector3? coordinates of the position
+---@field exitPos tes3vector3? coordinates in the game world of the entrance to the exterior cell that leads to the position
+---@field doorPath tes3travelDestinationNode[]? list of doors to exit from the position
+---@field cellPath tes3cell[]? list of cells to exit from the position
 ---@field rawData questDataGenerator.objectPosition?
----@field isExitEx boolean?
+---@field isExitEx boolean? true, if the exit is in an exterior cell
 
 ---@class questGuider.quest.getRequirementPositionData.returnData
----@field name string
----@field inWorld integer?
+---@field name string name of the object
+---@field inWorld integer? number of instances of the object in the game world
 ---@field positions questGuider.quest.getRequirementPositionData.positionData[]
 
 ---@param requirement questDataGenerator.requirementData
+---@param customConfig questGuider.config?
 ---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
-function this.getRequirementPositionData(requirement)
+function this.getRequirementPositionData(requirement, customConfig)
 
-    local trackingConfig = config.data.tracking
+    local configData = customConfig or config.data
+
+    local trackingConfig = configData.tracking
 
     if requirement.type == types.requirementType.CustomDialogue then
         return
@@ -826,7 +832,7 @@ function this.getRequirementPositionData(requirement)
                                     count = count + 1
                                 end
                                 table.shuffle(list, count)
-                                descr = stringLib.getValueEnumString(list, config.data.journal.objectNames, "Reachable from %s")
+                                descr = stringLib.getValueEnumString(list, configData.journal.objectNames, "Reachable from %s")
                             end
                             add(id, object, {description = descr or posDt.name, id = posDt.name, position = tes3vector3.new(x, y, z), rawData = newPosData})
                         end
@@ -900,7 +906,7 @@ function this.getRequirementPositionData(requirement)
                         count = count + 1
                     end
                     table.shuffle(list, count)
-                    descr = stringLib.getValueEnumString(list, config.data.journal.objectNames, "Reachable from %s")
+                    descr = stringLib.getValueEnumString(list, configData.journal.objectNames, "Reachable from %s")
                 end
 
                 add(id, cell, {description = descr or cell.name, id = cell.name, })
