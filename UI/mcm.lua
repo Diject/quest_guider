@@ -1,10 +1,6 @@
 local config = include("diject.quest_guider.config")
 local log = include("diject.quest_guider.utils.log")
 
-local markerIconInfo = include("diject.quest_guider.markers")
-
-local tracking = include("diject.quest_guider.tracking")
-
 local mcm = mwse.mcm
 
 local this = {}
@@ -257,6 +253,8 @@ local function createMarkerImageDropdown(parent)
     ---@type mwseMCMDropdownOption[]
     local options = {}
 
+    local markerIconInfo = include("diject.quest_guider.markers")
+
     for _, id in pairs(markerIconInfo.getIds()) do
         local name = markerIconInfo.getName(id) or id
         ---@type mwseMCMDropdownOption
@@ -333,7 +331,7 @@ function this.registerModConfig()
         end}
         dataGenGroup:createButton{buttonText = "Recreate markers on the map to apply the settings to them", inGameOnly = true, callback = function()
             if not tes3.player then return end
-            tracking.recreateMarkers()
+            include("diject.quest_guider.tracking").recreateMarkers()
         end}
     end
 
