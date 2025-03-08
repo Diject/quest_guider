@@ -429,7 +429,15 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
                 reqOut.priority = reqStrDescrData.priority
             end
         else
-            reqOut.str = tableLib.tableToStrLine(requirement) or "???"
+            local reqCopy = table.copy(requirement)
+            for reqDescr, reqId in pairs(types.requirementType) do
+                if reqCopy.type == reqId then
+                    reqCopy.type = reqDescr
+                    break;
+                end
+            end
+            reqCopy.operator = types.operator.name[reqCopy.operator] or reqCopy.operator
+            reqOut.str = tableLib.tableToStrLine(reqCopy) or "???"
         end
 
         local objects = {}
