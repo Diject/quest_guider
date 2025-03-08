@@ -68,12 +68,12 @@ local function onQLMKeyCallback(e)
                 local tooltip = tes3ui.createTooltipMenu()
                 tooltip.autoWidth = true
                 if not config.data.journal.requirements.tooltip then
-                    if not journalUI.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.", tes3.justifyText.left) then
+                    if not journalUI.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects. / Ctrl+Click to show list of all quests.", tes3.justifyText.left) then
                         tooltip:destroy()
                     end
                     return
                 else
-                    journalUI.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects.")
+                    journalUI.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects. / Ctrl+Click to show list of all quests.")
                 end
                 if not journalUI.drawRequirementMenu(tooltip, questId, nil, quest) then
                     tooltip:destroy()
@@ -87,6 +87,17 @@ local function onQLMKeyCallback(e)
 
             if tes3.worldController.inputController:isShiftDown() then
                 trackingLib.trackQuestsbyQuestId(questId)
+                return
+
+            elseif tes3.worldController.inputController:isControlDown() then
+                local el, buttonBlock = menuContainer.draw("Quests", function (menuEl, buttonBlock)
+                    journalUI.createContainerButtons(nil, menuEl, buttonBlock, { trackCurrentBtn = false })
+                end)
+                if not el then return end
+
+                journalUI.drawQuestsMenu(el)
+
+                el:getTopLevelMenu():updateLayout()
                 return
             end
 
