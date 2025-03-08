@@ -3,7 +3,7 @@ local log = include("diject.quest_guider.utils.log")
 
 local storageName = "Quest_Guider_Config"
 
-local version = 2
+local version = 3
 
 local this = {}
 
