@@ -469,8 +469,6 @@ function this.registerModConfig()
             restartRequired = true}
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "tooltip"}, label = "Show data as a tooltip for the button in the \"Quest Log Menu\""}
 
-        createMarkerImageDropdown(otherPage)
-
         createYesNo{self = otherPage, config = {path = "main", name = "helpLabels"}, label = "Show help info in menus"}
     end
 
