@@ -18,6 +18,7 @@ this.info = table.deepcopy(defaultInfo)
 
 local isReady = false
 local versionChanged = false
+local gameFileDataEmpty = false
 
 ---@return boolean
 function this.init()
@@ -33,11 +34,13 @@ function this.init()
             this.version == this.info.version then
         isReady = true
         versionChanged = false
+        gameFileDataEmpty = #this.info.files == 0
     else
         this.quests = {}
         this.questObjects = {}
         this.questByText = {}
         this.localVariablesByScriptId = {}
+        gameFileDataEmpty = this.info == nil or #this.info.files == 0
         this.info = table.deepcopy(defaultInfo)
         if this.version ~= this.info.version then
             versionChanged = true
@@ -86,7 +89,7 @@ function this.compareGameFileData()
 end
 
 function this.isGameFileDataEmpty()
-    return #this.info.files == 0
+    return gameFileDataEmpty
 end
 
 function this.isVersionChanged()
