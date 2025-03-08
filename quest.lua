@@ -180,6 +180,18 @@ end
 
 --#################################################################################################
 
+---@param dialogue tes3dialogue
+---@return boolean
+local function isDialogueAvailable(dialogue)
+    for _, dia in pairs(tes3.mobilePlayer.dialogueList) do
+        if dialogue == dia then
+            return true
+        end
+    end
+    return false
+end
+
+
 ---@class questGuider.quest.getDescriptionDataFromBlock.returnArr
 ---@field str string
 ---@field priority number
@@ -357,6 +369,8 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
                     mapped[pattern] = race and race.name or "???"
                 elseif codeStr == "dialogueVariable" then
                     mapped[pattern] = environment.variableStr:sub(7)
+                elseif codeStr == "dialogueValue" then
+                    mapped[pattern] = environment.valueStr:sub(7)
                 elseif codeStr == "operator" then
                     mapped[pattern] = types.operator.name[environment.operator]
                 elseif codeStr == "notContr" then
@@ -500,6 +514,72 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId)
             addDialogueData(environment.object)
             addDialogueData(environment.value)
             addDialogueData(environment.variable)
+        end
+
+        if requirement.type == types.requirementType.CustomDialogue and environment.variable then
+            local foundData = {}
+
+            local function findParentDialogues(recId, parentId, depth, dataChain)
+                if depth <= 0 then return end
+
+                if not dataChain then dataChain = {} end
+
+                local recData = this.getObjectData(recId)
+                if not recData then return end
+
+                if recData.type == 3 then
+                    local dialogue = tes3.findDialogue{ topic = string.sub(recId, 7) }
+                    if not dialogue or dialogue.type ~= tes3.dialogueType.topic then return end
+
+                    if not isDialogueAvailable(dialogue) then
+                        for _, linkInfo in pairs(recData.links or {}) do
+                            local chainDepth, chain = findParentDialogues(linkInfo[1], recId, depth - 1)
+                            if chainDepth then
+                                table.insert(foundData, {chainDepth, chain})
+                            end
+                        end
+                    else
+                        local chain = table.copy(dataChain)
+                        table.insert(chain, {variable = parentId, value = recId})
+                        return depth, chain
+                    end
+                elseif recData.type == 6 then
+                    for _, linkInfo in pairs(recData.links or {}) do
+                        local chainDepth, chain = findParentDialogues(linkInfo[1], parentId, depth - 1)
+                        if chainDepth then
+                            table.insert(foundData, {chainDepth, chain})
+                        end
+                    end
+                end
+            end
+
+            local dialogue = tes3.findDialogue{ topic = string.sub(environment.variable, 7) }
+            if not dialogue or dialogue.type ~= tes3.dialogueType.topic then goto continue end
+
+            if not isDialogueAvailable(dialogue) then
+                findParentDialogues(environment.variable, environment.variable, 6)
+
+                if #foundData == 0 then goto continue end
+                table.sort(foundData, function (a, b)
+                    return a[1] < b[1]
+                end)
+
+                local minDepth = foundData[1][1]
+                local addedDialogues = {}
+
+                for _, data in pairs(foundData) do
+                    if data[1] <= minDepth then
+                        for _, chainDt in pairs(data[2]) do
+                            if not addedDialogues[chainDt.variable] then
+                                processRequirement({type = "DIAP", operator = 48, variable = chainDt.variable, value = chainDt.value})
+                                addedDialogues[chainDt.variable] = true
+                            end
+                        end
+                    else
+                        break
+                    end
+                end
+            end
         end
 
         ::continue::

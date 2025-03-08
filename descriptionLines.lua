@@ -111,4 +111,5 @@ return {
     [types.requirementType.CustomChameleon] = { str = "#objectName# chameleon value is #operator# #value#", priority = -1001 },
     [types.requirementType.CustomPCRace] = { str = "Race of the player is#notContr# #raceByIntValue#" },
     ["DIAO"] = { str = "The object \"#objectName#\" (#object#) can be obtained via the \"#dialogueVariable#\" dialog", priority = -1001 },
+    ["DIAP"] = { str = "The dialogue \"#dialogueVariable#\" can be obtained via the \"#dialogueValue#\" dialog", priority = -1001 },
 }
