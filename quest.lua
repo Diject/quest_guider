@@ -134,26 +134,6 @@ function this.getNextIndexes(questData, questIndex)
     return nextIndexes
 end
 
----@param objectData string|questDataGenerator.objectInfo?
----@return integer?
-function this.getObjectCount(objectData)
-    if objectData and type(objectData) == "string" then
-        objectData = this.getObjectData(objectData)
-    end
-
-    if not objectData then return end
-
-    local count = objectData.inWorld
-
-    for _, linkArr in pairs(objectData.links or {}) do
-        local linkData = this.getObjectData(linkArr[1])
-        if linkData then
-            count = count + (linkData.inWorld or 0)
-        end
-    end
-
-    return count
-end
 
 ---@param tb {[1] : string} table with object ids
 ---@return table<string, string> out name by object id
