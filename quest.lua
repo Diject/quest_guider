@@ -673,13 +673,31 @@ function this.getRequirementPositionData(requirement)
                 end
 
                 if string.sub(value, 1, 6) == "#dia: " then
-                    local diaData = this.getObjectData(value)
-                    for _, linkData in pairs((diaData or {}).links) do
-                        local obj1 = tes3.getObject(linkData[1])
-                        if obj1 then
-                            objects[obj1] = linkData[1]
+
+                    local function findDiaData(recordId, depth)
+                        if depth <= 0 then return end
+
+                        local diaData = this.getObjectData(recordId)
+                        for _, linkInfo in pairs((diaData or {}).links or {}) do
+                            local linkId = linkInfo[1]
+                            local linkData = this.getObjectData(linkId)
+                            if not linkData then goto continue end
+
+                            if linkData.type == 6 then
+                                findDiaData(linkId, depth - 1)
+                            elseif linkData.type <= 2 then
+                                local obj1 = tes3.getObject(linkId)
+                                if obj1 then
+                                    objects[obj1] = linkId
+                                end
+                            end
+
+                            ::continue::
                         end
                     end
+
+                    findDiaData(value, 2)
+
                     goto continue
                 end
 
