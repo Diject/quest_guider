@@ -24,7 +24,7 @@ return {
     [types.requirementType.NPCSameFactionAsPlayer] = { str = "#objectName# faction is#notContr# equal player's faction", },
     [types.requirementType.NPCTalkedToPlayer] = { str = "#objectName# talked to the player @value == 0 and \"before\" or \"\"@", },
     [types.requirementType.CustomSkill] = { str = "#skillName# of #objectName# is #operator# #value#", },
-    [types.requirementType.PlayerGender] = { str = "Player gender is #operator# @value == 0 and \"male\" or \"female\"@", },
+    [types.requirementType.PlayerGender] = { str = "The player's gender is #operator# @value == 0 and \"male\" or \"female\"@", },
     [types.requirementType.CustomAIPackageDone] = { str = "AI action of #objectName# is#notContr# done", },
     [types.requirementType.NPCSameGenderAsPlayer] = { str = "#objectName# has#notContr# same gender as the player", },
     [types.requirementType.CustomAttribute] = { str = "#attributeName# of #objectName# is #operator# #value#", },
