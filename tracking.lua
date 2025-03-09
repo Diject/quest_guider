@@ -229,7 +229,11 @@ function this.addMarker(params)
 
             local rawData = data.rawData
 
-            if not rawData and not approxConfig.enabled or (data.id and approxConfig.interior.enabled) then
+            if rawData then
+                if rawData.id then
+                    objects[rawData.id] = true
+                end
+            elseif not approxConfig.enabled or (data.id and approxConfig.interior.enabled) then
                 markerLib.addLocalMarker{
                     record = objectMarkerData.localMarkerId,
                     cell = data.id,
