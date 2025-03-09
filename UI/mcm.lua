@@ -387,7 +387,7 @@ function this.registerModConfig()
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "maxPositions"},
             label = "Don't create markers on the world map for objects that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "minChance"},
-            label = "Don't create markers for containers that have a lower chance of receiving a quest item than this value", limits = {min = 0, max = 1}, incStep = 0.05}
+            label = "Don't create markers for containers that have a lower chance of receiving a quest item than this value. 1 is 100%", limits = {min = 0, max = 1}, incStep = 0.05}
         createNumberEdit{
             self = trackingPage, config = {path = "tracking", name = "maxCellDepth"},
             label = "Depth in game cells to which markers for doors in interior cells are looked for. The larger the value and the more adjacent interior cells, the longer it will take to calculate (the game will lag when loading or starting to track in interior cells)",
@@ -443,7 +443,7 @@ function this.registerModConfig()
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "maxPositions"},
             label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "minChance"},
-            label = "Don't show quest item information for containers that have a chance of getting this quest item below this value", limits = {min = 0, max = 1}, incStep = 0.05}
+            label = "Don't show quest item information for containers that have a chance of getting this quest item below this value. 1 is 100%", limits = {min = 0, max = 1}, incStep = 0.05}
     end
 
     do
