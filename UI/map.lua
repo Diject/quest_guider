@@ -188,7 +188,7 @@ function this.updateMapMenu()
             end)
 
             qDescrLabel:register(tes3.uiEvent.mouseClick, function (e)
-                if tes3.worldController.inputController:isShiftDown() then
+                if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
                     trackingLib.setDisableMarkerState{ value = not lastDisabledState, objectId = objId, questId = questId }
                     trackingLib.updateMarkers(true)
                     return
