@@ -79,7 +79,7 @@ function this.updateMapMenu()
         qNameLabel.borderLeft = 10
 
         qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
-            if tes3.worldController.inputController:isShiftDown() then
+            if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
                 local _, randObjId = table.choice(trackingData.objects)
                 if randObjId then
                     local randObjDisState = trackingLib.getDisabledState{ questId = questId, objectId = randObjId}
