@@ -647,7 +647,7 @@ end
 ---@field exitPos tes3vector3? coordinates in the game world of the entrance to the exterior cell that leads to the position
 ---@field doorPath tes3travelDestinationNode[]? list of doors to exit from the position
 ---@field cellPath tes3cell[]? list of cells to exit from the position
----@field rawData questDataGenerator.objectPosition?
+---@field rawData questDataGenerator.objectPosition|{id : string}|nil *id* is injected owner id, if it exists
 ---@field isExitEx boolean? true, if the exit is in an exterior cell
 
 ---@class questGuider.quest.getRequirementPositionData.returnData
