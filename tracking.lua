@@ -223,6 +223,8 @@ function this.addMarker(params)
     local objects = {}
     objects[objectId] = true
 
+    local allowToTagNameForLocal = true
+
     for _, data in pairs(positionData.positions or {}) do
 
         if objectMarkerData.localMarkerId then
@@ -234,6 +236,7 @@ function this.addMarker(params)
                     objects[rawData.id] = true
                 end
             elseif not approxConfig.enabled or (data.id and approxConfig.interior.enabled) then
+                allowToTagNameForLocal = false
                 markerLib.addLocalMarker{
                     record = objectMarkerData.localMarkerId,
                     cell = data.id,
@@ -332,6 +335,7 @@ function this.addMarker(params)
                             position = pos,
                             insertBefore = approxConfig.enabled,
                         }
+                        allowToTagNameForLocal = false
                     end
                 end
 
@@ -344,6 +348,14 @@ function this.addMarker(params)
             randomLib.resetRandomSeed()
         end
     end
+
+    if this.mapMarkerLibVersion >= 3 and allowToTagNameForLocal and objectMarkerData.localMarkerId then
+        local rec = markerLib.getRecord(objectMarkerData.localMarkerId)
+        if rec then
+            rec.name = "#objectName#"
+        end
+    end
+
     this.markerByObjectId[objectId] = objectTrackingData
 
     qTrackingInfo.objects[objectId] = table.keys(objects)
