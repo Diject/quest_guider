@@ -70,7 +70,7 @@ this.default = {
             finished = false, -- autotrack finished
         },
         maxPositions = 20,
-        minChance = 0.1, -- do not track parent objects with a chance to get less than this value
+        minChance = 0.2, -- do not track parent objects with a chance to get less than this value
         maxCellDepth = 12,
         approx = {
             enabled = false,
