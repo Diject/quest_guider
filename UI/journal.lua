@@ -128,8 +128,13 @@ local makeLabelSelectable = include("diject.quest_guider.UI.utils").makeLabelSel
 ---@return boolean
 function this.createHelpMessage(element, message, justifyText)
     if not config.data.main.helpLabels then return false end
-    local label = element:createLabel{ id = helpMenu.label, text = message }
+    local block = element:createBlock{}
+    block.autoWidth = true
+    block.autoHeight = true
+    block.maxWidth = 400
+    local label = block:createLabel{ id = helpMenu.label, text = message }
     label.autoWidth = false
+    label.autoHeight = true
     label.widthProportional = 1
     label.justifyText = justifyText or tes3.justifyText.center
     label.wrapText = true
