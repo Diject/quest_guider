@@ -670,15 +670,17 @@ function this.trackQuestFromCallback(questId, e)
         shouldUpdate = true
     end
 
+    local isFinished = e.info and e.info.isQuestFinished or false
+
     local questNextIndexes = questLib.getNextIndexes(questId, e.index)
 
-    if not questNextIndexes or e.info.isQuestFinished then
+    if not questNextIndexes or isFinished then
         this.removeMarker{ questId = questId }
         shouldUpdate = true
     end
 
     local objects = {}
-    if questNextIndexes and (not e.info.isQuestFinished or config.data.tracking.quest.finished) then
+    if questNextIndexes and (not isFinished or config.data.tracking.quest.finished) then
         for _, indexStr in pairs(questNextIndexes) do
             local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
             table.copy(objs, objects)

@@ -73,7 +73,7 @@ function this.getLocalVariableDataByScriptName(scriptName)
 end
 
 ---@param questData string|questDataGenerator.questData
----@return string[]|nil
+---@return integer[]|nil
 function this.getIndexes(questData)
     if not questData then return end
     if type(questData) == "string" then
@@ -93,7 +93,7 @@ function this.getIndexes(questData)
 end
 
 ---@param questData string|questDataGenerator.questData
----@return string|nil
+---@return integer|nil
 function this.getFirstIndex(questData)
     local indexes = this.getIndexes(questData)
     if not indexes or #indexes == 0 then return end
@@ -110,8 +110,18 @@ function this.getNextIndexes(questData, questIndex)
         questData = this.getQuestData(questData)
     end
     if not questData then return end
+
     local tpData = questData[tostring(questIndex)]
-    if not tpData then return end
+    if not tpData then
+        local intQuestIndex = tonumber(questIndex)
+        for i, index in ipairs(this.getIndexes(questData) or {}) do
+            if intQuestIndex and index > intQuestIndex then
+                tpData = questData[tostring(index)]
+                break
+            end
+        end
+        if not tpData then return end
+    end
 
     local nextIndexes = {}
     local foundNextIndex = false
