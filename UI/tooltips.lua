@@ -313,4 +313,13 @@ function this.drawDoorTooltip(parent, reference)
     return true
 end
 
+
+---@param menu tes3uiElement
+function this.changeTooltipTitleColor(menu, color)
+    local title = menu:findChild("HelpMenu_name")
+    if not title then return end
+
+    title.color = color
+end
+
 return this

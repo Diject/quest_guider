@@ -71,6 +71,9 @@ local function uiObjectTooltipCallback(e)
         if config.data.tooltip.object.enabled then
             shouldUpdate = shouldUpdate or tooltipUI.drawObjectTooltip(e.tooltip, e.reference and e.reference.baseObject.id or e.object.id)
         end
+        if config.data.tooltip.object.changeTitleForTracked then
+            tracking.changeObjectTooltipTitle(e.tooltip, e.reference and e.reference.baseObject.id or e.object.id)
+        end
     end
 
     if shouldUpdate then

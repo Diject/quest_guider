@@ -49,6 +49,7 @@ this.default = {
         width = 400,
         object = {
             enabled = true,
+            changeTitleForTracked = true,
             invNamesMax = 3,
             startsNamesMax = 3,
         },

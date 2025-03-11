@@ -9,6 +9,7 @@ local playerQuests = include("diject.quest_guider.playerQuests")
 local config = include("diject.quest_guider.config")
 local otherTypes = include("diject.quest_guider.Types.other")
 local randomLib = include("diject.quest_guider.utils.random")
+local tooltips = include("diject.quest_guider.UI.tooltips")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -967,6 +968,26 @@ function this.recreateMarkers()
     this.removeMarkers()
     for _, questId in pairs(questIds) do
         this.trackQuestsbyQuestId(questId)
+    end
+end
+
+
+---@param menu tes3uiElement
+---@param objectId string
+function this.changeObjectTooltipTitle(menu, objectId)
+    local objectData = this.markerByObjectId[objectId:lower()]
+    if not objectData then return end
+
+    local enabled = false
+    for _, dt in pairs(objectData.markers) do
+        if not dt.data.disabled then
+            enabled = true
+            break
+        end
+    end
+
+    if enabled then
+        tooltips.changeTooltipTitleColor(menu, tes3ui.getPalette(tes3.palette.miscColor))
     end
 end
 

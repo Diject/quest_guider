@@ -382,6 +382,7 @@ function this.registerModConfig()
         createYesNo{self = trackingPage, config = {path = "tracking.quest", name = "enabled"}, label = "Auto track quest objects when a new journal entry has been added"}
         createYesNo{self = trackingPage, config = {path = "tracking.quest", name = "finished"}, label = "Auto track next stages from finished quests. In most of cases, these stages are just different endings of the quest. But sometimes they are useful (but too rarely)"}
         createYesNo{self = trackingPage, config = {path = "map", name = "enabled"}, label = "Integrate tracking info to the game Map menu"}
+        createYesNo{self = trackingPage, config = {path = "tooltip.object", name = "changeTitleForTracked"}, label = "Change tracked object name color in tooltip"}
         createYesNo{self = trackingPage, config = {path = "map", name = "showJournalTextTooltip"},
             label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}
         createNumberEdit{self = trackingPage, config = {path = "tracking", name = "maxPositions"},
@@ -424,6 +425,7 @@ function this.registerModConfig()
 
         local objectGroup = tooltipsPage:createCategory{label = "Tooltip on an object"}
         createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "enabled"}, label = "Enable"}
+        createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "changeTitleForTracked"}, label = "Change tracked object name color in tooltip"}
         createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "invNamesMax"},
             label = "Maximum number of names of quests in which the object is involved, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
         createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "startsNamesMax"},
