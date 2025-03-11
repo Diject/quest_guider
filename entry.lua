@@ -134,6 +134,13 @@ local function loadedCallback(e)
     end
 end
 
+--- @param e itemTileUpdatedEventData
+local function itemTileUpdatedCallback(e)
+    if tracking.handlePlayerInventory() then
+        tracking.updateMarkers(true)
+    end
+end
+
 --- @param e enterFrameEventData
 local function afterInitCallback(e)
     if config.data.main.enabled and not config.data.init.ignoreDataChanges and dataHandler.compareGameFileData() then
@@ -163,6 +170,7 @@ local function initCallbacks()
     event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
     event.register(tes3.event.cellActivated, cellActivatedCallback)
     event.register(tes3.event.enterFrame, afterInitCallback, {priority = -278})
+    event.register(tes3.event.itemTileUpdated, itemTileUpdatedCallback)
 end
 
 --- @param e initializedEventData

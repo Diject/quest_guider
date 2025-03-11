@@ -65,7 +65,7 @@ this.trackedQuestGivers = {}
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
----@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord}> by quest id
+---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?}> by quest id
 ---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
@@ -217,7 +217,12 @@ function this.addMarker(params)
     if not objectMarkerData.localMarkerId and not objectMarkerData.worldMarkerId then return end
 
     if not objectTrackingData.markers then objectTrackingData.markers = {} end
-    objectTrackingData.markers[params.questId] = { id = params.questId, index = params.questStage, data = objectMarkerData }
+    objectTrackingData.markers[params.questId] = {
+        id = params.questId,
+        index = params.questStage,
+        data = objectMarkerData,
+        itemCount = positionData.itemCount
+    }
 
     local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
 
@@ -989,6 +994,47 @@ function this.changeObjectTooltipTitle(menu, objectId)
     if enabled then
         tooltips.changeTooltipTitleColor(menu, tes3ui.getPalette(tes3.palette.miscColor))
     end
+end
+
+
+local handlePlayerInventory_lastUpdate = nil
+---@return boolean? changed
+function this.handlePlayerInventory()
+    local timestamp = os.time()
+    if handlePlayerInventory_lastUpdate == timestamp then
+        return
+    else
+        handlePlayerInventory_lastUpdate = timestamp
+    end
+
+    if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideObtained then return end
+
+    local mobile = tes3.mobilePlayer
+    if not mobile then return end
+
+    local changed = false
+
+    for objId, data in pairs(this.markerByObjectId) do
+        for _, markerData in pairs(data.markers) do
+            if not markerData.itemCount then goto continue end
+
+            if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = objId } then
+                if markerData.data.disabled ~= true then
+                    this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
+                    changed = true
+                end
+            else
+                if markerData.data.disabled ~= false then
+                    this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = false }
+                    changed = true
+                end
+            end
+
+            ::continue::
+        end
+    end
+
+    return changed
 end
 
 return this

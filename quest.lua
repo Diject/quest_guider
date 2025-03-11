@@ -653,6 +653,7 @@ end
 ---@class questGuider.quest.getRequirementPositionData.returnData
 ---@field name string name of the object
 ---@field inWorld integer? number of instances of the object in the game world
+---@field itemCount integer? item count from *types.requirementType.Item*
 ---@field positions questGuider.quest.getRequirementPositionData.positionData[]
 
 ---@param requirement questDataGenerator.requirementData
@@ -930,6 +931,29 @@ function this.getRequirementPositionData(requirement, customConfig)
     if table.size(out) == 0 then
         return nil
     end
+
+    if requirement.type == types.requirementType.Item then
+        local data = out[requirement.variable]
+        if data and requirement.value then
+
+            if requirement.operator == types.operator.value.Greater then
+                data.itemCount = requirement.value + 1
+            elseif requirement.operator == types.operator.value.Less then
+                data.itemCount = math.max(0, requirement.value - 1)
+            elseif requirement.operator == types.operator.value.NotEqual then
+                if requirement.value == 0 then
+                    data.itemCount = requirement.value + 1
+                else
+                    data.itemCount = math.max(0, requirement.value - 1)
+                end
+            else
+                data.itemCount = requirement.value
+            end
+
+            if data.itemCount == 0 then data.itemCount = nil end
+        end
+    end
+
 
 
     local approxConfig = trackingConfig.approx
