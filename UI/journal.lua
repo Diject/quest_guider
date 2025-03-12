@@ -533,6 +533,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             return
         end
 
+        ---@type tes3uiElement[]
         local nextIndTabs = {}
         for _, ind in ipairs(indexes) do
 
@@ -545,6 +546,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             table.insert(nextIndTabs, nextIndexValueLabel)
 
             makeLabelSelectable(nextIndexValueLabel)
+
+            nextIndexValueLabel:setLuaData("data", indTopicData)
 
             nextIndexValueLabel:register(tes3.uiEvent.mouseClick, function (e)
 
@@ -712,7 +715,19 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         end
 
         if #nextIndTabs > 0 then
-            nextIndTabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
+            local found = false
+            for _, tab in pairs(nextIndTabs) do
+                ---@type questDataGenerator.stageData
+                local data = tab:getLuaData("data")
+                if data and data.requirements and #data.requirements > 0 then
+                    tab:triggerEvent(tes3.uiEvent.mouseClick)
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                nextIndTabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
+            end
             -- nextIndTabs[1].color = this.colors.lightGreen
         end
     end
@@ -1404,51 +1419,17 @@ function this.updateJournalMenu()
         return
     end
 
-    do
-        local bookmarkTopics = menu:findChild("MenuJournal_button_bookmark_topics")
-        if bookmarkTopics then
-            local bookmarkPanel = bookmarkTopics.parent
-
-            local questsImage = bookmarkPanel:createImage{ id = nil, path = "textures\\diject\\quest guider\\journalIcon64x64.dds" }
-            questsImage.imageScaleX = 0.25
-            questsImage.imageScaleY = 0.25
-            questsImage.color = {0.9, 0.9, 0.9}
-
-            makeLabelSelectable(questsImage)
-
-            questsImage:reorder{ after = bookmarkTopics }
-
-            questsImage:register(tes3.uiEvent.mouseClick, function (e)
-                local el, buttonBlock = menuContainer.draw("Quests", function (menuEl, buttonBlock)
-                    this.createContainerButtons(nil, menuEl, buttonBlock, { trackCurrentBtn = false })
-                end)
-                if not el then return end
-
-                this.drawQuestsMenu(el)
-
-                el:getTopLevelMenu():updateLayout()
-            end)
-        end
-    end
-
     for _, pageName in pairs({"MenuBook_page_1", "MenuBook_page_2"}) do
         local page = menu:findChild(pageName)
 
         if not page then goto continue end
 
-        local isDescription = true
         for i, element in pairs(page.children) do
 
             if element.type == tes3.uiElementType.text then
                 element.height = 4
             end
             if element.name ~= "MenuBook_hypertext" then goto continue end
-
-            isDescription = not isDescription
-            if not isDescription then
-                element.borderAllSides = -1
-                goto continue
-            end
 
             local questInfo = questLib.getQuestInfoByJournalText(element.text)
 
@@ -1546,6 +1527,45 @@ function this.updateJournalMenu()
         end
 
         ::continue::
+    end
+end
+
+
+function this.addAllQuestsButton()
+    if not config.data.journal.requirements.enabled and not config.data.journal.info.enabled then
+        return
+    end
+
+    local menu = tes3ui.findMenu("MenuJournal")
+    if not menu then return end
+
+    if menu:findChild(journalMenu.requirementBlock) then
+        return
+    end
+
+    local bookmarkTopics = menu:findChild("MenuJournal_button_bookmark_topics")
+    if bookmarkTopics then
+        local bookmarkPanel = bookmarkTopics.parent
+
+        local questsImage = bookmarkPanel:createImage{ id = nil, path = "textures\\diject\\quest guider\\journalIcon64x64.dds" }
+        questsImage.imageScaleX = 0.25
+        questsImage.imageScaleY = 0.25
+        questsImage.color = {0.9, 0.9, 0.9}
+
+        makeLabelSelectable(questsImage)
+
+        questsImage:reorder{ after = bookmarkTopics }
+
+        questsImage:register(tes3.uiEvent.mouseClick, function (e)
+            local el, buttonBlock = menuContainer.draw("Quests", function (menuEl, buttonBlock)
+                this.createContainerButtons(nil, menuEl, buttonBlock, { trackCurrentBtn = false })
+            end)
+            if not el then return end
+
+            this.drawQuestsMenu(el)
+
+            el:getTopLevelMenu():updateLayout()
+        end)
     end
 end
 

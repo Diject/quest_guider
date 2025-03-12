@@ -18,6 +18,7 @@ local function uiJournalActivatedCallback(e)
     if not dataHandler.isReady() or not config.data.main.enabled or not config.data.journal.enabled then return end
 
     if e.newlyCreated then
+        journalUI.addAllQuestsButton()
         journalUI.updateJournalMenu()
         e.element:updateLayout()
 
