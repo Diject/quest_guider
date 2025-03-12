@@ -142,6 +142,13 @@ local function itemTileUpdatedCallback(e)
     end
 end
 
+--- @param e deathEventData
+local function deathCallback(e)
+    if tracking.handleDeath(e.mobile.reference.baseObject.id) then
+        tracking.updateMarkers(true)
+    end
+end
+
 --- @param e enterFrameEventData
 local function afterInitCallback(e)
     if config.data.main.enabled and not config.data.init.ignoreDataChanges and dataHandler.compareGameFileData() then
@@ -172,6 +179,7 @@ local function initCallbacks()
     event.register(tes3.event.cellActivated, cellActivatedCallback)
     event.register(tes3.event.enterFrame, afterInitCallback, {priority = -278})
     event.register(tes3.event.itemTileUpdated, itemTileUpdatedCallback)
+    event.register(tes3.event.death, deathCallback)
 end
 
 --- @param e initializedEventData

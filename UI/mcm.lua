@@ -383,6 +383,7 @@ function this.registerModConfig()
         createYesNo{self = trackingPage, config = {path = "tracking.quest", name = "finished"}, label = "Auto track next stages from finished quests. In most of cases, these stages are just different endings of the quest. But sometimes they are useful (but too rarely)"}
         createYesNo{self = trackingPage, config = {path = "map", name = "enabled"}, label = "Integrate tracking info to the game Map menu"}
         createYesNo{self = trackingPage, config = {path = "tracking", name = "hideObtained"}, label = "Hide markers for obtained quest items"}
+        createYesNo{self = trackingPage, config = {path = "tracking", name = "hideKilled"}, label = "Hide markers with a condition to kill someone if that condition is met"}
         createYesNo{self = trackingPage, config = {path = "tooltip.object", name = "changeTitleForTracked"}, label = "Change tracked object name color in tooltip"}
         createYesNo{self = trackingPage, config = {path = "map", name = "showJournalTextTooltip"},
             label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}

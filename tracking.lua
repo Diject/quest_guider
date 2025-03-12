@@ -65,7 +65,7 @@ this.trackedQuestGivers = {}
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
----@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?}> by quest id
+---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?, actorCount : integer?}> by quest id
 ---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
@@ -221,7 +221,8 @@ function this.addMarker(params)
         id = params.questId,
         index = params.questStage,
         data = objectMarkerData,
-        itemCount = positionData.itemCount
+        itemCount = positionData.itemCount,
+        actorCount = positionData.actorCount
     }
 
     local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
@@ -367,6 +368,14 @@ function this.addMarker(params)
     qTrackingInfo.objects[objectId] = table.keys(objects)
 
     this.trackedObjectsByQuestId[params.questId] = qTrackingInfo
+
+    if positionData.itemCount then
+        this.handlePlayerInventory(true)
+    end
+    if positionData.actorCount then
+        this.handleDeath(objectId)
+    end
+
     return objectTrackingData
 end
 
@@ -1000,10 +1009,11 @@ end
 
 
 local handlePlayerInventory_lastUpdate = nil
+---@param force boolean?
 ---@return boolean? changed
-function this.handlePlayerInventory()
+function this.handlePlayerInventory(force)
     local timestamp = os.time()
-    if handlePlayerInventory_lastUpdate == timestamp then
+    if not force and handlePlayerInventory_lastUpdate == timestamp then
         return
     else
         handlePlayerInventory_lastUpdate = timestamp
@@ -1015,17 +1025,19 @@ function this.handlePlayerInventory()
     if not mobile then return end
 
     local changed = false
+    local protected = false
 
     for objId, data in pairs(this.markerByObjectId) do
         for _, markerData in pairs(data.markers) do
             if not markerData.itemCount then goto continue end
 
             if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = objId } then
-                if markerData.data.disabled ~= true then
+                if markerData.data.disabled ~= true and not protected then
                     this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
                     changed = true
                 end
             else
+                protected = true
                 if markerData.data.disabled ~= false then
                     this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = false }
                     changed = true
@@ -1033,6 +1045,41 @@ function this.handlePlayerInventory()
             end
 
             ::continue::
+        end
+    end
+
+    return changed
+end
+
+
+---@return boolean? changed
+function this.handleDeath(objectId)
+    if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideKilled then return end
+
+    if not objectId then return end
+    objectId = objectId:lower()
+    local objData = this.markerByObjectId[objectId]
+    if not objData then return end
+
+    local changed = false
+
+    local protected = false
+    for _, markerData in pairs(objData.markers) do
+        if markerData.actorCount then
+            local killCount = tes3.getKillCount{ actor = objectId }
+
+            if killCount >= markerData.actorCount then
+                if markerData.data.disabled ~= true and not protected then
+                    this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
+                    changed = true
+                end
+            else
+                protected = true
+                if markerData.data.disabled ~= false then
+                    this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false }
+                    changed = true
+                end
+            end
         end
     end
 

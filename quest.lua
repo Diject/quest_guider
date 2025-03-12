@@ -664,6 +664,7 @@ end
 ---@field name string name of the object
 ---@field inWorld integer? number of instances of the object in the game world
 ---@field itemCount integer? item count from *types.requirementType.Item*
+---@field actorCount integer? kill count from *types.requirementType.Dead*
 ---@field positions questGuider.quest.getRequirementPositionData.positionData[]
 
 ---@param requirement questDataGenerator.requirementData
@@ -942,7 +943,7 @@ function this.getRequirementPositionData(requirement, customConfig)
         return nil
     end
 
-    if requirement.type == types.requirementType.Item then
+    if requirement.type == types.requirementType.Item or requirement.type == types.requirementType.Dead then
         local data = out[requirement.variable]
         if data and requirement.value then
 
@@ -961,6 +962,11 @@ function this.getRequirementPositionData(requirement, customConfig)
             end
 
             if data.itemCount == 0 then data.itemCount = nil end
+
+            if requirement.type == types.requirementType.Dead then
+                data.actorCount = data.itemCount
+                data.itemCount = nil
+            end
         end
     end
 

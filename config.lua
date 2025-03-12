@@ -74,6 +74,7 @@ this.default = {
         minChance = 0.2, -- do not track parent objects with a chance to get less than this value
         maxCellDepth = 12,
         hideObtained = true,
+        hideKilled = true,
         approx = {
             enabled = false,
             worldMap = {
