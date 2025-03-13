@@ -733,7 +733,12 @@ function this.getRequirementPositionData(requirement, customConfig)
         end
     end
 
-    if requirement.type == types.requirementType.CustomScript and requirement.script then
+    if requirement.type == types.requirementType.CustomActor and requirement.object then
+        local obj = tes3.getObject(requirement.object)
+        if obj then
+            objects[obj] = requirement.object
+        end
+    elseif requirement.type == types.requirementType.CustomScript and requirement.script then
         fillDataForScriptByTableName(requirement.script, "links")
 
     elseif requirement.type == "SCR1" and requirement.value then
