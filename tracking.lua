@@ -62,6 +62,7 @@ this.trackedQuestGivers = {}
 ---@field localDoorMarkerId string|nil
 ---@field worldMarkerId string|nil
 ---@field disabled boolean?
+---@field userDisabled boolean?
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
@@ -902,6 +903,7 @@ end
 ---@field objectId string? should be lowercase
 ---@field toggle boolean?
 ---@field value boolean?
+---@field isUserDisabled boolean?
 
 ---@param params questGuider.tracking.disableMarker
 function this.setDisableMarkerState(params)
@@ -942,8 +944,24 @@ function this.setDisableMarkerState(params)
 
     ---@param markerData questGuider.tracking.markerRecord
     local function setDisabledState(markerData)
-        markerData.disabled = params.toggle == true and not markerData.disabled or params.value
-        if markerData.disabled == nil then markerData.disabled = false end
+        local disabledState = params.toggle == true and not markerData.disabled or params.value
+
+        if params.isUserDisabled then
+            markerData.disabled = disabledState
+            if markerData.disabled == nil then markerData.disabled = false end
+            markerData.userDisabled = markerData.disabled
+
+        elseif markerData.userDisabled ~= nil then
+            local userDisabled = markerData.userDisabled
+            if userDisabled == disabledState then
+                markerData.userDisabled = nil
+            end
+            markerData.disabled = userDisabled
+
+        else
+            markerData.disabled = disabledState
+        end
+
 
         if this.mapMarkerLibVersion >= 3 then
             local localDoorMarkerRec = markerLib.record.get(markerData.localDoorMarkerId)

@@ -83,7 +83,7 @@ function this.updateMapMenu()
                 local _, randObjId = table.choice(trackingData.objects)
                 if randObjId then
                     local randObjDisState = trackingLib.getDisabledState{ questId = questId, objectId = randObjId}
-                    trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = questId }
+                    trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = questId, isUserDisabled = true }
                 end
                 trackingLib.updateMarkers(true)
                 return
@@ -171,7 +171,7 @@ function this.updateMapMenu()
                 trackingLib.changeObjectMarkerColor(objId, color, 100)
                 if trackingLib.mapMarkerLibVersion >= 3 then
                     lastDisabledState = trackingLib.getDisabledState{ objectId = objId, questId = questId }
-                    trackingLib.setDisableMarkerState{ value = false,  objectId = objId, questId = questId }
+                    trackingLib.setDisableMarkerState{ value = false,  objectId = objId, questId = questId, isUserDisabled = true }
                 end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
@@ -181,7 +181,7 @@ function this.updateMapMenu()
                 qDescrLabel.color = markerColor
                 trackingLib.changeObjectMarkerColor(objId, markerColor, 0)
                 if trackingLib.mapMarkerLibVersion >= 3 then
-                    trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId }
+                    trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId, isUserDisabled = true }
                 end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
@@ -189,7 +189,7 @@ function this.updateMapMenu()
 
             qDescrLabel:register(tes3.uiEvent.mouseClick, function (e)
                 if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
-                    trackingLib.setDisableMarkerState{ value = not lastDisabledState, objectId = objId, questId = questId }
+                    trackingLib.setDisableMarkerState{ value = not lastDisabledState, objectId = objId, questId = questId, isUserDisabled = true }
                     trackingLib.updateMarkers(true)
                     return
                 end
