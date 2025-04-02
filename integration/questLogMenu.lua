@@ -4,6 +4,7 @@ local journalUI = include("diject.quest_guider.UI.journal")
 local trackingLib = include("diject.quest_guider.tracking")
 local questLib = include("diject.quest_guider.quest")
 local menuContainer = include("diject.quest_guider.UI.menuContainer")
+local filedBlockLib = include("diject.quest_guider.UI.fieldBlockSys")
 
 local priority = -278
 local buttonId = "qGuider_QLMBtn"
@@ -13,6 +14,87 @@ local this = {}
 this.isMenuActive = false
 
 local lastKey = nil
+
+
+local makeLabelSelectable = include("diject.quest_guider.UI.utils").makeLabelSelectable
+
+---@param quest tes3quest
+local function uiContainer(quest, parent)
+    if #quest.dialogue <= 1 then
+        local diaId = quest.dialogue and quest.dialogue[1] and quest.dialogue[1].id
+        if not diaId then return end
+        diaId = diaId:lower()
+
+        local diaData = questLib.getQuestData(diaId)
+        if not diaData then return end
+
+        return journalUI.drawRequirementMenu(parent, diaId, nil, diaData)
+    else
+        local block = parent:createBlock{}
+        block.autoWidth = false
+        block.width = 400
+        block.autoHeight = true
+        block.flowDirection = tes3.flowDirection.topToBottom
+        local tabFieldBlock = filedBlockLib.new{parent = block, delimiter = ",", delimiterBorderRight = 6, borderRight = 6}
+
+        local mainBlock = parent:createBlock{}
+        mainBlock.autoWidth = true
+        mainBlock.autoHeight = true
+
+        ---@type tes3uiElement[]
+        local tabs = {}
+        for _, dialogue in pairs(quest.dialogue) do
+            if not dialogue.journalIndex or dialogue.journalIndex == 0 then goto continue end
+
+            local diaId = dialogue.id:lower()
+            local diaData = questLib.getQuestData(diaId)
+            if not diaData then goto continue end
+
+            local tab = tabFieldBlock:add{ id = "qGuider_qlm_dialogueTab", text = "\""..dialogue.id.."\"" }
+
+            if not tab then goto continue end
+
+            table.insert(tabs, tab)
+
+            makeLabelSelectable(tab)
+            tab:setLuaData("data", {id = diaId, qData = diaData, index = dialogue.journalIndex})
+
+            tab:register(tes3.uiEvent.mouseClick, function (e)
+                mainBlock:destroyChildren()
+                local elem = e.source
+                if not elem then return end
+
+                for _, tb in pairs(tabs) do
+                    tb.color = tes3ui.getPalette(tes3.palette.journalFinishedQuestOverColor)
+                end
+                elem.color = {0.5, 1, 0.5}
+
+                local data = elem:getLuaData("data")
+                if not data then return end
+
+                journalUI.drawRequirementMenu(mainBlock, data.id, nil, data.qData)
+            end)
+
+            ::continue::
+        end
+
+        if #tabs > 0 then
+            for _, tab in pairs(tabs) do
+                local luaData = tab:getLuaData("data")
+                if luaData and questLib.getNextIndexes(luaData.qData, luaData.index) then
+                    tab:triggerEvent(tes3.uiEvent.mouseClick)
+                    return true
+                end
+            end
+            tabs[1]:triggerEvent(tes3.uiEvent.mouseClick)
+            return true
+        else
+            return false
+        end
+    end
+end
+
+-- ################################################################################################
 
 local function onQLMKeyCallback(e)
     if tes3ui.menuMode() or not tes3.player then return end
@@ -52,18 +134,14 @@ local function onQLMKeyCallback(e)
             local elemIndex = this.Quest_List:get_active_quest_index()
             if not elemIndex then return end
             local questDt = this.Quest_List.quests[elemIndex] and this.Quest_List.quests[elemIndex].quest
-            if not questDt then return end
-            local questId = questDt.dialogue and questDt.dialogue[1] and questDt.dialogue[1].id
-            if not questId then return end
-            local quest = questLib.getQuestData(questId)
 
-            return questId, quest
+            return questDt
         end
 
         if config.data.integration.questLogMenu.tooltip then
             qGuiderBtn:register(tes3.uiEvent.help, function (ei)
-                local questId, quest = getQuestParams()
-                if not questId or not quest then return end
+                local quest = getQuestParams()
+                if not quest then return end
 
                 local tooltip = tes3ui.createTooltipMenu()
                 tooltip.autoWidth = true
@@ -75,18 +153,23 @@ local function onQLMKeyCallback(e)
                 else
                     journalUI.createHelpMessage(tooltip, "Click to open. / Shift+Click to track quest objects. / Ctrl+Click to show list of all quests.")
                 end
-                if not journalUI.drawRequirementMenu(tooltip, questId, nil, quest) then
+                if not uiContainer(quest, tooltip) then
                     tooltip:destroy()
                 end
             end)
         end
 
         qGuiderBtn:register(tes3.uiEvent.mouseClick, function()
-            local questId, quest = getQuestParams()
-            if not questId or not quest then return end
+            local quest = getQuestParams()
+            if not quest then return end
 
             if tes3.worldController.inputController:isShiftDown() then
-                trackingLib.trackQuestsbyQuestId(questId)
+                for _, dia in pairs(quest.dialogue) do
+                    if dia.journalIndex and dia.journalIndex > 0 then
+                        trackingLib.trackQuestsbyQuestId(dia.id:lower())
+                    end
+                end
+
                 return
 
             elseif tes3.worldController.inputController:isControlDown() then
@@ -102,14 +185,14 @@ local function onQLMKeyCallback(e)
             end
 
             local function createContainerButtons(menuEl, buttonBlock)
-                journalUI.createContainerButtons(questId, menuEl, buttonBlock, {trackDisplayedBtn = false})
+                journalUI.createContainerButtons(nil, menuEl, buttonBlock, {trackDisplayedBtn = false})
             end
 
             local el, buttonBlock = menuContainer.draw("Requirements", createContainerButtons)
 
             if not el or not buttonBlock then return end
 
-            if not journalUI.drawRequirementMenu(el, questId, nil, quest) then
+            if not uiContainer(quest, el) then
                 el:destroy()
                 return
             end
@@ -147,10 +230,12 @@ local function onMenuDestroyed(e)
                 if not data.hidden_ids[quest.id] then goto continue end
 
                 for _, dialogue in pairs(quest.dialogue or {}) do
-                    local idLower = dialogue.id:lower()
-                    trackingLib.disabledQuests[idLower] = true
-                    disabledQuests_old[idLower] = nil
-                    trackingLib.setDisableMarkerState{ questId = idLower, value = true }
+                    if dialogue.journalIndex and dialogue.journalIndex > 0 then
+                        local idLower = dialogue.id:lower()
+                        trackingLib.disabledQuests[idLower] = true
+                        disabledQuests_old[idLower] = nil
+                        trackingLib.setDisableMarkerState{ questId = idLower, value = true }
+                    end
                 end
 
                 ::continue::
@@ -159,7 +244,6 @@ local function onMenuDestroyed(e)
 
         for qId, _ in pairs(disabledQuests_old) do
             trackingLib.setDisableMarkerState{ questId = qId, value = false }
-            log(qId)
         end
         trackingLib.updateMarkers(true)
     end
@@ -177,8 +261,10 @@ local function onLoaded()
             if not data.hidden_ids[quest.id] then goto continue end
 
             for _, dialogue in pairs(quest.dialogue or {}) do
-                local id = dialogue.id:lower()
-                trackingLib.disabledQuests[id] = true
+                if dialogue.journalIndex and dialogue.journalIndex > 0 then
+                    local id = dialogue.id:lower()
+                    trackingLib.disabledQuests[id] = true
+                end
             end
 
             ::continue::
