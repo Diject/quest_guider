@@ -78,6 +78,10 @@ this.trackedObjectsByQuestId = {}
 
 this.callbackToUpdateMapMenu = nil
 
+
+---@type table<string, boolean>
+this.disabledQuests = {}
+
 ---@type markerLib.localMarkerOOP[]
 local lastInteriorMarkers = {}
 
@@ -375,6 +379,10 @@ function this.addMarker(params)
     end
     if positionData.actorCount then
         this.handleDeath(objectId)
+    end
+
+    if this.disabledQuests[params.questId] then
+        this.setDisableMarkerState{ questId = params.questId, value = true }
     end
 
     return objectTrackingData

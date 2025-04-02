@@ -179,7 +179,7 @@ function this.updateMapMenu()
 
             qDescrLabel:register(tes3.uiEvent.mouseLeave, function (e)
                 qDescrLabel.color = markerColor
-                trackingLib.changeObjectMarkerColor(objId, markerColor, 0)
+                trackingLib.changeObjectMarkerColor(objId, objectMarkerData.color, 0)
                 if trackingLib.mapMarkerLibVersion >= 3 then
                     trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId, isUserDisabled = true }
                 end

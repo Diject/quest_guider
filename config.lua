@@ -101,6 +101,7 @@ this.default = {
         questLogMenu = {
             enabled = true,
             tooltip = true,
+            hideHidden = true,
         },
     },
     init = {

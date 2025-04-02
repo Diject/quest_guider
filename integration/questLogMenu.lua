@@ -136,11 +136,55 @@ end
 local function onMenuDestroyed(e)
     this.isMenuActive = false
     this.initKeyCallback(lastKey)
+
+    if tes3.player and config.data.integration.questLogMenu.hideHidden then
+        local disabledQuests_old = table.copy(trackingLib.disabledQuests)
+        table.clear(trackingLib.disabledQuests)
+
+        local data = tes3.player.data["herbert_QL"]
+        if data and data.hidden_ids then
+            for _, quest in pairs(tes3.worldController.quests) do
+                if not data.hidden_ids[quest.id] then goto continue end
+
+                for _, dialogue in pairs(quest.dialogue or {}) do
+                    local idLower = dialogue.id:lower()
+                    trackingLib.disabledQuests[idLower] = true
+                    disabledQuests_old[idLower] = nil
+                    trackingLib.setDisableMarkerState{ questId = idLower, value = true }
+                end
+
+                ::continue::
+            end
+        end
+
+        for qId, _ in pairs(disabledQuests_old) do
+            trackingLib.setDisableMarkerState{ questId = qId, value = false }
+            log(qId)
+        end
+        trackingLib.updateMarkers(true)
+    end
 end
 
 local function onLoaded()
     this.isMenuActive = false
     this.initKeyCallback(lastKey)
+
+
+    if not config.data.integration.questLogMenu.hideHidden then return end
+    local data = tes3.player.data["herbert_QL"]
+    if data and data.hidden_ids then
+        for _, quest in pairs(tes3.worldController.quests) do
+            if not data.hidden_ids[quest.id] then goto continue end
+
+            for _, dialogue in pairs(quest.dialogue or {}) do
+                local id = dialogue.id:lower()
+                trackingLib.disabledQuests[id] = true
+            end
+
+            ::continue::
+        end
+        trackingLib.updateMarkers(true)
+    end
 end
 
 

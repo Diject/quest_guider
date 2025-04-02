@@ -476,6 +476,7 @@ function this.registerModConfig()
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "enabled"}, label = "Integrate the mod to the \"Quest Log Menu\"",
             restartRequired = true}
         createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "tooltip"}, label = "Show data as a tooltip for the button in the \"Quest Log Menu\""}
+        createYesNo{self = integrQLMGroup, config = {path = "integration.questLogMenu", name = "hideHidden"}, label = "Hide markers for hidden quests from \"Quest Log Menu\""}
 
         createYesNo{self = otherPage, config = {path = "main", name = "helpLabels"}, label = "Show help info in menus"}
     end
