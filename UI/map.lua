@@ -171,7 +171,7 @@ function this.updateMapMenu()
                 trackingLib.changeObjectMarkerColor(objId, color, 100)
                 if trackingLib.mapMarkerLibVersion >= 3 then
                     lastDisabledState = trackingLib.getDisabledState{ objectId = objId, questId = questId }
-                    trackingLib.setDisableMarkerState{ value = false,  objectId = objId, questId = questId, isUserDisabled = true }
+                    trackingLib.setDisableMarkerState{ value = false,  objectId = objId, questId = questId, temporary = true }
                 end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()
@@ -181,7 +181,7 @@ function this.updateMapMenu()
                 qDescrLabel.color = markerColor
                 trackingLib.changeObjectMarkerColor(objId, objectMarkerData.color, 0)
                 if trackingLib.mapMarkerLibVersion >= 3 then
-                    trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId, isUserDisabled = true }
+                    trackingLib.setDisableMarkerState{ value = lastDisabledState,  objectId = objId, questId = questId, temporary = true }
                 end
                 trackingLib.updateMarkers(false)
                 qDescrLabel:getTopLevelMenu():updateLayout()

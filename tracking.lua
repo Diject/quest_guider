@@ -912,6 +912,7 @@ end
 ---@field toggle boolean?
 ---@field value boolean?
 ---@field isUserDisabled boolean?
+---@field temporary boolean?
 
 ---@param params questGuider.tracking.disableMarker
 function this.setDisableMarkerState(params)
@@ -954,7 +955,9 @@ function this.setDisableMarkerState(params)
     local function setDisabledState(markerData)
         local disabledState = params.toggle == true and not markerData.disabled or params.value
 
-        if params.isUserDisabled then
+        if params.temporary then
+            markerData.disabled = disabledState
+        elseif params.isUserDisabled then
             markerData.disabled = disabledState
             if markerData.disabled == nil then markerData.disabled = false end
             markerData.userDisabled = markerData.disabled
