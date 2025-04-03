@@ -230,12 +230,10 @@ local function onMenuDestroyed(e)
                 if not data.hidden_ids[quest.id] then goto continue end
 
                 for _, dialogue in pairs(quest.dialogue or {}) do
-                    if dialogue.journalIndex and dialogue.journalIndex > 0 then
-                        local idLower = dialogue.id:lower()
-                        trackingLib.disabledQuests[idLower] = true
-                        disabledQuests_old[idLower] = nil
-                        trackingLib.setDisableMarkerState{ questId = idLower, value = true }
-                    end
+                    local idLower = dialogue.id:lower()
+                    trackingLib.setDisableMarkerState{ questId = idLower, value = true }
+                    trackingLib.disabledQuests[idLower] = true
+                    disabledQuests_old[idLower] = nil
                 end
 
                 ::continue::
@@ -261,10 +259,8 @@ local function onLoaded()
             if not data.hidden_ids[quest.id] then goto continue end
 
             for _, dialogue in pairs(quest.dialogue or {}) do
-                if dialogue.journalIndex and dialogue.journalIndex > 0 then
-                    local id = dialogue.id:lower()
-                    trackingLib.disabledQuests[id] = true
-                end
+                local id = dialogue.id:lower()
+                trackingLib.disabledQuests[id] = true
             end
 
             ::continue::
