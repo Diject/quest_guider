@@ -916,6 +916,11 @@ end
 
 ---@param params questGuider.tracking.disableMarker
 function this.setDisableMarkerState(params)
+    if not (params.isUserDisabled or params.temporary) and
+        params.questId and this.disabledQuests[params.questId] then
+            return
+    end
+
     local markerDataHashTable = {}
 
     for objId, objData in pairs(this.markerByObjectId) do
