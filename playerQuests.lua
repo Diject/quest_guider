@@ -16,6 +16,8 @@ local initialized = false
 function this.init()
     if initialized then return end
 
+    this.finished = {}
+
     for _, dialogue in pairs(tes3.dataHandler.nonDynamicData.dialogues) do
         if dialogue.type ~= tes3.dialogueType.journal then goto continue end
 
