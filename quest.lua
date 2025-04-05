@@ -176,8 +176,9 @@ end
 --#################################################################################################
 
 ---@param dialogue tes3dialogue
----@return boolean
+---@return boolean?
 local function isDialogueAvailable(dialogue)
+    if not tes3.mobilePlayer then return end
     for _, dia in pairs(tes3.mobilePlayer.dialogueList) do
         if dialogue == dia then
             return true
