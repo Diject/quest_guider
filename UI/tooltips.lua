@@ -73,7 +73,9 @@ function this.drawObjectTooltip(parent, objectId)
         if not questData or not questData.name then goto continue end
 
         local playerData = playerQuests.getQuestData(questId)
-        if not playerData or (config.data.tracking.giver.hideStarted and playerData.index >= maxIndex) then goto continue end
+        if not playerData or (config.data.tracking.giver.hideStarted and (playerData.index >= maxIndex or playerQuests.isFinished(questId))) then
+            goto continue
+        end
 
         table.insert(involvedNames, questData.name)
 
@@ -184,9 +186,23 @@ function this.drawDoorTooltip(parent, reference)
 
             if objData.norm > config.data.tooltip.tracking.maxPositions then goto continue end
 
+            local valid = true
             if #(objData.stages or {}) > 0 then
-                questObjects[objId] = objData
+                if config.data.tracking.giver.hideStarted then
+                    valid = false
+                    for _, stage in pairs(objData.stages) do
+                        if not (playerQuests.isFinished(stage.id) or playerQuests.getCurrentIndex(stage.id) < stage.index) then
+                            questObjects[objId] = objData
+                            valid = true
+                            break
+                        end
+                    end
+                else
+                    questObjects[objId] = objData
+                end
             end
+
+            if not valid then goto continue end
 
             for _, oDt in pairs(objData.contains or {}) do
 
