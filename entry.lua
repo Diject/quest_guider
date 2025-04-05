@@ -47,6 +47,9 @@ local function journalCallback(e)
     local questId = e.topic.id:lower()
 
     playerQuests.updateIndex(questId, e.index)
+    if e.info and e.info.isQuestFinished then
+        playerQuests.addFinished(e.topic)
+    end
 
     if config.data.tracking.giver.enabled and e.new then
         tracking.updateQuestGiverMarkers()

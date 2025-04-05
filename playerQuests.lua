@@ -8,6 +8,9 @@ local this = {}
 ---@type table<string, questGuider.playerQuest.data>
 this.questData = {}
 
+---@type table<string, tes3quest>
+this.finished = {}
+
 local initialized = false
 
 function this.init()
@@ -28,6 +31,14 @@ function this.init()
         data.record = dialogue
 
         ::continue::
+    end
+
+    for _, quest in pairs(tes3.worldController.quests) do
+        if quest.isFinished then
+            for _, dia in pairs(quest.dialogue) do
+                this.finished[dia.id:lower()] = quest
+            end
+        end
     end
 
     initialized = true
@@ -55,6 +66,24 @@ function this.updateIndex(questId, index)
 
     data.index = index
     data.text = nil
+end
+
+---@param dialogue tes3dialogue
+function this.addFinished(dialogue)
+    if not dialogue then return end
+
+    local quest = tes3.findQuest{ journal = dialogue }
+    if not quest then return end
+
+    for _, dia in pairs(quest.dialogue) do
+        this.finished[dia.id:lower()] = quest
+    end
+end
+
+---@param dialogueId string lowercase
+---@return tes3quest?
+function this.isFinished(dialogueId)
+    return this.finished[dialogueId]
 end
 
 ---@param quest tes3dialogue|string
