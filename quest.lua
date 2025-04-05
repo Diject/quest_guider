@@ -112,6 +112,11 @@ function this.getNextIndexes(questData, questIndex)
     if not questData then return end
 
     local tpData = questData[tostring(questIndex)]
+
+    if tpData.finished then
+        return
+    end
+
     if not tpData then
         local intQuestIndex = tonumber(questIndex)
         for i, index in ipairs(this.getIndexes(questData) or {}) do
