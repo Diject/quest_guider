@@ -173,6 +173,13 @@ function this.getObjectNamesFromLinkTable(tb)
     return out, count
 end
 
+
+---@param name string
+---@return string
+function this.convertDialogueName(name)
+    return string.sub(name, 7)
+end
+
 --#################################################################################################
 
 ---@param dialogue tes3dialogue
