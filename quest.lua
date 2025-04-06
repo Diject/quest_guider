@@ -1085,4 +1085,78 @@ function this.checkConditionsForQuestGiver(object, questId, questIndex)
     return false
 end
 
+
+---@param objData questDataGenerator.objectInfo
+---@param maxNames integer
+---@return string[]
+function this.getObjectPositionDescription(objData, maxNames)
+    local approxEnabled = config.data.tracking.approx.enabled
+
+    local descriptions = {}
+    for _, posDt in pairs(objData.positions) do
+        local x = posDt.pos[1]
+        local y = posDt.pos[2]
+        local z = posDt.pos[3]
+
+        local descr
+
+        if posDt.name then
+            local cell = tes3.getCell{id = posDt.name}
+            if cell then
+                local exCellPos, doorPath, cellPath, isExterior, checkedCells = cellLib.findExitPos(cell)
+                if exCellPos then
+
+                    if cellPath then
+
+                        if not approxEnabled then
+                            for i = #cellPath, 1, -1 do
+                                descr = descr and string.format("%s => \"%s\"", descr, cellPath[i].editorName) or
+                                    string.format("\"%s\"", cellPath[i].editorName)
+                            end
+                        else
+                            local lastIndex = #cellPath
+                            if #cellPath > 1 then
+                                local regionName = cellPath[lastIndex].displayName
+                                regionName = regionName == "" and "???" or regionName
+                                descr = string.format("\"%s\"", regionName)
+                                descr = descr .. string.format(" => \"%s\"", cellPath[lastIndex - 1].editorName)
+                            else
+                                descr = string.format("\"%s\"", cellPath[1].editorName)
+                            end
+                        end
+                    end
+
+                else
+                    if cellPath then
+
+                        if not approxEnabled then
+                            local list = {}
+                            local count = 0
+                            for cl, _ in pairs(checkedCells) do
+                                table.insert(list, cl.name)
+                                count = count + 1
+                            end
+                            table.shuffle(list, count)
+                            descr = string.format("\"%s\", %s", cell.displayName, stringLib.getValueEnumString(list, maxNames, "Reachable from %s"))
+                        else
+                            descr = string.format("\"%s\"", cell.displayName)
+                        end
+                    end
+                end
+            end
+        elseif posDt.grid then
+            local cell = tes3.getCell{x = posDt.grid[1], y = posDt.grid[2]}
+            if cell then
+                descr = approxEnabled and cell.displayName or cell.editorName
+            end
+        end
+
+        if descr then
+            table.insert(descriptions, descr)
+        end
+    end
+
+    return descriptions
+end
+
 return this

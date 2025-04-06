@@ -3,6 +3,7 @@ local log = include("diject.quest_guider.utils.log")
 local questLib = include("diject.quest_guider.quest")
 local trackingLib = include("diject.quest_guider.tracking")
 local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
+local stringLib = include("diject.quest_guider.utils.string")
 
 local config = include("diject.quest_guider.config")
 
@@ -161,6 +162,11 @@ function this.updateMapMenu()
                     end
                     tooltip:add{name = text}
                 end
+                local objData = questLib.getObjectData(objId)
+                if not objData or not objData.positions then return end
+                local positionDescrs = questLib.getObjectPositionDescription(objData, config.data.journal.objectNames)
+                table.shuffle(positionDescrs)
+                tooltip:add{name = "Location:", description = stringLib.getValueEnumString(positionDescrs, config.data.journal.objectNames)}
             end
 
             local lastDisabledState = disabledState
