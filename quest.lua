@@ -12,6 +12,7 @@ local otherTypes = include("diject.quest_guider.Types.other")
 
 local dataHandler = include("diject.quest_guider.dataHandler")
 local playerQuests = include("diject.quest_guider.playerQuests")
+local requirementChecker = include("diject.quest_guider.requirementChecker")
 
 local this = {}
 
@@ -174,11 +175,6 @@ function this.getObjectNamesFromLinkTable(tb)
 end
 
 
----@param name string
----@return string
-function this.convertDialogueName(name)
-    return string.sub(name, 7)
-end
 
 --#################################################################################################
 
@@ -1049,10 +1045,12 @@ function this.getRequirementPositionData(requirement, customConfig)
 end
 
 
+---@param object tes3npc|tes3creature
 ---@param questId string
 ---@param questIndex integer|string
 ---@return boolean?
-function this.checkConditionsForPlayer(questId, questIndex)
+function this.checkConditionsForQuestGiver(object, questId, questIndex)
+    if not object then return end
     local questData = this.getQuestData(questId)
     if not questData then return end
 
@@ -1060,39 +1058,24 @@ function this.checkConditionsForPlayer(questId, questIndex)
     local stageData = questData[indexStr]
     if not stageData then return end
 
-    local operator = types.operator
     local requirements = stageData.requirements or {}
 
     if #requirements == 0 then return true end
 
+    local allowedTypes = {
+        [types.requirementType.Journal] = true,
+        [types.requirementType.CustomActorFaction] = true,
+        [types.requirementType.CustomPCFaction] = true,
+        [types.requirementType.RankRequirement] = true,
+        [types.requirementType.CustomPCRank] = true,
+    }
+
     for _, reqBlock in pairs(stageData.requirements or {}) do
-        local ret = true
-
-        for _, req in pairs(reqBlock) do
-
-            if req.type == types.requirementType.Journal then
-                local plIndex = playerQuests.getCurrentIndex(req.variable) or 0
-                if not operator.check(plIndex, req.value, req.operator) then
-                    ret = false
-                    break
-                end
-
-            elseif (req.type == types.requirementType.CustomActorFaction or req.type == types.requirementType.CustomPCFaction) and req.object == "player" then
-                local faction = tes3.getFaction(req.value)
-                if not operator.check(faction, req.value, req.operator) then
-                    ret = false
-                    break
-                end
-
-            elseif (req.type == types.requirementType.RankRequirement or req.type == types.requirementType.CustomPCRank) and req.object == "player" then
-                local faction = tes3.getFaction(req.variable)
-                if not operator.check(faction, req.value, req.operator) then
-                    ret = false
-                    break
-                end
-            end
-
-        end
+        local ret = requirementChecker.checkBlock(reqBlock, {
+            allowedTypes = allowedTypes,
+            object = object,
+            threatErrorsAs = true,
+        })
 
         if ret then
             return true

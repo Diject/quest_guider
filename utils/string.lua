@@ -41,4 +41,11 @@ function this.getValueEnumString(tb, max, framePattern, returnTable, customNumbe
     return str
 end
 
+
+---@param name string
+---@return string
+function this.convertDialogueName(name)
+    return string.sub(name, 7)
+end
+
 return this

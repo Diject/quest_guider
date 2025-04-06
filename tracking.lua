@@ -589,7 +589,7 @@ function this.createQuestGiverMarkers(cell)
             if config.data.tracking.giver.filter then
                 local firstIndexStr = questLib.getFirstIndex(questData)
                 if not firstIndexStr then goto continue end
-                if not questLib.checkConditionsForPlayer(questIdLower, firstIndexStr) then
+                if not questLib.checkConditionsForQuestGiver(ref.object, questIdLower, firstIndexStr) then
                     goto continue
                 end
             end
@@ -651,7 +651,7 @@ function this.updateQuestGiverMarkers()
             if config.data.tracking.giver.filter then
                 local firstIndexStr = questLib.getFirstIndex(questData)
                 if not firstIndexStr then goto continue end
-                if not questLib.checkConditionsForPlayer(questId, firstIndexStr) then
+                if not questLib.checkConditionsForQuestGiver(tes3.getObject(objId), questId, firstIndexStr) then
                     goto continue
                 end
             end
