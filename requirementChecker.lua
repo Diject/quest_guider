@@ -113,6 +113,18 @@ local dataFuncs = {
 
         return dialogueInfo:filter(ref.object, ref, 0, dialogue)
     end,
+
+    [types.requirementType.CustomDialogue] = function (req)
+        if not req.variable then return end
+        if not tes3.mobilePlayer then return end
+        local dialogueId = stringLib.convertDialogueName(req.variable)
+        for _, dia in pairs(tes3.mobilePlayer.dialogueList) do
+            if dialogueId == dia.id:lower() then
+                return true
+            end
+        end
+        return false
+    end,
 }
 
 
