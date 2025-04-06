@@ -113,7 +113,7 @@ function this.getNextIndexes(questData, questIndex)
 
     local tpData = questData[tostring(questIndex)]
 
-    if tpData.finished then
+    if tpData and tpData.finished then
         return
     end
 
@@ -125,7 +125,7 @@ function this.getNextIndexes(questData, questIndex)
                 break
             end
         end
-        if not tpData then return end
+        if not tpData or tpData.finished then return end
     end
 
     local nextIndexes = {}
