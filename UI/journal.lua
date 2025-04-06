@@ -441,7 +441,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel, text = string.format("(%s) %s", topicIndexStr, questName) }
     headerLabel.borderBottom = 2
 
-    if currentTopicData and currentTopicData.finished then
+    if currentTopicData and playerQuests.isFinished(questId) then
         local finishedLabel = scrollBlockContent:createLabel{ id = requirementsMenu.finishedLabel, text = "Finished" }
         finishedLabel.color = this.colors.lightGreen
         finishedLabel.widthProportional = 1
