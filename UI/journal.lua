@@ -438,8 +438,14 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local scrollBlockContent = scrollBlock:getContentElement()
 
-    local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel, text = string.format("(%s) %s", topicIndexStr, questName) }
+    local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel }
     headerLabel.borderBottom = 2
+
+    local function resetHeaderQuestName()
+        headerLabel.text = string.format("%s, id: \"%s\"", questName, questId)
+    end
+
+    resetHeaderQuestName()
 
     if currentTopicData and playerQuests.isFinished(questId) then
         local finishedLabel = scrollBlockContent:createLabel{ id = requirementsMenu.finishedLabel, text = "Finished" }
@@ -521,12 +527,13 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local function drawTopicInfo(topicIndex)
 
         local indexes
+        local linkedIndexData
         if topicIndex then
-            indexes = questLib.getNextIndexes(questData, topicIndex)
+            indexes, linkedIndexData = questLib.getNextIndexes(questData, topicIndex, true)
         else
             indexes = questLib.getIndexes(questData)
         end
-        if not indexes then
+        if not indexes and not linkedIndexData then
             -- indexTabBlock:destroyChildren()
             tabFieldBlock:destroyChildren()
             reqBlock:destroyChildren()
@@ -535,14 +542,24 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
         ---@type tes3uiElement[]
         local nextIndTabs = {}
-        for _, ind in ipairs(indexes) do
 
+        ---@param ind integer
+        ---@param qId string?
+        ---@param qData questDataGenerator.questData?
+        local function createIndex(ind, qId, qData)
+            local islinkedDia = qData ~= nil
+            if qData == nil then
+                qData = questData
+            end
             local indStr = tostring(ind)
-            local indTopicData = questData[indStr]
-            if not indTopicData then goto continue end
+            local indTopicData = qData[indStr]
+            if not indTopicData then return end
 
-            local nextIndexValueLabel = indexFieldBlock:add{ id = requirementsMenu.nextIndexValueLabel, text = "-"..indStr.."-" }
-            if not nextIndexValueLabel then goto continue end
+            local nextIndexValueLabel = indexFieldBlock:add{
+                id = requirementsMenu.nextIndexValueLabel,
+                text = islinkedDia and "<"..indStr..">" or "-"..indStr.."-"
+            }
+            if not nextIndexValueLabel then return end
             table.insert(nextIndTabs, nextIndexValueLabel)
 
             makeLabelSelectable(nextIndexValueLabel)
@@ -550,6 +567,12 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
             nextIndexValueLabel:setLuaData("data", indTopicData)
 
             nextIndexValueLabel:register(tes3.uiEvent.mouseClick, function (e)
+
+                if not islinkedDia then
+                    resetHeaderQuestName()
+                else
+                    headerLabel.text = string.format("%s, id: \"%s\"", qData.name or "???", qId)
+                end
 
                 for _, tb in pairs(nextIndTabs) do
                     tb.color = this.colors.disabled
@@ -574,19 +597,20 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     makeLabelSelectable(tab)
 
-                    local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock, questId)
+                    local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock, qId)
                     tab:setLuaData("requirementData", requirementData)
 
                     tab:register(tes3.uiEvent.mouseClick, function (e)
                         reqBlock:destroyChildren()
                         reqBlock:setLuaData("index", i)
-                        reqBlock:setLuaData("questId", questId)
+                        reqBlock:setLuaData("questId", qId)
 
                         ---@type table<string, table<string, string>>
                         local variableScripts = {}
 
                         if requirementData then
                             reqBlock:setLuaData("requirementData", requirementData)
+
                             for _, req in pairs(requirementData) do
                                 local reqType = req.data.type
 
@@ -631,7 +655,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                                     reqLabel:register(tes3.uiEvent.mouseClick, function (e)
                                         for objId, posDt in pairs(req.positionData) do
-                                            local res = trackingLib.addMarker{objectId = objId, questId = questId, questStage = index, positionData = posDt}
+                                            local res = trackingLib.addMarker{objectId = objId, questId = qId, questStage = ind, positionData = posDt}
                                             if res then
                                                 reqLabel.color = res.color
                                             end
@@ -710,8 +734,14 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                 end
 
             end)
+        end
 
-            ::continue::
+        for _, ind in ipairs(indexes or {}) do
+            createIndex(ind, questId)
+        end
+
+        for qId, data in pairs(linkedIndexData or {}) do
+            createIndex(data.index, qId, data.qData)
         end
 
         if #nextIndTabs > 0 then

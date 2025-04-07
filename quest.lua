@@ -104,8 +104,10 @@ end
 
 ---@param questData string|questDataGenerator.questData
 ---@param questIndex integer|string
----@return string[]|nil
-function this.getNextIndexes(questData, questIndex)
+---@param findInLinked boolean?
+---@return string[]?
+---@return table<string, {index: integer, qData: questDataGenerator.questData}>?
+function this.getNextIndexes(questData, questIndex, findInLinked)
     if not questData then return end
     if type(questData) == "string" then
         questData = this.getQuestData(questData)
@@ -118,7 +120,40 @@ function this.getNextIndexes(questData, questIndex)
         return
     end
 
-    if not tpData then
+    ---@type table<string, {index: integer, qData: questDataGenerator.questData}>
+    local linkedNext
+
+    if findInLinked and questData.links then
+        for _, linkedId in pairs(questData.links) do
+            local linkData = this.getQuestData(linkedId)
+            if not linkData then goto continue end
+
+            local firstIndex = this.getFirstIndex(linkData)
+            if not firstIndex then goto continue end
+            local linkRequirements = linkData[tostring(firstIndex)]
+            if not linkRequirements then goto continue end
+
+            local valid = false
+            for _, block in pairs(linkRequirements.requirements) do
+                valid = valid or requirementChecker.checkBlock(block, {
+                    allowedTypes = {
+                        [types.requirementType.Journal] = true,
+                    },
+                    threatErrorsAs = true,
+                })
+                if valid then break end
+            end
+
+            if valid then
+                linkedNext = linkedNext or {}
+                linkedNext[linkedId] = {index = firstIndex, qData = linkData}
+            end
+
+            ::continue::
+        end
+    end
+
+    if not tpData and not linkedNext then
         local intQuestIndex = tonumber(questIndex)
         for i, index in ipairs(this.getIndexes(questData) or {}) do
             if intQuestIndex and index > intQuestIndex then
@@ -129,6 +164,8 @@ function this.getNextIndexes(questData, questIndex)
         if not tpData or tpData.finished then return end
     end
 
+    if not tpData then return nil, linkedNext end
+
     local nextIndexes = {}
     local foundNextIndex = false
     if tpData.next then
@@ -137,17 +174,17 @@ function this.getNextIndexes(questData, questIndex)
             foundNextIndex = true
         end
     end
-    if not foundNextIndex and tpData.nextIndex then
+    if not foundNextIndex and tpData.nextIndex and not linkedNext then
         nextIndexes[tpData.nextIndex] = true
     end
 
     nextIndexes = table.keys(nextIndexes)
 
-    if #nextIndexes == 0 then return end
+    if #nextIndexes == 0 then return nil, linkedNext end
 
     table.sort(nextIndexes)
 
-    return nextIndexes
+    return nextIndexes, linkedNext
 end
 
 
