@@ -32,7 +32,7 @@ local disallowedRequirementTypes = {
 }
 
 ---@param questId string
----@return { name: string, [string]: questDataGenerator.stageData }|nil
+---@return questDataGenerator.questData|nil
 function this.getQuestData(questId)
     return dataHandler.quests[questId:lower()]
 end
