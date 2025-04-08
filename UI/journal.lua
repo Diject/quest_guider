@@ -506,7 +506,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
     local reqBlock = scrollBlockContent:createBlock{ id = requirementsMenu.requirementBlock }
     reqBlock.autoHeight = true
     reqBlock.widthProportional = 1
-    reqBlock.borderTop = 12
+    reqBlock.borderTop = 2
     reqBlock.flowDirection = tes3.flowDirection.topToBottom
 
 
@@ -529,7 +529,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
         local indexes
         local linkedIndexData
         if topicIndex then
-            indexes, linkedIndexData = questLib.getNextIndexes(questData, topicIndex, true)
+            indexes, linkedIndexData = questLib.getNextIndexes(questData, questId, topicIndex, {findInLinked = true})
         else
             indexes = questLib.getIndexes(questData)
         end
@@ -605,6 +605,16 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                         reqBlock:setLuaData("index", i)
                         reqBlock:setLuaData("questId", qId)
 
+                        local playerIndex = playerQuests.getCurrentIndex(qId) or -1
+                        if playerIndex >= ind then
+                            local block = reqBlock:createBlock{}
+                            block.autoHeight = true
+                            block.widthProportional = 1
+                            block.childAlignX = 0.5
+                            local label = block:createLabel{ id = "qGuider_req_requirementCurrentLabel", text = playerIndex == ind and "Current" or "Completed"}
+                            label.color = this.colors.lightGreen
+                        end
+
                         ---@type table<string, table<string, string>>
                         local variableScripts = {}
 
@@ -619,6 +629,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 reqLabel.color = this.colors.lightDefault
                                 reqLabel.wrapText = true
                                 reqLabel:setLuaData("requirement", req)
+                                reqLabel:setLuaData("index", ind)
+                                reqLabel:setLuaData("questId", qId)
                                 for objId, _ in pairs(req.objects or {}) do
                                     local trackingObj = trackingLib.getObjectData(objId)
                                     if trackingObj then
@@ -992,7 +1004,9 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
 
             ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
             local reqData = child:getLuaData("requirement")
-            if not reqData or not reqData.positionData then return end
+            local qId = child:getLuaData("questId")
+            local qIndex = child:getLuaData("index")
+            if not reqData or not reqData.positionData or not qIndex or not qId then return end
 
             local color = markerColors[colorIndex]
 
@@ -1038,7 +1052,7 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
                 ---@param e tes3uiEventData
                 local function mouseClick(e)
                     for objId, posDt in pairs(reqData.positionData or {}) do
-                        trackingLib.addMarker{objectId = objId, questId = questId, questStage = qIndexForTracking, positionData = posDt}
+                        trackingLib.addMarker{objectId = objId, questId = qId, questStage = qIndex, positionData = posDt}
                     end
                     if tes3.player.cell.isInterior then
                         trackingLib.addMarkersForInteriorCell(tes3.player.cell)
@@ -1369,7 +1383,7 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
             local qIndex = reqBlock:getLuaData("index")
             if not qIndex then return end
 
-            local qId = getQuestId()
+            local qId = reqBlock:getLuaData("questId")
             if not qId then return end
 
             local objects = {}
@@ -1416,7 +1430,10 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
 
         local removeButton = buttonBlock:createButton{ id = containerMenu.trackBtn, text = "Remove" }
         removeButton:register(tes3.uiEvent.mouseClick, function (e)
-            local qId = getQuestId()
+            local reqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
+            if not reqBlock then return end
+
+            local qId = reqBlock:getLuaData("questId")
             if not qId then return end
 
             trackingLib.removeMarker{questId = qId}

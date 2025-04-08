@@ -690,7 +690,7 @@ function this.trackQuestFromCallback(questId, e)
 
     local isFinished = e.info and e.info.isQuestFinished or false
 
-    local questNextIndexes = questLib.getNextIndexes(questId, e.index)
+    local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, e.index, {findCompleted = false, findInLinked = true})
 
     if not questNextIndexes or isFinished then
         this.removeMarker{ questId = questId }
@@ -701,6 +701,14 @@ function this.trackQuestFromCallback(questId, e)
     if questNextIndexes and (not isFinished or config.data.tracking.quest.finished) then
         for _, indexStr in pairs(questNextIndexes) do
             local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            table.copy(objs, objects)
+        end
+        shouldUpdate = true
+    end
+
+    if linkedIndexData then
+        for qId, dt in pairs(linkedIndexData) do
+            local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
             table.copy(objs, objects)
         end
         shouldUpdate = true
@@ -738,7 +746,7 @@ function this.trackQuestsbyQuestId(questId)
     local index = playerQuests.getCurrentIndex(questId)
     if not index then return end
 
-    local questNextIndexes = questLib.getNextIndexes(questId, index)
+    local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, index, {findCompleted = false, findInLinked = true})
 
     local objects = {}
 
@@ -748,6 +756,14 @@ function this.trackQuestsbyQuestId(questId)
     elseif questNextIndexes then
         for _, indexStr in pairs(questNextIndexes) do
             local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            table.copy(objs, objects)
+        end
+        shouldUpdate = true
+    end
+
+    if linkedIndexData then
+        for qId, dt in pairs(linkedIndexData) do
+            local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
             table.copy(objs, objects)
         end
         shouldUpdate = true

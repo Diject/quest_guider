@@ -103,11 +103,13 @@ function this.getFirstIndex(questData)
 end
 
 ---@param questData string|questDataGenerator.questData
+---@param quesId string?
 ---@param questIndex integer|string
----@param findInLinked boolean?
+---@param params {findInLinked: boolean?, findCompleted: boolean?}?
 ---@return string[]?
 ---@return table<string, {index: integer, qData: questDataGenerator.questData}>?
-function this.getNextIndexes(questData, questIndex, findInLinked)
+function this.getNextIndexes(questData, quesId, questIndex, params)
+    if not params then params = {} end
     if not questData then return end
     if type(questData) == "string" then
         questData = this.getQuestData(questData)
@@ -120,10 +122,13 @@ function this.getNextIndexes(questData, questIndex, findInLinked)
         return
     end
 
+    local plIndex = params.findCompleted == false and playerQuests.getCurrentIndex(quesId or "") or -1
+    plIndex = plIndex or -1
+
     ---@type table<string, {index: integer, qData: questDataGenerator.questData}>
     local linkedNext
 
-    if findInLinked and questData.links then
+    if params.findInLinked and questData.links then
         for _, linkedId in pairs(questData.links) do
             local linkData = this.getQuestData(linkedId)
             if not linkData then goto continue end
@@ -132,6 +137,10 @@ function this.getNextIndexes(questData, questIndex, findInLinked)
             if not firstIndex then goto continue end
             local linkRequirements = linkData[tostring(firstIndex)]
             if not linkRequirements then goto continue end
+
+            if params.findCompleted == false and playerQuests.getCurrentIndex(linkedId) ~= 0 then
+                goto continue
+            end
 
             local valid = false
             for _, block in pairs(linkRequirements.requirements) do
@@ -170,11 +179,13 @@ function this.getNextIndexes(questData, questIndex, findInLinked)
     local foundNextIndex = false
     if tpData.next then
         for _, ind in pairs(tpData.next) do
-            nextIndexes[ind] = true
-            foundNextIndex = true
+            if plIndex < ind then
+                nextIndexes[ind] = true
+                foundNextIndex = true
+            end
         end
     end
-    if not foundNextIndex and tpData.nextIndex and not linkedNext then
+    if not foundNextIndex and tpData.nextIndex and not linkedNext and not plIndex >= tpData.nextIndex then
         nextIndexes[tpData.nextIndex] = true
     end
 

@@ -81,7 +81,7 @@ local function uiContainer(quest, parent)
         if #tabs > 0 then
             for _, tab in pairs(tabs) do
                 local luaData = tab:getLuaData("data")
-                if luaData and questLib.getNextIndexes(luaData.qData, luaData.index) then
+                if luaData and questLib.getNextIndexes(luaData.qData, luaData.id, luaData.index) then
                     tab:triggerEvent(tes3.uiEvent.mouseClick)
                     return true
                 end
