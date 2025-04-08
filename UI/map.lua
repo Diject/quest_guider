@@ -163,10 +163,11 @@ function this.updateMapMenu()
                     tooltip:add{name = text}
                 end
                 local objData = questLib.getObjectData(objId)
-                if not objData or not objData.positions then return end
-                local positionDescrs = questLib.getObjectPositionDescription(objData, config.data.journal.objectNames)
-                table.shuffle(positionDescrs)
-                tooltip:add{name = "Location:", description = stringLib.getValueEnumString(positionDescrs, config.data.journal.objectNames)}
+                if objData and objData.positions then
+                    local positionDescrs = questLib.getObjectPositionDescription(objData, config.data.journal.objectNames)
+                    table.shuffle(positionDescrs)
+                    tooltip:add{name = "Location:", description = stringLib.getValueEnumString(positionDescrs, config.data.journal.objectNames)}
+                end
             end
 
             local lastDisabledState = disabledState
