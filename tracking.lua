@@ -953,25 +953,6 @@ function this.setDisableMarkerState(params)
         ::continue::
     end
 
-    for qId, qData in pairs(this.trackedObjectsByQuestId) do
-        if params.questId and params.questId ~= qId then goto continue end
-
-        for objId, _ in pairs(qData.objects) do
-            if params.objectId and objId ~= params.objectId then goto continue end
-
-            local objData = this.markerByObjectId[objId]
-            if not objData then goto continue end
-
-            for _, markerData in pairs(objData.markers) do
-                markerDataHashTable[markerData.data] = true
-            end
-
-            ::continue::
-        end
-
-        ::continue::
-    end
-
     ---@param markerData questGuider.tracking.markerRecord
     local function setDisabledState(markerData)
         local disabledState = params.toggle == true and not markerData.disabled or params.value
