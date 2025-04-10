@@ -16,6 +16,7 @@ local mapAddon = {
     scrollPane = "qGuider_mapAddon_scrollPane",
     trackingBlock = "qGuider_mapAddon_trackingBlock",
     questNameLabel = "qGuider_mapAddon_questNameLabel",
+    questPartLabel = "qGuider_mapAddon_questPartLabel",
     questObjLabel = "qGuider_mapAddon_questObjLabel",
 }
 
@@ -64,70 +65,77 @@ function this.updateMapMenu()
     dragMenu:reorderChildren(dragMenu.children[1], questPane, -1)
 
     ---@param parent tes3uiElement
-    local function createTrackingBlock(parent, questId, trackingData)
-        local questData = questLib.getQuestData(questId)
-        if not questData then return end
-
+    ---@param questId string
+    ---@param questData questDataGenerator.questData
+    ---@param trackingData table<string, { objects: table<string, string[]> }>
+    ---@param showHeader boolean
+    local function createTrackingBlock(parent, questId, questData, trackingData, showHeader)
         local block = parent:createBlock{ id = mapAddon.trackingBlock }
         block.autoHeight = true
         block.widthProportional = 1
         block.flowDirection = tes3.flowDirection.topToBottom
-        block.borderBottom = 16
+        block.borderBottom = 6
 
-        local qNameLabel = block:createLabel{ id = mapAddon.questNameLabel, text = questData.name or "???" }
-        qNameLabel.widthProportional = 1
-        qNameLabel.wrapText = true
-        qNameLabel.borderLeft = 10
+        if showHeader then
+            local bl = block:createBlock{ id = mapAddon.trackingBlock }
+            bl.autoHeight = true
+            bl.widthProportional = 1
+            bl.childAlignX = 0.5
 
-        qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
-            if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
-                local _, randObjId = table.choice(trackingData.objects)
-                if randObjId then
-                    local randObjDisState = trackingLib.getDisabledState{ questId = questId, objectId = randObjId}
-                    trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = questId, isUserDisabled = true }
-                end
-                trackingLib.updateMarkers(true)
-                return
-            end
-            tes3.messageBox{
-                message = "Remove markers for this quest?",
-                buttons = { "Yes", "No" },
-                showInDialog = false,
-                callback = function (e1)
-                    if e1.button == 0 then
-                        trackingLib.removeMarker{ questId = questId }
-                        trackingLib.updateMarkers(true)
-                        qNameLabel:getTopLevelMenu():updateLayout()
+            local qBlockHeader = bl:createLabel{ id = mapAddon.questPartLabel, text = "<----->" }
+            qBlockHeader.wrapText = true
+            qBlockHeader.borderLeft = 0
+
+            qBlockHeader:register(tes3.uiEvent.mouseClick, function (e)
+                if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
+                    local _, randObjId = table.choice(trackingData.objects)
+                    if randObjId then
+                        local randObjDisState = trackingLib.getDisabledState{ questId = questId, objectId = randObjId}
+                        trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = questId, isUserDisabled = true }
                     end
-                end,
-            }
-        end)
+                    trackingLib.updateMarkers(true)
+                    return
+                end
+                tes3.messageBox{
+                    message = "Remove markers for this quest?",
+                    buttons = { "Yes", "No" },
+                    showInDialog = false,
+                    callback = function (e1)
+                        if e1.button == 0 then
+                            trackingLib.removeMarker{ questId = questId }
+                            trackingLib.updateMarkers(true)
+                            qBlockHeader:getTopLevelMenu():updateLayout()
+                        end
+                    end,
+                }
+            end)
 
-        if config.data.main.helpLabels then
-            local tooltip = tooltipLib.new{parent = qNameLabel}
             if config.data.main.helpLabels then
-                local text = "Click to remove."
-                if trackingLib.mapMarkerLibVersion >= 3 then
-                    text = text.." Shift+Click to enable/disable."
-                end
-                tooltip:add{name = text}
-            end
-        end
-
-        if config.data.map.showJournalTextTooltip then
-            local qData = playerQuests.getQuestData(questId)
-            if qData then
-                local journalInfo = qData.record:getJournalInfo()
-                if journalInfo then
-                    local tooltip = tooltipLib.new{ parent = qNameLabel }
-                    local text
-                    if qData.text then
-                        text = qData.text
-                    else
-                        qData.text = journalInfo.text
-                        text = qData.text
+                local tooltip = tooltipLib.new{parent = qBlockHeader}
+                if config.data.main.helpLabels then
+                    local text = "Click to remove."
+                    if trackingLib.mapMarkerLibVersion >= 3 then
+                        text = text.." Shift+Click to enable/disable."
                     end
-                    tooltip:add{ name = questData.name, description = questLib.removeSpecialCharactersFromJournalText(text) }
+                    tooltip:add{name = text}
+                end
+            end
+
+            if config.data.map.showJournalTextTooltip then
+                local qData = playerQuests.getQuestData(questId)
+                if qData then
+                    local journalInfo = qData.record:getJournalInfo()
+                    if journalInfo then
+                        local tooltip = tooltipLib.new{ parent = qBlockHeader }
+                        local text
+                        if qData.text then
+                            text = qData.text
+                        else
+                            qData.text = journalInfo.text
+                            text = qData.text
+                        end
+                        tooltip:add{ name = questData.name, description = questLib.removeSpecialCharactersFromJournalText(text) }
+                    end
                 end
             end
         end
@@ -221,9 +229,107 @@ function this.updateMapMenu()
 
     local function fillQuestPane()
         questPane:getContentElement():destroyChildren()
+        ---@type table<string, table<string, { trackingData: table<string, { objects: table<string, string[]> }>, qData : questDataGenerator.questData }>>
+        local qDataByQName = {}
         for questId, trackingData in pairs(trackingLib.trackedObjectsByQuestId) do
-            createTrackingBlock(questPane, questId, trackingData)
+            local qData = questLib.getQuestData(questId)
+            if not qData then goto continue end
+
+            local qName = qData.name or "???"
+            qDataByQName[qName] = qDataByQName[qName] or {}
+            qDataByQName[qData.name][questId] = {qData = qData, trackingData = trackingData}
+
+            ::continue::
         end
+
+        for qName, diaData in pairs(qDataByQName) do
+            local block = questPane:createBlock{ id = mapAddon.trackingBlock }
+            block.autoHeight = true
+            block.widthProportional = 1
+            block.flowDirection = tes3.flowDirection.topToBottom
+            block.borderBottom = 8
+
+            local qNameLabel = block:createLabel{ id = mapAddon.questNameLabel, text = qName }
+            qNameLabel.widthProportional = 1
+            qNameLabel.wrapText = true
+            qNameLabel.borderBottom = 2
+            qNameLabel.justifyText = tes3.justifyText.center
+
+            qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
+                if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
+                    local trackingData
+                    local randQId
+                    for qId, qData in pairs(diaData) do
+                        trackingData = qData.trackingData
+                        randQId = qId
+                        break
+                    end
+                    if not trackingData then return end
+                    local _, randObjId = table.choice(trackingData.objects)
+                    if randObjId then
+                        local randObjDisState = trackingLib.getDisabledState{ questId = randQId, objectId = randObjId}
+                        for qId, qData in pairs(diaData) do
+                            trackingLib.setDisableMarkerState{ value = not randObjDisState, questId = qId, isUserDisabled = true }
+                        end
+                    end
+                    trackingLib.updateMarkers(true)
+                    return
+                end
+                tes3.messageBox{
+                    message = "Remove markers for this quest?",
+                    buttons = { "Yes", "No" },
+                    showInDialog = false,
+                    callback = function (e1)
+                        if e1.button == 0 then
+                            for qId, qData in pairs(diaData) do
+                                trackingLib.removeMarker{ questId = qId }
+                            end
+                            trackingLib.updateMarkers(true)
+                            qNameLabel:getTopLevelMenu():updateLayout()
+                        end
+                    end,
+                }
+            end)
+
+            if config.data.main.helpLabels then
+                local tooltip = tooltipLib.new{parent = qNameLabel}
+                if config.data.main.helpLabels then
+                    local text = "Click to remove."
+                    if trackingLib.mapMarkerLibVersion >= 3 then
+                        text = text.." Shift+Click to enable/disable."
+                    end
+                    tooltip:add{name = text}
+                end
+            end
+
+            if config.data.map.showJournalTextTooltip then
+                local tooltip = tooltipLib.new{ parent = qNameLabel }
+                tooltip:add{ name = qName }
+                for qId, dt in pairs(diaData) do
+                    local qData = playerQuests.getQuestData(qId)
+                    if qData then
+                        local journalInfo = qData.record:getJournalInfo()
+                        if journalInfo then
+                            local text
+                            if qData.text then
+                                text = qData.text
+                            else
+                                qData.text = journalInfo.text
+                                text = qData.text
+                            end
+                            tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(text) }
+                        end
+                    end
+                end
+            end
+
+            local showHeader = table.size(diaData) > 1
+
+            for qId, qData in pairs(diaData) do
+                createTrackingBlock(block, qId, qData.qData, qData.trackingData, showHeader)
+            end
+        end
+
 
         local removeAllBtn = questPane:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
         removeAllBtn.absolutePosAlignX = 0.5
