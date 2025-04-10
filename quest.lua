@@ -248,7 +248,7 @@ end
 
 ---@alias questGuider.quest.getDescriptionDataFromBlock.return questGuider.quest.getDescriptionDataFromBlock.returnArr[]
 
----@param reqBlock table<integer, questDataGenerator.requirementData>
+---@param reqBlock questDataGenerator.requirementBlock
 ---@param questId string?
 ---@param customConfig questGuider.config?
 ---@return questGuider.quest.getDescriptionDataFromBlock.return|nil
