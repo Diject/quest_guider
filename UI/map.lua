@@ -123,7 +123,7 @@ function this.updateMapMenu()
 
             if config.data.map.showJournalTextTooltip then
                 local qData = playerQuests.getQuestData(questId)
-                if qData then
+                if qData and qData.index > 0 then
                     local journalInfo = qData.record:getJournalInfo()
                     if journalInfo then
                         local tooltip = tooltipLib.new{ parent = qBlockHeader }
@@ -253,7 +253,6 @@ function this.updateMapMenu()
             qNameLabel.widthProportional = 1
             qNameLabel.wrapText = true
             qNameLabel.borderBottom = 2
-            qNameLabel.justifyText = tes3.justifyText.center
 
             qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
                 if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
@@ -307,7 +306,7 @@ function this.updateMapMenu()
                 tooltip:add{ name = qName }
                 for qId, dt in pairs(diaData) do
                     local qData = playerQuests.getQuestData(qId)
-                    if qData then
+                    if qData and qData.index > 0 then
                         local journalInfo = qData.record:getJournalInfo()
                         if journalInfo then
                             local text
