@@ -58,6 +58,10 @@ local function journalCallback(e)
     if config.data.tracking.quest.enabled then
         tracking.trackQuestFromCallback(questId, e)
     end
+
+    if tracking.handleJournal(questId, e.index) then
+        tracking.updateMarkers(true)
+    end
 end
 
 --- @param e uiObjectTooltipEventData

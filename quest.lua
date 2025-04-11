@@ -31,6 +31,18 @@ local disallowedRequirementTypes = {
     -- ["SCR"] = true
 }
 
+
+local filterForHandledReqBlock = {
+    [types.requirementType.Dead] = true,
+    [types.requirementType.Journal] = true,
+    [types.requirementType.RankRequirement] = true,
+    [types.requirementType.PlayerRankMinusNPCRank] = true,
+    [types.requirementType.Item] = true,
+    [types.requirementType.CustomOnDeath] = true,
+}
+
+
+
 ---@param questId string
 ---@return questDataGenerator.questData|nil
 function this.getQuestData(questId)
@@ -245,6 +257,7 @@ end
 ---@field objects table<string, string>|nil index and value are the same
 ---@field positionData table<string, questGuider.quest.getRequirementPositionData.returnData>?
 ---@field data questDataGenerator.requirementData
+---@field reqDataForHandling questDataGenerator.requirementBlock? for requirementType.CustomActor type
 
 ---@alias questGuider.quest.getDescriptionDataFromBlock.return questGuider.quest.getDescriptionDataFromBlock.returnArr[]
 
@@ -282,6 +295,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
 
         ---@type questGuider.quest.getDescriptionDataFromBlock.returnArr
         local reqOut = {str = "", priority = 0, data = requirement}
+
+        if requirement.type == types.requirementType.CustomActor then
+            reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock(reqBlock, filterForHandledReqBlock)
+        end
 
         local object = requirement.object
         local value = requirement.value

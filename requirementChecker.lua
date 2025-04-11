@@ -178,4 +178,22 @@ function this.checkBlock(block, params)
     return res
 end
 
+
+---@param reqBlock questDataGenerator.requirementBlock
+---@param  filter table<string, any> by requirement type id
+---@return questDataGenerator.requirementBlock?
+---@return integer count
+function this.getFilterredRequirementBlock(reqBlock, filter)
+    local outReqBlock = {}
+    local count = 0
+    for _, req in pairs(reqBlock) do
+        if filter[req.type] then
+            table.insert(outReqBlock, table.copy(req))
+            count = count + 1
+        end
+    end
+    if count == 0 then return nil, 0 end
+    return outReqBlock, count
+end
+
 return this

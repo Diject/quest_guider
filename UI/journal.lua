@@ -667,7 +667,8 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                                     reqLabel:register(tes3.uiEvent.mouseClick, function (e)
                                         for objId, posDt in pairs(req.positionData) do
-                                            local res = trackingLib.addMarker{objectId = objId, questId = qId, questStage = ind, positionData = posDt}
+                                            local res = trackingLib.addMarker{objectId = objId, questId = qId, questStage = ind,
+                                                positionData = posDt, reqData = req}
                                             if res then
                                                 reqLabel.color = res.color
                                             end
@@ -1052,7 +1053,8 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
                 ---@param e tes3uiEventData
                 local function mouseClick(e)
                     for objId, posDt in pairs(reqData.positionData or {}) do
-                        trackingLib.addMarker{objectId = objId, questId = qId, questStage = qIndex, positionData = posDt}
+                        trackingLib.addMarker{objectId = objId, questId = qId, questStage = qIndex,
+                            positionData = posDt, reqData}
                     end
                     if tes3.player.cell.isInterior then
                         trackingLib.addMarkersForInteriorCell(tes3.player.cell)
@@ -1397,7 +1399,7 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
 
 
                     for objId, posData in pairs(requirement.positionData) do
-                        trackingLib.addMarker{objectId = objId, positionData = posData, questId = qId, questStage = qIndex}
+                        trackingLib.addMarker{objectId = objId, positionData = posData, questId = qId, questStage = qIndex, reqData = requirement}
                         objects[objId] = true
                     end
                 end

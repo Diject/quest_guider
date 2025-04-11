@@ -10,6 +10,7 @@ local config = include("diject.quest_guider.config")
 local otherTypes = include("diject.quest_guider.Types.other")
 local randomLib = include("diject.quest_guider.utils.random")
 local tooltips = include("diject.quest_guider.UI.tooltips")
+local requirementChecker = include("diject.quest_guider.requirementChecker")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -66,7 +67,7 @@ this.trackedQuestGivers = {}
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
----@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?, actorCount : integer?}> by quest id
+---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?, actorCount : integer?, handledRequirements : questDataGenerator.requirementBlock?}> by quest id
 ---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
@@ -140,6 +141,7 @@ end
 ---@field questId string should be lower
 ---@field questStage integer
 ---@field objectId string should be lower
+---@field reqData questGuider.quest.getDescriptionDataFromBlock.returnArr?
 ---@field positionData questGuider.quest.getRequirementPositionData.returnData
 ---@field color number[]|nil
 ---@field associatedNumber number|nil not used
@@ -227,7 +229,8 @@ function this.addMarker(params)
         index = params.questStage,
         data = objectMarkerData,
         itemCount = positionData.itemCount,
-        actorCount = positionData.actorCount
+        actorCount = positionData.actorCount,
+        handledRequirements = params.reqData and params.reqData.reqDataForHandling,
     }
 
     local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
@@ -413,7 +416,8 @@ function this.addMarkersForQuest(params)
         for _, requirement in ipairs(requirementData) do
             for objId, posData in pairs(requirement.positionData or {}) do
 
-                this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex, positionData = posData }
+                this.addMarker{ objectId = objId, questId = params.questId, questStage = params.questIndex,
+                    positionData = posData, reqData = requirement }
 
                 out[objId] = true
 
@@ -1039,6 +1043,29 @@ function this.changeObjectTooltipTitle(menu, objectId)
 end
 
 
+local function checkHandledRequirements(objectId, markerData, protectedState)
+    if not protectedState then protectedState = false end
+    local changed = false
+    if not markerData.handledRequirements then return end
+
+    local res = requirementChecker.checkBlock(markerData.handledRequirements, {threatErrorsAs = true})
+    if res == false then
+        if markerData.data.disabled ~= true and not protectedState then
+            this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
+            changed = true
+        end
+    elseif res == true then
+        protectedState = true
+        if markerData.data.disabled ~= false then
+            this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false }
+            changed = true
+        end
+    end
+
+    return changed, protectedState
+end
+
+
 local handlePlayerInventory_lastUpdate = nil
 ---@param force boolean?
 ---@return boolean? changed
@@ -1050,32 +1077,38 @@ function this.handlePlayerInventory(force)
         handlePlayerInventory_lastUpdate = timestamp
     end
 
-    if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideObtained then return end
+    if this.mapMarkerLibVersion < 3 or (not config.data.tracking.hideObtained and not config.data.tracking.hideFinActors) then return end
 
     local mobile = tes3.mobilePlayer
     if not mobile then return end
 
     local changed = false
-    local protected = false
 
     for objId, data in pairs(this.markerByObjectId) do
+        local protected = false
         for _, markerData in pairs(data.markers) do
-            if not markerData.itemCount then goto continue end
 
-            if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = objId } then
-                if markerData.data.disabled ~= true and not protected then
-                    this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
-                    changed = true
-                end
-            else
-                protected = true
-                if markerData.data.disabled ~= false then
-                    this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = false }
-                    changed = true
+            if markerData.handledRequirements and config.data.tracking.hideFinActors then
+                local hChanged, hProtected = checkHandledRequirements(objId, markerData, protected)
+                changed = changed or hChanged
+                protected = protected or hProtected
+            end
+
+            if markerData.itemCount and config.data.tracking.hideObtained then
+                if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = objId } then
+                    if markerData.data.disabled ~= true and not protected then
+                        this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
+                        changed = true
+                    end
+                else
+                    protected = true
+                    if markerData.data.disabled ~= false then
+                        this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = false }
+                        changed = true
+                    end
                 end
             end
 
-            ::continue::
         end
     end
 
@@ -1085,7 +1118,7 @@ end
 
 ---@return boolean? changed
 function this.handleDeath(objectId)
-    if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideKilled then return end
+    if this.mapMarkerLibVersion < 3 or (not config.data.tracking.hideKilled and not config.data.tracking.hideFinActors) then return end
 
     if not objectId then return end
     objectId = objectId:lower()
@@ -1096,7 +1129,14 @@ function this.handleDeath(objectId)
 
     local protected = false
     for _, markerData in pairs(objData.markers) do
-        if markerData.actorCount then
+
+        if markerData.handledRequirements and config.data.tracking.hideFinActors then
+            local hChanged, hProtected = checkHandledRequirements(objectId, markerData, protected)
+            changed = changed or hChanged
+            protected = protected or hProtected
+        end
+
+        if markerData.actorCount and config.data.tracking.hideKilled then
             local killCount = tes3.getKillCount{ actor = objectId }
 
             if killCount >= markerData.actorCount then
@@ -1116,5 +1156,28 @@ function this.handleDeath(objectId)
 
     return changed
 end
+
+
+---@return boolean?
+function this.handleJournal(id, index)
+
+    if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideFinActors then return end
+
+    local changed = false
+    local protected = false
+
+    for objectId, data in pairs(this.markerByObjectId) do
+        for _, markerData in pairs(data.markers) do
+
+            local hChanged, hProtected = checkHandledRequirements(objectId, markerData, protected)
+            changed = changed or hChanged
+            protected = protected or hProtected
+
+        end
+    end
+
+    return changed
+end
+
 
 return this

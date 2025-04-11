@@ -75,6 +75,7 @@ this.default = {
         maxCellDepth = 12,
         hideObtained = true,
         hideKilled = true,
+        hideFinActors = true,
         approx = {
             enabled = false,
             worldMap = {
