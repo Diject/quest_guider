@@ -196,8 +196,6 @@ local function initializedCallback(e)
     journalUI.init()
     initCallbacks()
     initIntegrations()
-
-    -- include("diject.quest_guider.testing.tests").descriptionLines()
 end
 event.register(tes3.event.initialized, initializedCallback, {priority = -278})
 

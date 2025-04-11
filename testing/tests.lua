@@ -18,9 +18,6 @@ function this.descriptionLines()
     ---@type table<string, table<string, questDataGenerator.requirementData>>
     local types = {}
 
-    ---@type table<string, integer>
-    local reqCount = {}
-
     local reqNum = 0
     local knownNum = 0
 
@@ -38,8 +35,6 @@ function this.descriptionLines()
                 reqTypeList = types[req.type]
             end
             reqTypeList[getRequirementDataHash(req)] = req
-
-            reqCount[req.type] = (reqCount[req.type] or 0) + 1
         end
     end
 
@@ -75,23 +70,6 @@ function this.descriptionLines()
     log("Found requirements:", reqNum)
     log("Known requirements:", knownNum)
     log("Coverage:", knownNum / reqNum)
-
-    local countList = {}
-    for reqType, count in pairs(reqCount) do
-        table.insert(countList, {count, reqType})
-    end
-
-    table.sort(countList, function (a, b)
-        return a[1] > b[1]
-    end)
-
-    print("")
-    print("")
-    log("Count:")
-    print("")
-    for _, dt in ipairs(countList) do
-        log(dt[2], ":", dt[1])
-    end
 
     for type, data in pairs(types) do
         print("")
