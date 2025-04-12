@@ -440,6 +440,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
     local headerLabel = scrollBlockContent:createLabel{ id = requirementsMenu.headerLabel }
     headerLabel.borderBottom = 2
+    headerLabel.wrapText = true
 
     local function resetHeaderQuestName()
         headerLabel.text = string.format("%s, id: \"%s\"", questName, questId)
