@@ -47,6 +47,8 @@ function this.init()
         end
     end
 
+    pcall(event.trigger, "questGuider:dataInitialized", {success = isReady})
+
     return isReady
 end
 

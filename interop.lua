@@ -4,6 +4,18 @@ local questLib = include("diject.quest_guider.quest")
 
 local this = {}
 
+this.version = 1 -- can be nil
+
+this.event = {
+    dataInitialized = "questGuider:dataInitialized",
+}
+
+---@class questGuider.event.dataInitialized.params
+---@field success boolean
+
+---@class eventlib
+---@field register fun(eventId: '"questGuider:dataInitialized"', callback: (fun(e: questGuider.event.dataInitialized.params): boolean?), options: nil)
+
 
 function this.isEnabled()
     return config.data.main.enabled
