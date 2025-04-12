@@ -185,7 +185,7 @@ local function onQLMKeyCallback(e)
             end
 
             local function createContainerButtons(menuEl, buttonBlock)
-                journalUI.createContainerButtons(nil, menuEl, buttonBlock, {trackDisplayedBtn = false})
+                journalUI.createContainerButtons(nil, menuEl, buttonBlock, {})
             end
 
             local el, buttonBlock = menuContainer.draw("Requirements", createContainerButtons)
