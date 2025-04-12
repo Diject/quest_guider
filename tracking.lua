@@ -194,7 +194,8 @@ function this.addMarker(params)
         scale = approxConfig.enabled and -2 * approxConfig.interior.radius or localImageInfo.scale,
         alpha = alpha,
         name = positionData.name,
-        description = string.format("Quest: \"%s\"", questData.name or "")
+        description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
     local worldImageInfo = approxConfig.enabled and this.zoneImageInfo or this.worldMarkerImageInfo
     objectMarkerData.worldMarkerId = objectMarkerData.worldMarkerId or markerLib.addRecord{
@@ -205,7 +206,8 @@ function this.addMarker(params)
         scale = approxConfig.enabled and -2 * approxConfig.worldMap.radius or worldImageInfo.scale,
         alpha = alpha,
         name = positionData.name,
-        description = string.format("Quest: \"%s\"", questData.name or "")
+        description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
     local doorImageInfo = this.localDoorMarkerImageInfo
     objectMarkerData.localDoorMarkerId = objectMarkerData.localDoorMarkerId or markerLib.addRecord{
@@ -218,7 +220,8 @@ function this.addMarker(params)
         scale = doorImageInfo.scale,
         alpha = config.data.tracking.marker.alpha,
         name = positionData.name,
-        description = string.format("Quest: \"%s\"", questData.name or "")
+        description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
 
     if not objectMarkerData.localMarkerId and not objectMarkerData.worldMarkerId then return end

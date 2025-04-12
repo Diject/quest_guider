@@ -176,6 +176,22 @@ local function initIntegrations()
     end
 end
 
+local function mapMarkerLib_tooltipPreRecordRegistered(e)
+    if not e.record.userData or type(e.record.userData) ~= "table" then return end
+    local rec = e.record
+    local uData = rec.userData
+    if uData.action ~= "jText" then return end
+
+    if tes3.worldController.inputController:isShiftDown() then
+        local journalText = playerQuests.getJournalText(uData.questId, uData.index)
+        if journalText then
+            rec.description[2] = questLib.removeSpecialCharactersFromJournalText(journalText)
+        end
+    else
+        rec.description[2] = ""
+    end
+end
+
 local function initCallbacks()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
@@ -187,6 +203,7 @@ local function initCallbacks()
     event.register(tes3.event.enterFrame, afterInitCallback, {priority = -278})
     event.register(tes3.event.itemTileUpdated, itemTileUpdatedCallback)
     event.register(tes3.event.death, deathCallback)
+    event.register("mapMarkerLib:tooltipPreRecordRegistered", mapMarkerLib_tooltipPreRecordRegistered)
 end
 
 --- @param e initializedEventData
