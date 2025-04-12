@@ -15,7 +15,7 @@ return {
     [types.requirementType.PlayerLevel] = { str = "Player level is #operator# #value#", },
     [types.requirementType.CustomActorFaction] = { str = "The NPC in #valueName# faction", priority = -1001 },
     [types.requirementType.NotActorRace] = { str = "Race of #objectName# is#negNotContr# #variable#", priority = -1001 },
-    [types.requirementType.Journal] = { str = "Stage of \"#varQuestName#\" quest is #operator# #value#", },
+    [types.requirementType.Journal] = { str = "Stage of \"#varQuestName#\"(\"#variable#\") quest is #operator# #value#", },
     [types.requirementType.CustomLocal] = { str = "Local variable @variable@ for #objectName# is #operator# #value#", },
     [types.requirementType.CustomCurrentAIPackage] = { str = "AI action in action", },
     [types.requirementType.CustomGlobal] = { str = "Global variable @variable@ is #operator# #value#", },
