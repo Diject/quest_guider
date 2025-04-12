@@ -439,14 +439,7 @@ function this.addMarkersForQuest(params)
 end
 
 
----@class questGuider.tracking.removeMarker
----@field questId string|nil should be lowercase
----@field objectId string|nil should be lowercase
-
----@param params questGuider.tracking.removeMarker
-function this.removeMarker(params)
-    if not params.questId and not params.objectId then return end
-
+local function removeMarker(params)
     local recordIdsToRemove = {}
 
     ---@param rec questGuider.tracking.markerRecord
@@ -493,11 +486,42 @@ function this.removeMarker(params)
         ::continue::
     end
 
+    local removed = false
+
     recordIdsToRemove[""] = nil
     for id, _ in pairs(recordIdsToRemove) do
         markerLib.removeRecord(id)
+        removed = true
     end
+
+    return removed
 end
+
+
+---@class questGuider.tracking.removeMarker
+---@field questId string|nil should be lowercase
+---@field objectId string|nil should be lowercase
+---@field removeLinked boolean?
+
+---@param params questGuider.tracking.removeMarker
+---@return boolean?
+function this.removeMarker(params)
+    if not params.questId and not params.objectId then return end
+
+    local res = false
+
+    if params.removeLinked and params.questId then
+        local qData = questLib.getQuestData(params.questId)
+        if not qData then return end
+        for _, qId in pairs(qData.links or {}) do
+            res = res or removeMarker{ questId = qId, objectId = params.objectId }
+        end
+    end
+    res = res or removeMarker(params)
+
+    return res
+end
+
 
 function this.removeMarkers()
     local questIds = table.keys(this.trackedObjectsByQuestId)
@@ -689,9 +713,7 @@ end
 function this.trackQuestFromCallback(questId, e)
     local shouldUpdate = false
 
-    local questTrackingData = this.getQuestData(questId)
-    if questTrackingData then
-        this.removeMarker{ questId = questId }
+    if this.removeMarker{ questId = questId } then
         shouldUpdate = true
     end
 
@@ -699,8 +721,8 @@ function this.trackQuestFromCallback(questId, e)
 
     local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, e.index, {findCompleted = false, findInLinked = true})
 
-    if not questNextIndexes or isFinished then
-        this.removeMarker{ questId = questId }
+    if isFinished then
+        this.removeMarker{ questId = questId, removeLinked = isFinished }
         shouldUpdate = true
     end
 
@@ -744,9 +766,7 @@ end
 function this.trackQuestsbyQuestId(questId)
     local shouldUpdate = false
 
-    local questTrackingData = this.getQuestData(questId)
-    if questTrackingData then
-        this.removeMarker{ questId = questId }
+    if this.removeMarker{ questId = questId, removeLinked = true } then
         shouldUpdate = true
     end
 
@@ -757,10 +777,7 @@ function this.trackQuestsbyQuestId(questId)
 
     local objects = {}
 
-    if not questNextIndexes then
-        this.removeMarker{ questId = questId }
-        shouldUpdate = true
-    elseif questNextIndexes then
+    if questNextIndexes then
         for _, indexStr in pairs(questNextIndexes) do
             local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
             table.copy(objs, objects)

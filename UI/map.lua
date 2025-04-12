@@ -274,7 +274,7 @@ function this.updateMapMenu()
                     callback = function (e1)
                         if e1.button == 0 then
                             for qId, qData in pairs(diaData) do
-                                trackingLib.removeMarker{ questId = qId }
+                                trackingLib.removeMarker{ questId = qId, removeLinked = true }
                             end
                             trackingLib.updateMarkers(true)
                             qNameLabel:getTopLevelMenu():updateLayout()

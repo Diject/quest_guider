@@ -602,7 +602,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
 
                     tab:register(tes3.uiEvent.mouseClick, function (e)
                         reqBlock:destroyChildren()
-                        reqBlock:setLuaData("index", i)
+                        reqBlock:setLuaData("index", ind)
                         reqBlock:setLuaData("questId", qId)
 
                         local playerIndex = playerQuests.getCurrentIndex(qId) or -1
@@ -1382,12 +1382,6 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
             local reqBlock = menuEl:findChild(requirementsMenu.requirementBlock)
             if not reqBlock then return end
 
-            local qIndex = reqBlock:getLuaData("index")
-            if not qIndex then return end
-
-            local qId = reqBlock:getLuaData("questId")
-            if not qId then return end
-
             local objects = {}
             for _, child in pairs(reqBlock.children) do
                 if child.name == requirementsMenu.requirementLabel then
@@ -1396,6 +1390,12 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
                     if not requirement then goto continue end
 
                     if not requirement.positionData then goto continue end
+
+                    local qIndex = child:getLuaData("index")
+                    if not qIndex then goto continue end
+
+                    local qId = child:getLuaData("questId")
+                    if not qId then goto continue end
 
 
                     for objId, posData in pairs(requirement.positionData) do
@@ -1438,7 +1438,7 @@ function this.createContainerButtons(questId, menuEl, buttonBlock, params)
             local qId = reqBlock:getLuaData("questId")
             if not qId then return end
 
-            trackingLib.removeMarker{questId = qId}
+            trackingLib.removeMarker{questId = qId, removeLinked = true}
 
             tes3ui.showNotifyMenu("The markers have been removed.")
 
