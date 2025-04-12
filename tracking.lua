@@ -918,6 +918,7 @@ function this.addMarkersForInteriorCell(cell)
 
                         local infoRecordId, recordData = markerLib.duplicateRecord(markerData.localDoorMarkerId)
                         if infoRecordId and recordData then
+                            recordData.userData = nil
                             recordData.temporary = true
                             recordData.priority = -1000
 
