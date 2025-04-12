@@ -124,17 +124,10 @@ function this.updateMapMenu()
             if config.data.map.showJournalTextTooltip then
                 local qData = playerQuests.getQuestData(questId)
                 if qData and qData.index > 0 then
-                    local journalInfo = qData.record:getJournalInfo()
-                    if journalInfo then
+                    local journalText = playerQuests.getJournalText(qData)
+                    if journalText then
                         local tooltip = tooltipLib.new{ parent = qBlockHeader }
-                        local text
-                        if qData.text then
-                            text = qData.text
-                        else
-                            qData.text = journalInfo.text
-                            text = qData.text
-                        end
-                        tooltip:add{ name = questData.name, description = questLib.removeSpecialCharactersFromJournalText(text) }
+                        tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(journalText) }
                     end
                 end
             end
@@ -307,16 +300,9 @@ function this.updateMapMenu()
                 for qId, dt in pairs(diaData) do
                     local qData = playerQuests.getQuestData(qId)
                     if qData and qData.index > 0 then
-                        local journalInfo = qData.record:getJournalInfo()
-                        if journalInfo then
-                            local text
-                            if qData.text then
-                                text = qData.text
-                            else
-                                qData.text = journalInfo.text
-                                text = qData.text
-                            end
-                            tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(text) }
+                        local journalText = playerQuests.getJournalText(qData)
+                        if journalText then
+                            tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(journalText) }
                         end
                     end
                 end

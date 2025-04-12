@@ -3,7 +3,7 @@ local this = {}
 ---@class questGuider.playerQuest.data
 ---@field index integer
 ---@field record tes3dialogue
----@field text string?
+---@field text table<integer, string> cached text
 
 ---@type table<string, questGuider.playerQuest.data>
 this.questData = {}
@@ -31,6 +31,7 @@ function this.init()
 
         data.index = dialogue.journalIndex or 0
         data.record = dialogue
+        data.text = {}
 
         ::continue::
     end
@@ -60,6 +61,27 @@ function this.getQuestData(questId)
     return this.questData[questId]
 end
 
+---@param quest string|questGuider.playerQuest.data should be lowercase
+---@param index integer?
+---@return string?
+function this.getJournalText(quest, index)
+    local data = type(quest) == "string" and this.questData[quest] or quest
+    if not data then return end
+    local journalInfo = data.record:getJournalInfo(index)
+    if not journalInfo then return end
+
+    if not index then index = data.index end
+
+    local text
+    if data.text[index] then
+        text = data.text[index]
+    else
+        data.text[index] = journalInfo.text
+        text = data.text[index]
+    end
+    return text
+end
+
 ---@param questId string should be lowercase
 ---@param index integer
 function this.updateIndex(questId, index)
@@ -67,7 +89,6 @@ function this.updateIndex(questId, index)
     if not data then return end
 
     data.index = index
-    data.text = nil
 end
 
 ---@param dialogue tes3dialogue
