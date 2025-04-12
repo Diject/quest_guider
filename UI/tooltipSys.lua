@@ -1,6 +1,7 @@
 local tooltipMenu = {
     tooltipBlock = "qGuider_ts_block",
     tooltipName = "qGuider_ts_name",
+    tooltipNameBlock = "qGuider_ts_nameBlock",
     tooltipDescription = "qGuider_ts_description",
 }
 
@@ -81,12 +82,16 @@ function this.new(params)
             block.maxWidth = luaData.maxWidth or 350
 
             if rec.name then
-                local label = block:createLabel{id = tooltipMenu.tooltipName, text = rec.name}
+                local bl = block:createBlock{id = tooltipMenu.tooltipNameBlock}
+                bl.autoHeight = true
+                bl.autoWidth = true
+                bl.maxWidth = luaData.maxWidth or 350
+                bl.childAlignX = 0.5
+                local label = bl:createLabel{id = tooltipMenu.tooltipName, text = rec.name}
                 label.autoHeight = true
                 label.widthProportional = 1
                 label.maxWidth = luaData.maxWidth or 350
                 label.wrapText = true
-                label.justifyText = tes3.justifyText.center
                 if rec.nameColor then
                     label.color = rec.nameColor
                 end
