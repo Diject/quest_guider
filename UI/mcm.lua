@@ -385,6 +385,7 @@ function this.registerModConfig()
         createYesNo{self = trackingPage, config = {path = "tracking", name = "hideObtained"}, label = "Hide markers for obtained quest items"}
         createYesNo{self = trackingPage, config = {path = "tracking", name = "hideKilled"}, label = "Hide markers with a condition to kill someone if that condition is met"}
         createYesNo{self = trackingPage, config = {path = "tracking", name = "hideFinActors"}, label = "Hide markers with a \"talk to\" condition if the relevant topic isn't available"}
+        createYesNo{self = trackingPage, config = {path = "tracking", name = "showJournalTextOnMarker"}, label = "Always show journal text on markers"}
         createYesNo{self = trackingPage, config = {path = "tooltip.object", name = "changeTitleForTracked"}, label = "Change tracked object name color in tooltip"}
         createYesNo{self = trackingPage, config = {path = "map", name = "showJournalTextTooltip"},
             label = "Show a tooltip about current journal entry in the map menu. (The game may briefly stutter when you start tracking an object if the game is on HDD)"}
@@ -425,6 +426,8 @@ function this.registerModConfig()
         local tooltipsPage = template:createPage{label = "Tooltips"}
 
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip", name = "width"}, label = "Tooltip width", limits = {min = 300, max = 800}, int = true}
+
+        createYesNo{self = tooltipsPage, config = {path = "tracking", name = "showJournalTextOnMarker"}, label = "Always show journal text on markers"}
 
         local objectGroup = tooltipsPage:createCategory{label = "Tooltip on an object"}
         createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "enabled"}, label = "Enable"}
