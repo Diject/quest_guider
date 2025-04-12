@@ -110,17 +110,6 @@ function this.updateMapMenu()
                 }
             end)
 
-            if config.data.main.helpLabels then
-                local tooltip = tooltipLib.new{parent = qBlockHeader}
-                if config.data.main.helpLabels then
-                    local text = "Click to remove."
-                    if trackingLib.mapMarkerLibVersion >= 3 then
-                        text = text.." Shift+Click to enable/disable."
-                    end
-                    tooltip:add{name = text}
-                end
-            end
-
             if config.data.map.showJournalTextTooltip then
                 local qData = playerQuests.getQuestData(questId)
                 if qData and qData.index > 0 then
@@ -129,6 +118,17 @@ function this.updateMapMenu()
                         local tooltip = tooltipLib.new{ parent = qBlockHeader }
                         tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(journalText) }
                     end
+                end
+            end
+
+            if config.data.main.helpLabels then
+                local tooltip = tooltipLib.new{parent = qBlockHeader, maxWidth = 450}
+                if config.data.main.helpLabels then
+                    local text = "Click to remove."
+                    if trackingLib.mapMarkerLibVersion >= 3 then
+                        text = text.." Shift+Click to enable/disable."
+                    end
+                    tooltip:add{name = text}
                 end
             end
         end
@@ -283,19 +283,8 @@ function this.updateMapMenu()
                 }
             end)
 
-            if config.data.main.helpLabels then
-                local tooltip = tooltipLib.new{parent = qNameLabel}
-                if config.data.main.helpLabels then
-                    local text = "Click to remove."
-                    if trackingLib.mapMarkerLibVersion >= 3 then
-                        text = text.." Shift+Click to enable/disable."
-                    end
-                    tooltip:add{name = text}
-                end
-            end
-
             if config.data.map.showJournalTextTooltip then
-                local tooltip = tooltipLib.new{ parent = qNameLabel }
+                local tooltip = tooltipLib.new{ parent = qNameLabel, maxWidth = 470 }
                 tooltip:add{ name = qName }
                 for qId, dt in pairs(diaData) do
                     local qData = playerQuests.getQuestData(qId)
@@ -305,6 +294,18 @@ function this.updateMapMenu()
                             tooltip:add{ description = questLib.removeSpecialCharactersFromJournalText(journalText) }
                         end
                     end
+                end
+            end
+
+            if config.data.main.helpLabels then
+                local tooltip = tooltipLib.new{ parent = qNameLabel, maxWidth = 470 }
+                if config.data.main.helpLabels then
+                    local text = "Click to remove."
+                    if trackingLib.mapMarkerLibVersion >= 3 then
+                        text = text.." Shift+Click to enable/disable."
+                    end
+                    text = text.." Turn on Caps Lock or hold Shift over a marker to view its journal entry."
+                    tooltip:add{name = text}
                 end
             end
 
