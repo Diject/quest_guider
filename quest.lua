@@ -768,23 +768,23 @@ function this.getRequirementPositionData(requirement, customConfig)
         if not index or index == 0 then
             local qDt = this.getQuestData(requirement.variable)
             if qDt then
-                local stageData = qDt["1"]
-                if not stageData then
-                    local keys = {}
-                    for n, _ in pairs(qDt) do
-                        local num = tonumber(n)
-                        if num then
-                            table.insert(keys, num)
-                        end
-                    end
-                    table.sort(keys)
-                    stageData = qDt[tostring(keys[1])]
-                end
+                local firstIndex = this.getFirstIndex(qDt)
+                local stageData = qDt[tostring(firstIndex)]
 
                 if stageData then
                     for _, block in pairs(stageData.requirements or {}) do
-                        for _, req in pairs(block) do
-                            table.insert(requirements, req)
+                        local isReqsValid = requirementChecker.checkBlock(block, {
+                            threatErrorsAs = true,
+                            allowedTypes = {
+                                [types.requirementType.Journal] = true,
+                                [types.requirementType.CustomPCFaction] = true,
+                                [types.requirementType.CustomPCFaction] = true,
+                            }
+                        })
+                        if isReqsValid then
+                            for _, req in pairs(block) do
+                                table.insert(requirements, req)
+                            end
                         end
                     end
                 end
