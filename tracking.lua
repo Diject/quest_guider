@@ -1013,7 +1013,7 @@ function this.getDisabledState(params)
     local objQuestTrackingData = objData and objData.markers[params.questId]
     local disabledState = objQuestTrackingData and objQuestTrackingData.data.disabled
 
-    return disabledState
+    return disabledState or false
 end
 
 
