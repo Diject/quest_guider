@@ -1055,7 +1055,7 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
                 local function mouseClick(e)
                     for objId, posDt in pairs(reqData.positionData or {}) do
                         trackingLib.addMarker{objectId = objId, questId = qId, questStage = qIndex,
-                            positionData = posDt, reqData}
+                            positionData = posDt, reqData = reqData}
                     end
                     if tes3.player.cell.isInterior then
                         trackingLib.addMarkersForInteriorCell(tes3.player.cell)
