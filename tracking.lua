@@ -761,6 +761,10 @@ function this.trackQuestFromCallback(questId, e)
     end
 
     if shouldUpdate then
+        if tes3.player.cell.isInterior then
+            this.addMarkersForInteriorCell(tes3.player.cell)
+        end
+
         this.updateMarkers(true)
     end
 end
@@ -811,6 +815,10 @@ function this.trackQuestsbyQuestId(questId)
     end
 
     if shouldUpdate then
+        if tes3.player.cell.isInterior then
+            this.addMarkersForInteriorCell(tes3.player.cell)
+        end
+
         this.updateMarkers(true)
     end
 end
@@ -1136,6 +1144,10 @@ function this.handlePlayerInventory(force)
         end
     end
 
+    if changed and tes3.player.cell.isInterior then
+        this.addMarkersForInteriorCell(tes3.player.cell)
+    end
+
     return changed
 end
 
@@ -1178,6 +1190,10 @@ function this.handleDeath(objectId)
         end
     end
 
+    if changed and tes3.player.cell.isInterior then
+        this.addMarkersForInteriorCell(tes3.player.cell)
+    end
+
     return changed
 end
 
@@ -1198,6 +1214,10 @@ function this.handleTrackingRequirements()
             protected = protected or hProtected
 
         end
+    end
+
+    if changed and tes3.player.cell.isInterior then
+        this.addMarkersForInteriorCell(tes3.player.cell)
     end
 
     return changed
