@@ -120,10 +120,10 @@ local dataFuncs = {
         local dialogueId = stringLib.convertDialogueName(req.variable)
         for _, dia in pairs(tes3.mobilePlayer.dialogueList) do
             if dialogueId == dia.id:lower() then
-                return true
+                return operator.check(true, true, req.operator)
             end
         end
-        return false
+        return operator.check(false, true, req.operator)
     end,
 }
 
@@ -180,14 +180,14 @@ end
 
 
 ---@param reqBlock questDataGenerator.requirementBlock
----@param  filter table<string, any> by requirement type id
+---@param  filter table<string, any>? by requirement type id
 ---@return questDataGenerator.requirementBlock?
 ---@return integer count
 function this.getFilterredRequirementBlock(reqBlock, filter)
     local outReqBlock = {}
     local count = 0
     for _, req in pairs(reqBlock) do
-        if filter[req.type] then
+        if not filter or filter[req.type] then
             table.insert(outReqBlock, table.copy(req))
             count = count + 1
         end

@@ -67,7 +67,7 @@ this.trackedQuestGivers = {}
 
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
----@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, itemCount : integer?, actorCount : integer?, handledRequirements : questDataGenerator.requirementBlock?}> by quest id
+---@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, parentObject: string?, itemCount : integer?, actorCount : integer?, handledRequirements : questDataGenerator.requirementBlock?}> by quest id
 ---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
@@ -161,6 +161,8 @@ function this.addMarker(params)
 
     if not questData or not positionData then return end
 
+    if params.reqData and params.reqData.data.type == "DIAO" then return end
+
     local qTrackingInfo
     if this.trackedObjectsByQuestId[params.questId] then
         qTrackingInfo = this.trackedObjectsByQuestId[params.questId]
@@ -233,6 +235,7 @@ function this.addMarker(params)
         data = objectMarkerData,
         itemCount = positionData.itemCount,
         actorCount = positionData.actorCount,
+        parentObject = positionData.parentObject,
         handledRequirements = params.reqData and params.reqData.reqDataForHandling,
     }
 
@@ -1116,7 +1119,7 @@ function this.handlePlayerInventory(force)
             end
 
             if markerData.itemCount and config.data.tracking.hideObtained then
-                if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = objId } then
+                if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = markerData.parentObject or objId } then
                     if markerData.data.disabled ~= true and not protected then
                         this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
                         changed = true
@@ -1158,7 +1161,7 @@ function this.handleDeath(objectId)
         end
 
         if markerData.actorCount and config.data.tracking.hideKilled then
-            local killCount = tes3.getKillCount{ actor = objectId }
+            local killCount = tes3.getKillCount{ actor = markerData.parentObject or objectId }
 
             if killCount >= markerData.actorCount then
                 if markerData.data.disabled ~= true and not protected then
@@ -1180,7 +1183,7 @@ end
 
 
 ---@return boolean?
-function this.handleJournal(id, index)
+function this.handleTrackingRequirements()
 
     if this.mapMarkerLibVersion < 3 or not config.data.tracking.hideFinActors then return end
 

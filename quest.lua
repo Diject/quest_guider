@@ -298,6 +298,10 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
 
         if requirement.type == types.requirementType.CustomActor then
             reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock(reqBlock, filterForHandledReqBlock)
+        elseif requirement.type == "DIAP" then
+            reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock(
+                {{operator = 49, type = types.requirementType.CustomDialogue, variable = requirement.variable}}
+            )
         end
 
         local object = requirement.object
@@ -578,7 +582,11 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
                 if not linkData then goto continue end
 
                 if linkData.type == 3 then
-                    processRequirement({type = "DIAO", operator = 48, object = objId, variable = linkName})
+                    if requirement.type == types.requirementType.Item then
+                        processRequirement({type = "DIAO", operator = operator, object = variable, variable = linkName, value = value})
+                    else
+                        processRequirement({type = "DIAO", operator = operator, variable = linkName})
+                    end
                 end
 
                 ::continue::
@@ -737,6 +745,7 @@ end
 ---@class questGuider.quest.getRequirementPositionData.returnData
 ---@field name string name of the object
 ---@field inWorld integer? number of instances of the object in the game world
+---@field parentObject string?
 ---@field itemCount integer? item count from *types.requirementType.Item*
 ---@field actorCount integer? kill count from *types.requirementType.Dead*
 ---@field positions questGuider.quest.getRequirementPositionData.positionData[]
@@ -1022,29 +1031,33 @@ function this.getRequirementPositionData(requirement, customConfig)
         return nil
     end
 
-    if requirement.type == types.requirementType.Item or requirement.type == types.requirementType.Dead then
-        local data = out[requirement.variable]
-        if data and requirement.value then
+    if requirement.type == types.requirementType.Item or requirement.type == types.requirementType.Dead or
+            (requirement.type == "DIAO" and requirement.value) then
 
-            if requirement.operator == types.operator.value.Greater then
-                data.itemCount = requirement.value + 1
-            elseif requirement.operator == types.operator.value.Less then
-                data.itemCount = math.max(0, requirement.value - 1)
-            elseif requirement.operator == types.operator.value.NotEqual then
-                if requirement.value == 0 then
+        for _, data in pairs(out) do
+            if requirement.value then
+                data.parentObject = requirement.type == "DIAO" and requirement.object or requirement.variable
+
+                if requirement.operator == types.operator.value.Greater then
                     data.itemCount = requirement.value + 1
-                else
+                elseif requirement.operator == types.operator.value.Less then
                     data.itemCount = math.max(0, requirement.value - 1)
+                elseif requirement.operator == types.operator.value.NotEqual then
+                    if requirement.value == 0 then
+                        data.itemCount = requirement.value + 1
+                    else
+                        data.itemCount = math.max(0, requirement.value - 1)
+                    end
+                else
+                    data.itemCount = requirement.value
                 end
-            else
-                data.itemCount = requirement.value
-            end
 
-            if data.itemCount == 0 then data.itemCount = nil end
+                if data.itemCount == 0 then data.itemCount = nil end
 
-            if requirement.type == types.requirementType.Dead then
-                data.actorCount = data.itemCount
-                data.itemCount = nil
+                if requirement.type == types.requirementType.Dead then
+                    data.actorCount = data.itemCount
+                    data.itemCount = nil
+                end
             end
         end
     end

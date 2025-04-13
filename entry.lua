@@ -59,7 +59,7 @@ local function journalCallback(e)
         tracking.trackQuestFromCallback(questId, e)
     end
 
-    if tracking.handleJournal(questId, e.index) then
+    if tracking.handleTrackingRequirements() then
         tracking.updateMarkers(true)
     end
 end
@@ -199,6 +199,13 @@ local function mapMarkerLib_tooltipPreRecordRegistered(e)
     end
 end
 
+--- @param e postInfoResponseEventData
+local function postInfoResponseCallback(e)
+    if tracking.handleTrackingRequirements() then
+        tracking.updateMarkers(true)
+    end
+end
+
 local function initCallbacks()
     event.register(tes3.event.load, loadCallback)
     event.register(tes3.event.loaded, loadedCallback)
@@ -210,6 +217,7 @@ local function initCallbacks()
     event.register(tes3.event.enterFrame, afterInitCallback, {priority = -278})
     event.register(tes3.event.itemTileUpdated, itemTileUpdatedCallback)
     event.register(tes3.event.death, deathCallback)
+    event.register(tes3.event.postInfoResponse, postInfoResponseCallback)
     event.register("mapMarkerLib:tooltipPreRecordRegistered", mapMarkerLib_tooltipPreRecordRegistered)
 end
 
