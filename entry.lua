@@ -187,12 +187,14 @@ local function mapMarkerLib_tooltipPreRecordRegistered(e)
         if journalText then
             rec.description[2] = questLib.removeSpecialCharactersFromJournalText(journalText)
         end
-    elseif (not tes3.worldController.inputController:isShiftDown() and config.data.tracking.showJournalTextOnMarker) or
-            (tes3.worldController.inputController:isShiftDown() and not config.data.tracking.showJournalTextOnMarker) then
+    elseif ((not tes3.worldController.inputController:isShiftDown() and config.data.tracking.showJournalTextOnMarker) or
+            (tes3.worldController.inputController:isShiftDown() and not config.data.tracking.showJournalTextOnMarker)) then
         local plData = playerQuests.getQuestData(uData.questId)
-        local journalText = playerQuests.getJournalText(plData, plData.index)
-        if journalText then
-            rec.description[2] = questLib.removeSpecialCharactersFromJournalText(journalText)
+        if plData.index > 0 then
+            local journalText = playerQuests.getJournalText(plData, plData.index)
+            if journalText then
+                rec.description[2] = questLib.removeSpecialCharactersFromJournalText(journalText)
+            end
         end
     else
         rec.description[2] = ""
