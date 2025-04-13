@@ -65,9 +65,11 @@ this.trackedQuestGivers = {}
 ---@field disabled boolean?
 ---@field userDisabled boolean?
 
+---@alias questGuider.tracking.markerData {id : string, index : integer, data : questGuider.tracking.markerRecord, parentObject: string?, itemCount : integer?, actorCount : integer?, handledRequirements : table<string, questDataGenerator.requirementBlock>?}
+
 ---@class questGuider.tracking.objectRecord
 ---@field color number[]
----@field markers table<string, {id : string, index : integer, data : questGuider.tracking.markerRecord, parentObject: string?, itemCount : integer?, actorCount : integer?, handledRequirements : questDataGenerator.requirementBlock?}> by quest id
+---@field markers table<string, questGuider.tracking.markerData> by quest id
 ---@field targetCells table<string, string>? parent cell editor name by editor name of cell that have access to the parent
 
 ---@type table<string, questGuider.tracking.objectRecord>
@@ -179,7 +181,27 @@ function this.addMarker(params)
         this.storageData.colorId = colorId < #colors and colorId + 1 or 1
     end
 
-    if objectTrackingData.markers[params.questId] then return end
+    if objectTrackingData.markers[params.questId] then
+        local oldData = objectTrackingData.markers[params.questId]
+        if oldData.actorCount or positionData.actorCount then
+            oldData.actorCount = math.max(oldData.actorCount or 0, positionData.actorCount or 0)
+        end
+        if oldData.itemCount or positionData.itemCount then
+            oldData.itemCount = math.max(oldData.itemCount or 0, positionData.itemCount or 0)
+        end
+        if positionData.parentObject then
+            oldData.parentObject = positionData.parentObject
+        end
+        if params.reqData and params.reqData.reqDataForHandling then
+            local hash = ""
+            for _, r in pairs(params.reqData.reqDataForHandling) do
+                hash = hash..r.type..tostring(r.operator)..tostring(r.value)..tostring(r.variable)..tostring(r.object)
+            end
+            if not oldData.handledRequirements then oldData.handledRequirements = {} end
+            oldData.handledRequirements[hash] = params.reqData.reqDataForHandling
+        end
+        return
+    end
 
     ---@type questGuider.tracking.markerRecord
     local objectMarkerData = {}
@@ -229,6 +251,14 @@ function this.addMarker(params)
     if not objectMarkerData.localMarkerId and not objectMarkerData.worldMarkerId then return end
 
     if not objectTrackingData.markers then objectTrackingData.markers = {} end
+    local handledReqs = params.reqData and params.reqData.reqDataForHandling
+    if handledReqs then
+        local hash = ""
+        for _, r in pairs(handledReqs) do
+            hash = hash..r.type..tostring(r.operator)..tostring(r.value)..tostring(r.variable)..tostring(r.object)
+        end
+        handledReqs = {[hash] = handledReqs}
+    end
     objectTrackingData.markers[params.questId] = {
         id = params.questId,
         index = params.questStage,
@@ -236,7 +266,7 @@ function this.addMarker(params)
         itemCount = positionData.itemCount,
         actorCount = positionData.actorCount,
         parentObject = positionData.parentObject,
-        handledRequirements = params.reqData and params.reqData.reqDataForHandling,
+        handledRequirements = handledReqs,
     }
 
     local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
@@ -1075,12 +1105,19 @@ function this.changeObjectTooltipTitle(menu, objectId)
 end
 
 
+---@param markerData questGuider.tracking.markerData
 local function checkHandledRequirements(objectId, markerData, protectedState)
     if not protectedState then protectedState = false end
     local changed = false
     if not markerData.handledRequirements then return end
 
-    local res = requirementChecker.checkBlock(markerData.handledRequirements, {threatErrorsAs = true})
+    local res = false
+
+    for _, reqBlock in pairs(markerData.handledRequirements) do
+        local reqRes = requirementChecker.checkBlock(reqBlock, {threatErrorsAs = true})
+        res = res or reqRes
+    end
+
     if res == false then
         if markerData.data.disabled ~= true and not protectedState then
             this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
