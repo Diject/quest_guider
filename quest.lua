@@ -298,6 +298,11 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
 
         if requirement.type == types.requirementType.CustomActor then
             reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock(reqBlock, filterForHandledReqBlock)
+        elseif requirement.type == types.requirementType.Journal then
+            local req = table.copy(requirement)
+            req.operator = types.operator.value.Equal
+            req.value = 0
+            reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock({req}, filterForHandledReqBlock)
         elseif requirement.type == "DIAP" then
             reqOut.reqDataForHandling = requirementChecker.getFilterredRequirementBlock(
                 {{operator = 49, type = types.requirementType.CustomDialogue, variable = requirement.variable}}
@@ -787,7 +792,7 @@ function this.getRequirementPositionData(requirement, customConfig)
                             allowedTypes = {
                                 [types.requirementType.Journal] = true,
                                 [types.requirementType.CustomPCFaction] = true,
-                                [types.requirementType.CustomPCFaction] = true,
+                                [types.requirementType.CustomPCRank] = true,
                             }
                         })
                         if isReqsValid then
