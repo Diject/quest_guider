@@ -4,6 +4,8 @@ local questLib = include("diject.quest_guider.quest")
 local trackingLib = include("diject.quest_guider.tracking")
 local tooltipLib = include("diject.quest_guider.UI.tooltipSys")
 local stringLib = include("diject.quest_guider.utils.string")
+local journalUI = include("diject.quest_guider.UI.journal")
+local menuContainer = include("diject.quest_guider.UI.menuContainer")
 
 local config = include("diject.quest_guider.config")
 
@@ -95,6 +97,21 @@ function this.updateMapMenu()
                     end
                     trackingLib.updateMarkers(true)
                     return
+                elseif tes3.worldController.inputController:isControlDown() then
+                    local function createContainerButtons(menuEl, buttonBlock)
+                        journalUI.createContainerButtons(nil, menuEl, buttonBlock, {})
+                    end
+
+                    local el, buttonBlock = menuContainer.draw("Requirements", createContainerButtons)
+
+                    if not el or not buttonBlock then return end
+
+                    if not journalUI.drawRequirementMenu(el, questId, nil, questData) then
+                        el:destroy()
+                        return
+                    end
+                    menuContainer.centerToCursor(el)
+                    return
                 end
                 tes3.messageBox{
                     message = "Remove markers for this quest?",
@@ -128,6 +145,7 @@ function this.updateMapMenu()
                     if trackingLib.mapMarkerLibVersion >= 3 then
                         text = text.." Shift+Click to enable/disable."
                     end
+                    text = text.." Ctrl+Click for info."
                     tooltip:add{name = text}
                 end
             end
@@ -247,6 +265,8 @@ function this.updateMapMenu()
             qNameLabel.wrapText = true
             qNameLabel.borderBottom = 2
 
+            local showHeader = table.size(diaData) > 1
+
             qNameLabel:register(tes3.uiEvent.mouseClick, function (e)
                 if tes3.worldController.inputController:isShiftDown() and trackingLib.mapMarkerLibVersion >= 3 then
                     local trackingData
@@ -265,6 +285,29 @@ function this.updateMapMenu()
                         end
                     end
                     trackingLib.updateMarkers(true)
+                    return
+                elseif not showHeader and tes3.worldController.inputController:isControlDown() then
+                    local function createContainerButtons(menuEl, buttonBlock)
+                        journalUI.createContainerButtons(nil, menuEl, buttonBlock, {})
+                    end
+
+                    local el, buttonBlock = menuContainer.draw("Requirements", createContainerButtons)
+
+                    if not el or not buttonBlock then return end
+
+                    local questData
+                    local questId
+                    for qId, qData in pairs(diaData) do
+                        questId = qId
+                        questData = qData.qData
+                        break
+                    end
+
+                    if not questId or not questData or not journalUI.drawRequirementMenu(el, questId, nil, questData) then
+                        el:destroy()
+                        return
+                    end
+                    menuContainer.centerToCursor(el)
                     return
                 end
                 tes3.messageBox{
@@ -304,12 +347,13 @@ function this.updateMapMenu()
                     if trackingLib.mapMarkerLibVersion >= 3 then
                         text = text.." Shift+Click to enable/disable."
                     end
-                    text = text.." Turn on Caps Lock or hold Shift over a marker to view its journal entry."
+                    if not showHeader then
+                        text = text.." Ctrl+Click for info."
+                    end
+                    text = text.." Hold Shift over a marker to view its journal entry."
                     tooltip:add{name = text}
                 end
             end
-
-            local showHeader = table.size(diaData) > 1
 
             for qId, qData in pairs(diaData) do
                 createTrackingBlock(block, qId, qData.qData, qData.trackingData, showHeader)
