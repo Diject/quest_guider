@@ -350,7 +350,7 @@ function this.updateMapMenu()
                     if not showHeader then
                         text = text.." Ctrl+Click for info."
                     end
-                    text = text.." Hold Shift over a marker to view its journal entry."
+                    text = text.." Hold Shift over a marker to show/hide its journal entry."
                     tooltip:add{name = text}
                 end
             end
