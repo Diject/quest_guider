@@ -248,7 +248,7 @@ function this.updateMapMenu()
 
             local qName = qData.name or "???"
             qDataByQName[qName] = qDataByQName[qName] or {}
-            qDataByQName[qData.name][questId] = {qData = qData, trackingData = trackingData}
+            qDataByQName[qName][questId] = {qData = qData, trackingData = trackingData}
 
             ::continue::
         end
