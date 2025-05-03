@@ -12,6 +12,11 @@ local config = include("diject.quest_guider.config")
 local playerQuests = include("diject.quest_guider.playerQuests")
 
 local mapAddon = {
+    menu = "qGuider_mapAddon_menu",
+    menuButtonBlock = "qGuider_mapAddon_menuButtonBlock",
+    menuCloseBtn = "qGuider_mapAddon_menuCloseBtn",
+    menuLeftBtnBlock = "qGuider_mapAddon_menuLeftBtnBlock",
+    menuRightBtnBlock = "qGuider_mapAddon_menuRightBtnBlock",
     buttonBlock = "qGuider_mapAddon_buttonBlock",
     showHideBtn = "qGuider_mapAddon_showHideBtn",
     removeAllBtn = "qGuider_mapAddon_removeAllBtn",
@@ -48,23 +53,9 @@ function this.updateMapMenu()
     btnBlock.absolutePosAlignY = 0
     btnBlock.flowDirection = tes3.flowDirection.leftToRight
 
-    local trackedBtn = btnBlock:createButton{ id = mapAddon.showHideBtn, text = ">" }
+    local trackedBtn = btnBlock:createButton{ id = mapAddon.showHideBtn, text = "<" }
 
-    local questPane = dragMenu:createVerticalScrollPane{ id = mapAddon.scrollPane }
-    questPane.heightProportional = 1
-    questPane.widthProportional = 0.75
-    questPane.visible = false
-    questPane.widget.scrollbarVisible = true
-
-    if uiexpElement then
-        questPane.heightProportional = nil
-        questPane.height = dragMenu.height - uiexpElement.height - 2
-        menu:registerAfter(tes3.uiEvent.preUpdate, function (e)
-            questPane.height = math.max(0, dragMenu.height - uiexpElement.height - 5)
-        end)
-    end
-
-    dragMenu:reorderChildren(dragMenu.children[1], questPane, -1)
+    local questPane
 
     ---@param parent tes3uiElement
     ---@param questId string
@@ -239,6 +230,7 @@ function this.updateMapMenu()
     end
 
     local function fillQuestPane()
+        if not questPane then return end
         questPane:getContentElement():destroyChildren()
         ---@type table<string, table<string, { trackingData: table<string, { objects: table<string, string[]> }>, qData : questDataGenerator.questData }>>
         local qDataByQName = {}
@@ -360,38 +352,82 @@ function this.updateMapMenu()
             end
         end
 
+        local emptyBlock = questPane:createBlock{}
+        emptyBlock.height = 40
+        emptyBlock.width = 1
 
-        local removeAllBtn = questPane:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
-        removeAllBtn.absolutePosAlignX = 0.5
+        questPane:getTopLevelMenu():updateLayout()
+        questPane.widget:contentsChanged()
+    end
+
+    trackedBtn:register(tes3.uiEvent.mouseClick, function (e)
+        local oldMenu = tes3ui.findMenu(mapAddon.menu)
+        if oldMenu then
+            oldMenu:destroy()
+            questPane = nil
+            return
+        end
+
+        local screenWidth, screenHeight = tes3ui.getViewportSize()
+
+        local element = tes3ui.createMenu{ id = mapAddon.menu, dragFrame = true, }
+        element.text = "Tracked objects"
+        element.height = menu.height
+        element.width = 300
+        element.positionX = math.max(-screenWidth / 2, menu.positionX - 300)
+        element.positionY = menu.positionY
+
+        local dragFrame = element:findChild("PartDragMenu_drag_frame")
+        if not dragFrame then return end
+        local tileBlock = dragFrame:findChild("PartDragMenu_title_tint")
+        if not tileBlock then return end
+
+        local mainBlock = dragFrame:createBlock{ id = mapAddon.menuButtonBlock }
+        mainBlock.flowDirection = tes3.flowDirection.leftToRight
+        mainBlock.autoHeight = true
+        mainBlock.autoWidth = false
+        mainBlock.widthProportional = 1
+
+        local leftBlock = mainBlock:createBlock{ d = mapAddon.menuLeftBtnBlock }
+        leftBlock.autoHeight = true
+        leftBlock.autoWidth = false
+        leftBlock.widthProportional = 1
+        leftBlock.flowDirection = tes3.flowDirection.leftToRight
+
+        local rightBlock = mainBlock:createBlock{ d = mapAddon.menuRightBtnBlock }
+        rightBlock.autoHeight = true
+        rightBlock.autoWidth = false
+        rightBlock.widthProportional = 1
+        rightBlock.childAlignX = 1
+        rightBlock.flowDirection = tes3.flowDirection.leftToRight
+
+        mainBlock:reorder{after = tileBlock}
+
+        local closeBtn = rightBlock:createButton{ id = mapAddon.menuCloseBtn, text = "X" }
+        closeBtn.autoHeight = true
+        closeBtn.autoWidth = true
+
+        closeBtn:register(tes3.uiEvent.mouseClick, function (e)
+            element:destroy()
+            questPane = nil
+        end)
+
+        local removeAllBtn = leftBlock:createButton{ id = mapAddon.removeAllBtn, text = "Remove all" }
         removeAllBtn:register(tes3.uiEvent.mouseClick, function (e)
             trackingLib.removeMarkers()
             trackingLib.updateMarkers(true)
         end)
 
-        local emptyBlock = questPane:createBlock{}
-        emptyBlock.height = 40
-        emptyBlock.width = 1
 
-        menu:updateLayout()
-        questPane.widget:contentsChanged()
-    end
+        questPane = element:createVerticalScrollPane{ id = mapAddon.scrollPane }
+        questPane.heightProportional = 1
+        questPane.widthProportional = 1
+        questPane.visible = true
+        questPane.widget.scrollbarVisible = true
 
-    trackedBtn:register(tes3.uiEvent.mouseClick, function (e)
-        questPane.visible = not questPane.visible
-        trackedBtn.text = questPane.visible and "<" or ">"
-        btnBlock.absolutePosAlignX = questPane.visible and 0.395 or 0
+        fillQuestPane()
 
-        if questPane.visible then
-            menuLocal.widthProportional = 2 - questPane.widthProportional
-            menuWorld.widthProportional = 2 - questPane.widthProportional
-            dragMenu.flowDirection = tes3.flowDirection.leftToRight
-        else
-            menuLocal.widthProportional = 1
-            menuWorld.widthProportional = 1
-            dragMenu.flowDirection = flowDirection
-        end
-
-        menu:updateLayout()
+        element:updateLayout()
         questPane.widget:contentsChanged()
     end)
 
