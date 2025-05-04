@@ -180,7 +180,8 @@ local function mapMarkerLib_tooltipPreRecordRegistered(e)
     if not e.record.userData or type(e.record.userData) ~= "table" then return end
     local rec = e.record
     local uData = rec.userData
-    if uData.action ~= "jText" and type(rec.description) == "table" then return end
+    if not uData.action or type(uData.action) ~= "string" or
+        uData.action ~= "jText" or type(rec.description) ~= "table" then return end
 
     if tes3.worldController.inputController:isControlDown() then
         local journalText = playerQuests.getJournalText(uData.questId, uData.index)
