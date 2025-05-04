@@ -184,6 +184,7 @@ local function mapMarkerLib_tooltipPreRecordRegistered(e)
         uData.action ~= "jText" or type(rec.description) ~= "table" or
         not uData.questId or not uData.index then return end
 
+    rec.description[2] = ""
     if tes3.worldController.inputController:isControlDown() then
         local journalText = playerQuests.getJournalText(uData.questId, uData.index)
         if journalText then
@@ -198,8 +199,6 @@ local function mapMarkerLib_tooltipPreRecordRegistered(e)
                 rec.description[2] = questLib.removeSpecialCharactersFromJournalText(journalText)
             end
         end
-    else
-        rec.description[2] = ""
     end
 end
 
