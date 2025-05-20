@@ -19,7 +19,7 @@ function this.init()
     this.finished = {}
 
     for _, dialogue in pairs(tes3.dataHandler.nonDynamicData.dialogues) do
-        if dialogue.type ~= tes3.dialogueType.journal then goto continue end
+        if dialogue.type ~= tes3.dialogueType.journal or dialogue.deleted or not dialogue.id then goto continue end
 
         local dialogueId = dialogue.id:lower()
 
