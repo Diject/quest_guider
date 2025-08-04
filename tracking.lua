@@ -547,10 +547,10 @@ function this.removeMarker(params)
         local qData = questLib.getQuestData(params.questId)
         if not qData then return end
         for _, qId in pairs(qData.links or {}) do
-            res = res or removeMarker{ questId = qId, objectId = params.objectId }
+            res = removeMarker{ questId = qId, objectId = params.objectId } or res
         end
     end
-    res = res or removeMarker(params)
+    res = removeMarker(params) or res
 
     return res
 end
