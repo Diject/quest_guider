@@ -197,7 +197,7 @@ function this.getNextIndexes(questData, quesId, questIndex, params)
             end
         end
     end
-    if not foundNextIndex and tpData.nextIndex and not linkedNext and not (plIndex >= tpData.nextIndex) then
+    if not foundNextIndex and tpData.nextIndex and not (plIndex >= tpData.nextIndex) then
         nextIndexes[tpData.nextIndex] = true
     end
 
@@ -777,7 +777,9 @@ function this.getRequirementPositionData(requirement, customConfig)
 
     local requirements = {requirement}
 
-    if requirement.type == types.requirementType.Journal and playerQuests.isInitialized() then
+    if requirement.type == types.requirementType.Journal and playerQuests.isInitialized()
+            and not ((requirement.operator == types.operator.value.Equal or requirement.operator == types.operator.value.LessOrEqual) and requirement.value == 0)
+            and not (requirement.operator == types.operator.value.Less and requirement.value == 1) then
         local index = playerQuests.getCurrentIndex(requirement.variable or "")
         if not index or index == 0 then
             local qDt = this.getQuestData(requirement.variable)
