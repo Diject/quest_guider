@@ -20,37 +20,25 @@ function this.runDataGeneration(async)
         encoding = "1252"
     end
 
-    -- by morrowind.ini
-    -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -o \"%s\" -e %s -l %d",
-    --     dir, maxPos, tes3.installDirectory, outputDir, encoding, this.logLevel)
-
-    -- by mod names
-    -- local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -e %s -d \"%s\" -o \"%s\" -l %d -f",
-    --     dir, maxPos, encoding, tes3.installDirectory, outputDir, this.logLevel)
-    -- for _, gameFile in ipairs(tes3.dataHandler.nonDynamicData.activeMods) do
-    --     if gameFile.playerName == "" then
-    --         command = string.format("%s \"%s\"", command, gameFile.filename)
-    --     end
-    -- end
-
     -- by data file
     local inputData = {
+        initializer = "Config",
         logLevel = this.logLevel,
-        directory = tes3.installDirectory,
+        morrowindDirectory = tes3.installDirectory,
+        files = {},
         output = outputDir,
+        outputFormat = "json",
         encoding = encoding,
-        maxPos = maxPos,
-        gameFiles = {},
+        maxObjectPositions = maxPos,
     }
     for _, gameFile in ipairs(tes3.dataHandler.nonDynamicData.activeMods) do
         if gameFile.playerName == "" then
-            table.insert(inputData.gameFiles, tes3.installDirectory.."\\Data Files\\"..gameFile.filename)
+            table.insert(inputData.files, tes3.installDirectory.."\\Data Files\\"..gameFile.filename)
         end
     end
     json.savefile("mods\\diject\\quest_guider\\Data\\input", inputData, {indent = true})
     local inputDataPath = tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\input.json"
-    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -p %d -d \"%s\" -i \"%s\" -o \"%s\" -e %s -l %d",
-        dir, maxPos, tes3.installDirectory, inputDataPath, outputDir, encoding, this.logLevel)
+    local command = string.format("start /B \"\" /D \"%s\" \"Quest Data Builder.exe\" -c \"%s\"", dir, inputDataPath)
 
     log(command)
     if async then

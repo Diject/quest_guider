@@ -2,7 +2,7 @@ include("diject.quest_guider.Data.luaAnnotations")
 
 local this = {}
 
-this.version = 6
+this.version = 7
 
 ---@type questDataGenerator.quests
 this.quests = {}
@@ -27,8 +27,7 @@ function this.init()
     this.questByText = json.loadfile("mods\\diject\\quest_guider\\Data\\questByTopicText")
     this.questObjects = json.loadfile("mods\\diject\\quest_guider\\Data\\questObjects")
     this.localVariablesByScriptId = json.loadfile("mods\\diject\\quest_guider\\Data\\localVariables")
-    local infoData = loadfile(tes3.installDirectory.."\\Data Files\\MWSE\\mods\\diject\\quest_guider\\Data\\info.lua")
-    this.info = infoData and infoData() or nil
+    this.info = json.loadfile("mods\\diject\\quest_guider\\Data\\info")
 
     if this.quests and this.questObjects and this.questByText and this.localVariablesByScriptId and this.info and
             this.version == this.info.version then
