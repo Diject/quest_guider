@@ -103,6 +103,8 @@ function this.findExitPositions(cell, checked, res)
 end
 
 
+local findNearestDoorCache = {}
+
 ---@param cell tes3cell?
 ---@param position tes3vector3
 ---@return tes3reference?
@@ -111,32 +113,46 @@ function this.findNearestDoor(position, cell)
         cell = tes3.getCell{position = position}
         if not cell then return end
     end
+
+    local hashVal = string.format("%d_%d_%d_%s", math.floor(position.x), math.floor(position.y), math.floor(position.z), cell.editorName)
+    if findNearestDoorCache[hashVal] then
+        return findNearestDoorCache[hashVal]
+    end
+
     local nearestDoor
     local nearestdist = math.huge
+
+    local function checkDoor(doorRef)
+        if not doorRef.position then return end
+
+        local dist = doorRef.position:distance(position)
+        if nearestdist > dist then
+            nearestdist = dist
+            nearestDoor = doorRef
+        end
+    end
+
     if cell.isInterior then
         for doorRef in cell:iterateReferences(tes3.objectType.door) do
-            local dist = doorRef.position:distance(position)
-            if nearestdist > dist then
-                nearestdist = dist
-                nearestDoor = doorRef
-            end
+            checkDoor(doorRef)
         end
     else
-        for i = -1, 1 do
-            for j = -1, 1 do
-                local cl = tes3.getCell{x = cell.gridX + i, y = cell.gridY + j}
-                if cl then
-                    for doorRef in cl:iterateReferences(tes3.objectType.door) do
-                        local dist = doorRef.position:distance(position)
-                        if nearestdist > dist then
-                            nearestdist = dist
-                            nearestDoor = doorRef
+        checkDoor(cell)
+        if nearestdist > 500 then
+            for i = -1, 1 do
+                for j = -1, 1 do
+                    local cl = tes3.getCell{x = cell.gridX + i, y = cell.gridY + j}
+                    if cl then
+                        for doorRef in cl:iterateReferences(tes3.objectType.door) do
+                            checkDoor(doorRef)
                         end
                     end
                 end
             end
         end
     end
+
+    findNearestDoorCache[hashVal] = nearestDoor
 
     return nearestDoor
 end
