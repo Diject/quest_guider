@@ -5,7 +5,7 @@ return {
     [types.requirementType.CustomDialogue] = { str = "Dialogue topic \"#dialogueVariable#\"", priority = -1000 },
     [types.requirementType.Item] = { str = "The number of item \"#varName#\" (#variable#) is #operator# #value# for #objectName#", },
     [types.requirementType.CustomDisposition] = { str = "Disposition of the actor is #operator# #value#", priority = -1001 },
-    [types.requirementType.PreviousDialogChoice] = { str = "#value# dialogue option is selected", priority = -1001 },
+    [types.requirementType.PreviousDialogChoice] = { str = "\"#variable#\" (#value#) dialogue option is selected", priority = -1001 },
     [types.requirementType.CustomPCFaction] = { str = "The player in #valueName# faction", },
     [types.requirementType.Dead] = { str = "The number of deaths #varName# (#variable#) is #operator# #value#", },
     [types.requirementType.CustomActorCell] = { str = "Find #objectName# in \"#value#\"", priority = -1000 },
