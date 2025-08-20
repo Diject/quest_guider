@@ -433,9 +433,9 @@ function this.registerModConfig()
         createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "enabled"}, label = "Enable"}
         createYesNo{self = objectGroup, config = {path = "tooltip.object", name = "changeTitleForTracked"}, label = "Change tracked object name color in tooltip"}
         createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "invNamesMax"},
-            label = "Maximum number of names of quests in which the object is involved, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
+            label = "Maximum number of names of quests in which the object is involved, displayed in the tooltip (-1 = disabled)", limits = {min = -1, max = 10}, int = true}
         createNumberEdit{self = objectGroup, config = {path = "tooltip.object", name = "startsNamesMax"},
-            label = "Maximum number of names of quests the object can start, displayed in the tooltip", limits = {min = 0, max = 10}, int = true}
+            label = "Maximum number of names of quests the object can start, displayed in the tooltip (-1 = disabled)", limits = {min = -1, max = 10}, int = true}
 
         local doorGroup = tooltipsPage:createCategory{label = "Tooltip on a door to a location"}
         createYesNo{self = doorGroup, config = {path = "tooltip.door", name = "enabled"}, label = "Enable"}

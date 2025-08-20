@@ -97,9 +97,7 @@ function this.drawObjectTooltip(parent, objectId)
     end
 
 
-    local involvedQuestNamesStr = stringLib.getValueEnumString(involvedNames, config.data.tooltip.object.invNamesMax, " (%s)")
-    local involvedCount = #involvedNames
-    local startsQuestNamesStr = stringLib.getValueEnumString(startsNames, config.data.tooltip.object.startsNamesMax, " (%s)")
+    local involvedCount = #involvedNames 
     local startsCount = #startsNames
 
     if involvedCount <= 0 and startsCount <= 0 then return end
@@ -111,7 +109,9 @@ function this.drawObjectTooltip(parent, objectId)
     block.autoWidth = true
     block.maxWidth = config.data.tooltip.width
 
-    if startsCount > 0 then
+    if startsCount > 0 and config.data.tooltip.object.startsNamesMax >= 0 then
+        local startsQuestNamesStr = stringLib.getValueEnumString(startsNames, config.data.tooltip.object.startsNamesMax, " (%s)")
+
         local text = string.format("Starts %d quest%s%s.", startsCount, startsCount == 1 and "" or "s", startsQuestNamesStr)
 
         local label = block:createLabel{
@@ -122,7 +122,9 @@ function this.drawObjectTooltip(parent, objectId)
         label.borderTop = 3
     end
 
-    if involvedCount > 0 then
+    if involvedCount > 0 and config.data.tooltip.object.invNamesMax >= 0 then
+        local involvedQuestNamesStr = stringLib.getValueEnumString(involvedNames, config.data.tooltip.object.invNamesMax, " (%s)")
+
         local text = string.format("Involved in %d quest%s%s.", involvedCount, involvedCount == 1 and "" or "s", involvedQuestNamesStr)
 
         local label = block:createLabel{
