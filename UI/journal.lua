@@ -180,7 +180,7 @@ function this.drawQuestInfoMenu(parent, questId, index, questData)
     local topicIndexLabel = mainBlock:createLabel{ id = infoMenu.indexId, text = indexStr }
 
     if topicData and topicData.next and #topicData.next > 0 then
-        local nextIndexesStr = "Possible next stage"..(#topicData.next > 1 and "es" or "")..": "..tableLib.valuesToStr(topicData.next)
+        local nextIndexesStr = "Possible next stage"..(#topicData.next > 1 and "s" or "")..": "..tableLib.valuesToStr(topicData.next)
         local topicnextIndexesLabel = mainBlock:createLabel{ id = infoMenu.nextIndexes, text = nextIndexesStr }
     end
 
