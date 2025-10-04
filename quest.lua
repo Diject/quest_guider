@@ -150,7 +150,7 @@ function this.getNextIndexes(questData, quesId, questIndex, params)
             local linkRequirements = linkData[tostring(firstIndex)]
             if not linkRequirements then goto continue end
 
-            if params.findCompleted == false and playerQuests.getCurrentIndex(linkedId) ~= 0 then
+            if params.findCompleted == false and (playerQuests.getCurrentIndex(linkedId) or 0) ~= 0 then
                 goto continue
             end
 

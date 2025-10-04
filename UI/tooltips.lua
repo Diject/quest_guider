@@ -193,7 +193,8 @@ function this.drawDoorTooltip(parent, reference)
                 if config.data.tracking.giver.hideStarted then
                     valid = false
                     for _, stage in pairs(objData.stages) do
-                        if not (playerQuests.isFinished(stage.id) or playerQuests.getCurrentIndex(stage.id) < stage.index) then
+                        local currentIndex = playerQuests.getCurrentIndex(stage.id)
+                        if not (playerQuests.isFinished(stage.id) or (currentIndex and currentIndex < stage.index)) then
                             questObjects[objId] = objData
                             valid = true
                             break
