@@ -194,7 +194,7 @@ function this.drawDoorTooltip(parent, reference)
                     valid = false
                     for _, stage in pairs(objData.stages) do
                         local currentIndex = playerQuests.getCurrentIndex(stage.id)
-                        if not (playerQuests.isFinished(stage.id) or (currentIndex and currentIndex < stage.index)) then
+                        if currentIndex and not (playerQuests.isFinished(stage.id) or currentIndex < stage.index) then
                             questObjects[objId] = objData
                             valid = true
                             break
