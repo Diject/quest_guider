@@ -126,7 +126,7 @@ function this.show(params)
             local data = quests[id]
             if not data then goto continue end
 
-            foundMatched = foundMatched or createLabel(startsBlock, data, true)
+            foundMatched = createLabel(startsBlock, data, true) or foundMatched
 
             ::continue::
         end
@@ -159,7 +159,7 @@ function this.show(params)
 
         for _, data in pairs(quests) do
             height = height + fontHeight
-            hasData = hasData or createLabel(involvedBlock, data)
+            hasData = createLabel(involvedBlock, data) or hasData
         end
     end
 
