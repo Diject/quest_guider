@@ -631,8 +631,8 @@ end
 
 
 ---@param cell tes3cell
-function this.createQuestGiverMarkers(cell)
-    if this.scannedCellsForTemporaryMarkers[cell.editorName] then return end
+function this.createQuestGiverMarkers(cell, withoutCellCheck)
+    if not withoutCellCheck and this.scannedCellsForTemporaryMarkers[cell.editorName] then return end
     this.scannedCellsForTemporaryMarkers[cell.editorName] = true
 
     for ref in cell:iterateReferences{ tes3.objectType.npc, tes3.objectType.creature } do

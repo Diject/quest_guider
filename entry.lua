@@ -207,6 +207,10 @@ local function postInfoResponseCallback(e)
     if tracking.handleTrackingRequirements() then
         tracking.updateMarkers(true)
     end
+    if config.data.tracking.giver.enabled then
+        tracking.updateQuestGiverMarkers()
+        tracking.createQuestGiverMarkers(tes3.player.cell, true)
+    end
 end
 
 local function initCallbacks()
