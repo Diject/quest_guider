@@ -8,16 +8,21 @@ local this = {}
 ---@return tes3cell[]|nil cellPath
 ---@return boolean|nil isExterior
 ---@return table<tes3cell,boolean>|nil checkedCells
-function this.findExitPos(cell, path, checked, cellPath)
+---@return integer?
+function this.findExitPos(cell, path, checked, cellPath, depth)
+    local maxDepth = config.data.tracking.maxCellDepth
     if not checked then checked = {} end
     if not path then path = {} end
+    if not depth then depth = 1 end
     if not cellPath then
         cellPath = {}
         table.insert(cellPath, cell)
     end
 
-    if checked[cell] then return nil, nil, nil, nil, checked end
-    checked[cell] = true
+    if (checked[cell] and (checked[cell] > depth)) or depth > maxDepth then return nil, nil, nil, nil, checked, depth end
+    checked[cell] = depth
+
+    local results = {}
     for door in cell:iterateReferences(tes3.objectType.door) do
         if door.destination and not door.deleted and not door.disabled then
 
@@ -29,14 +34,24 @@ function this.findExitPos(cell, path, checked, cellPath)
             table.insert(cellPathCopy, door.destination.cell)
 
             if door.destination.cell.isOrBehavesAsExterior then
-                return door.destination.marker.position:copy(), pathCopy, cellPathCopy, not door.destination.cell.isInterior
+                table.insert(results, {door.destination.marker.position:copy(), pathCopy, cellPathCopy, not door.destination.cell.isInterior, checked, depth})
             else
-                local out, destPath, cPath, isEx = this.findExitPos(door.destination.cell, pathCopy, checked, cellPathCopy)
-                if out then return out, destPath, cPath, isEx, checked end
+                local out, destPath, cPath, isEx, ch, dp = this.findExitPos(door.destination.cell, pathCopy, checked, cellPathCopy, depth + 1)
+                if out then
+                    table.insert(results, {out, destPath, cPath, isEx, checked, dp})
+                end
             end
         end
     end
-    return nil, nil, nil, nil, checked
+
+    if next(results) then
+        table.sort(results, function (a, b)
+            return a[6] < b[6]
+        end)
+        return table.unpack(results[1]) ---@diagnostic disable-line: redundant-return-value
+    end
+
+    return nil, nil, nil, nil, checked, depth
 end
 
 ---@param node tes3travelDestinationNode
@@ -97,6 +112,92 @@ function this.findExitPositions(cell, checked, res)
                 this.findExitPositions(door.destination.cell, checked, res)
             end
         end
+    end
+
+    return res
+end
+
+
+---@param cell tes3cell
+---@return table<string, {cell : tes3cell, depth : integer}>?
+function this.findExitCells(cell, checked, cells, depth)
+    local maxDepth = config.data.tracking.maxCellDepth
+    if not checked then checked = {} end
+    if not cells then cells = {} end
+    if not depth then depth = 0 end
+
+    if checked[cell.editorName] and checked[cell.editorName] < depth then return end
+    checked[cell.editorName] = depth
+
+    if depth > maxDepth or not cell.isInterior then return cells end
+
+    for door in cell:iterateReferences(tes3.objectType.door) do
+        if door.destination and not door.deleted and not door.disabled then
+            local destCell = door.destination.cell
+            if not destCell.isInterior then
+                local cellData = cells[cell.editorName] or {cell = cell}
+                cellData.depth = math.min(depth, cellData.depth or depth)
+                cells[cell.editorName] = cellData
+            else
+                this.findExitCells(destCell, checked, cells, depth + 1)
+            end
+        end
+    end
+
+    return cells
+end
+
+
+local findClosestExitPositionsCache = {}
+
+---@param cell tes3cell
+---@param onePerCell boolean?
+---@return tes3vector3[]?
+function this.findClosestExitPositions(cell, onePerCell)
+    local cellRes = findClosestExitPositionsCache[cell] or this.findExitCells(cell)
+    findClosestExitPositionsCache[cell] = cellRes
+    if not cellRes then return end
+
+    cellRes = table.values(cellRes, function (a, b)
+        return a.depth < b.depth
+    end)
+
+    local lowestDepth
+    ---@type tes3cell[]
+    local cells = {}
+    for _, dt in ipairs(cellRes) do
+        if not lowestDepth then
+            lowestDepth = dt.depth
+        end
+
+        if dt.depth == lowestDepth then
+            table.insert(cells, dt.cell)
+        else
+            break
+        end
+    end
+
+    local res = {}
+    for _, cl in pairs(cells) do
+        local dests = {}
+        for door in cl:iterateReferences(tes3.objectType.door) do
+            if door.destination and not door.deleted and not door.disabled and not door.destination.cell.isInterior then
+                table.insert(dests, door.destination.marker.position:copy())
+            end
+        end
+
+        if not next(dests) then goto continue end
+
+        if onePerCell then
+            local pos = table.choice(dests)
+            table.insert(res, pos)
+        else
+            for _, pos in pairs(dests) do
+                table.insert(res, pos)
+            end
+        end
+
+        ::continue::
     end
 
     return res

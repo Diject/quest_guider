@@ -77,6 +77,7 @@ this.default = {
         hideKilled = true,
         hideFinActors = true,
         showJournalTextOnMarker = true,
+        onlyOneMarkerToInterior = false,
         approx = {
             enabled = false,
             worldMap = {

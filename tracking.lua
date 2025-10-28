@@ -328,7 +328,7 @@ function this.addMarker(params)
 
                         if path then
                             if objectMarkerData.localDoorMarkerId then
-                                local exitPositions = cellLib.findExitPositions(cell)
+                                local exitPositions = cellLib.findClosestExitPositions(cell, config.data.tracking.onlyOneMarkerToInterior)
                                 if exitPositions then
                                     for _, pos in pairs(exitPositions) do
                                         local nearestDoor = cellLib.findNearestDoor(pos)
