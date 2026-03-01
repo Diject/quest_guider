@@ -19,7 +19,7 @@ function this.findExitPos(cell, path, checked, cellPath, depth)
         table.insert(cellPath, cell)
     end
 
-    if (checked[cell] and (checked[cell] > depth)) or depth > maxDepth then return nil, nil, nil, nil, checked, depth end
+    if (checked[cell] and (checked[cell] < depth)) or depth > maxDepth then return nil, nil, nil, nil, checked, depth end
     checked[cell] = depth
 
     local results = {}
