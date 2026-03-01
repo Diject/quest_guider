@@ -1158,13 +1158,22 @@ function this.handlePlayerInventory(force)
         for _, markerData in pairs(data.markers) do
 
             if markerData.handledRequirements and config.data.tracking.hideFinActors then
-                local hChanged, hProtected = checkHandledRequirements(objId, markerData, protected)
-                changed = changed or hChanged
-                protected = protected or hProtected
+                local obj = tes3.getObject(objId)
+                if obj then
+                    local hChanged, hProtected = checkHandledRequirements(objId, markerData, protected)
+                    changed = changed or hChanged
+                    protected = protected or hProtected
+                end
             end
 
             if markerData.itemCount and config.data.tracking.hideObtained then
-                if markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = markerData.parentObject or objId } then
+                local item = tes3.getObject(markerData.parentObject or objId)
+                if not item then
+                    if markerData.data.disabled ~= true then
+                        this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
+                        changed = true
+                    end
+                elseif markerData.itemCount <= tes3.getItemCount{ reference = mobile, item = markerData.parentObject or objId } then
                     if markerData.data.disabled ~= true and not protected then
                         this.setDisableMarkerState{ objectId = objId, questId = markerData.id, value = true }
                         changed = true
