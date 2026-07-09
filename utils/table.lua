@@ -158,4 +158,17 @@ function this.tableIndexesToArray(tb)
     return arr
 end
 
+---@param from table
+---@param to table?
+---@return table
+function this.addValues(from, to)
+    if not to then to = {} end
+
+	for _, v in pairs(from) do
+		table.insert(to, v)
+	end
+
+	return to
+end
+
 return this

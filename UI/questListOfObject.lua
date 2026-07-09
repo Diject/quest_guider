@@ -13,6 +13,7 @@ local this = {}
 ---@field objectId string should be lowercase
 ---@field showStarts boolean? default true
 ---@field showInvolved boolean? default true
+---@field diaIds table<string, string>? by diaId, quest name
 
 ---@param params questGuider.questListOfObject.show.params
 function this.show(params)
@@ -43,14 +44,23 @@ function this.show(params)
     ---@type table<string, {id : string, name : string, index : integer, data : any}>
     local quests = {}
 
-    for i, stageData in pairs(objData.stages) do
-        local data = quests[stageData.id]
-        if data then
-            data.index = math.min(data.index, stageData.index)
-        else
-            local qData = questLib.getQuestData(stageData.id)
+    if params.diaIds then
+        for diaId, qName in pairs(params.diaIds) do
+            local qData = questLib.getQuestData(diaId)
             if qData then
-                quests[stageData.id] = {id = stageData.id, name = qData.name or "???", index = stageData.index, data = qData}
+                quests[diaId] = {id = diaId, name = qName, index = playerQuests.getCurrentIndex(diaId) or 0, data = qData}
+            end
+        end
+    else
+        for i, stageData in pairs(objData.stages) do
+            local data = quests[stageData.id]
+            if data then
+                data.index = math.min(data.index, stageData.index)
+            else
+                local qData = questLib.getQuestData(stageData.id)
+                if qData then
+                    quests[stageData.id] = {id = stageData.id, name = qData.name or "???", index = stageData.index, data = qData}
+                end
             end
         end
     end

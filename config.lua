@@ -69,9 +69,11 @@ this.default = {
         quest = {
             enabled = true,
             finished = false, -- autotrack finished
+            oneEntryDialogues = false, -- new, local
+            sideBranches = false, -- new, local
         },
         maxPositions = 20,
-        minChance = 0.2, -- do not track parent objects with a chance to get less than this value
+        minChance = 0.5, -- do not track parent objects with a chance to get less than this value
         maxCellDepth = 12,
         hideObtained = true,
         hideKilled = true,
@@ -93,7 +95,7 @@ this.default = {
             enabled = true,
             hideStarted = true,
             namesMax = 3,
-            filter = true,
+            filter = true, -- deprecated
         },
         marker = {
             alpha = 0.9,
@@ -111,7 +113,7 @@ this.default = {
         ignoreDataChanges = false,
     },
     data = {
-        maxPos = 50,
+        maxPos = 20,
     },
 }
 
@@ -133,6 +135,14 @@ if this.data then
             this.data.journal.requirements.enabled = true
         end
         mwse.saveConfig(storageName, this.data)
+
+    elseif this.data.version == 3 then
+        if this.data.tracking.minChance < 0.5 then
+            this.data.tracking.minChance = 0.5
+        end
+        if this.data.data.maxPos > 20 then
+            this.data.data.maxPos = 20
+        end
     end
 
     tableLib.addMissing(this.data, this.default)

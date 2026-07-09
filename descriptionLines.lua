@@ -86,6 +86,7 @@ return {
     [types.requirementType.CustomSoundPlaying] = { str = "\"#variable#\" sound is#notContr# playing", },
     [types.requirementType.CustomScript] = { str = "\"#variable#\" script attached to #scriptObjects#", priority = -2000 },
     ["SCR1"] = { str = "Objects that this script contains: #objectsInScript#", priority = -2001 },
+    ["SCR2"] = { str = "Script \"#script#\" attached to #varName# (#variable#)" or "", priority = -2002 },
     [types.requirementType.CustomDay] = { str = "The date is #operator# #value#", },
     [types.requirementType.CustomMonth] = { str = "The month is #operator# #value#", },
     [types.requirementType.CustomYear] = { str = "The year is #operator# #value#", },

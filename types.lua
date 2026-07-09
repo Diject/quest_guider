@@ -190,4 +190,75 @@ this.requirementType = require("diject.quest_guider.Types.requirement")
 
 this.operator = require("diject.quest_guider.Types.operator")
 
+
+function this.areRequirementsEqual(req1, req2)
+    if not req1 or not req2 then return false end
+    if req1.type ~= req2.type then return false end
+    if req1.operator ~= req2.operator then return false end
+    if req1.value ~= req2.value then return false end
+    if req1.variable ~= req2.variable then return false end
+    if req1.object ~= req2.object then return false end
+    if req1.skill ~= req2.skill then return false end
+    if req1.attribute ~= req2.attribute then return false end
+    if req1.script ~= req2.script then return false end
+
+    return true
+end
+
+
+function this.invertRequirement(req)
+    if not req then return nil end
+    req.operator = this.operator.invert(req.operator)
+    return req
+end
+
+
+function this.getRequirementHash(req)
+    if not req then return "" end
+    return string.format("%s_%s_%s_%s_%s_%s_%s_%s",
+        req.type or "",
+        req.operator or "",
+        req.value or "",
+        req.variable or "",
+        req.object or "",
+        req.skill or "",
+        req.attribute or "",
+        req.script or ""
+    )
+end
+
+
+function this.gerRequirementBlockHash(reqBlock)
+    if not reqBlock then return "" end
+    local hash = ""
+    for i, req in ipairs(reqBlock) do
+        hash = hash..this.getRequirementHash(req).."|"
+    end
+    return hash
+end
+
+
+---@param reqBlock questDataGenerator.requirementBlock
+---@return questDataGenerator.requirementData[]?
+function this.getReqirementsByTypeFromBlock(reqBlock, type)
+    local res = {}
+    for _, req in pairs(reqBlock or {}) do
+        if req.type == type then
+            table.insert(res, req)
+        end
+    end
+    return next(res) and res or nil
+end
+
+
+---@return string?
+function this.getActorDialogueIdFromBlock(reqBlock)
+    for _, req in pairs(reqBlock or {}) do
+        if req.type == this.requirementType.CustomActor then
+            return req.variable
+        end
+    end
+end
+
+
 return this

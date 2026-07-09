@@ -48,4 +48,54 @@ function this.convertDialogueName(name)
     return string.sub(name, 7)
 end
 
+
+---@param data questGuider.quest.getRequirementPositionData.positionData
+---@return string?
+---@return string? backward
+function this.getPathDescription(data)
+    local descr
+    local descrBack
+    if not data.description then
+        if data.pathFromPlayer then
+            for _, cellName in ipairs(data.pathFromPlayer) do
+                descr = descr and string.format("%s => \"%s\"", descr, cellName) or
+                    string.format("\"%s\"", cellName)
+                -- descrBack = descrBack and string.format("\"%s\" <= %s", cellName, descrBack) or
+                --     string.format("\"%s\"", cellName)
+            end
+
+        elseif data.cellPath then
+            for i = #data.cellPath, 1, -1 do
+                descr = descr and string.format("%s => \"%s\"", descr, data.cellPath[i].displayName) or
+                    string.format("\"%s\"", data.cellPath[i].displayName)
+                -- descrBack = descrBack and string.format("\"%s\" <= %s", data.cellPath[i].name, descrBack) or
+                --     string.format("\"%s\"", data.cellPath[i].name)
+            end
+
+        elseif data.id then
+            descr = string.format("\"%s\"", data.id)
+            -- descrBack = descr
+
+        else
+            descr = "???"
+            -- descrBack = "???"
+        end
+    else
+        descr = data.description
+    end
+
+    return descr, descrBack
+end
+
+
+function this.getBeforeComma(str)
+    local commaIndex = string.find(str, ",")
+    if commaIndex then
+        return string.sub(str, 1, commaIndex - 1)
+    else
+        return str
+    end
+end
+
+
 return this

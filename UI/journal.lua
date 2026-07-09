@@ -343,13 +343,16 @@ function this.drawScriptLocalsMenu(parent, scriptNames)
                                 reqLabel:setLuaData("requirement", req)
 
                                 if req.positionData then
-                                    local tooltip = tooltipLib.new{parent = reqLabel}
+                                    local tooltip = tooltipLib.new{parent = reqLabel, descrWidthProportional = 1}
                                     if config.data.main.helpLabels then
                                         tooltip:add{name = "Click to track.", nameColor = this.colors.lightDefault}
                                     end
                                     for objId, posDt in pairs(req.positionData) do
                                         local posDescriptions = {}
                                         for _, p in pairs(posDt.positions) do
+                                            if not p.description then
+                                                p.description = stringLib.getPathDescription(p)
+                                            end
                                             table.insert(posDescriptions, p.description)
                                         end
                                         tooltip:add{name = posDt.name}
@@ -648,7 +651,7 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                 end
 
                                 if req.positionData then
-                                    local tooltip = tooltipLib.new{parent = reqLabel}
+                                    local tooltip = tooltipLib.new{parent = reqLabel, descrWidthProportional = 1}
                                     if config.data.main.helpLabels then
                                         tooltip:add{name = "Click to track.", nameColor = this.colors.lightDefault}
                                     end
@@ -656,6 +659,9 @@ function this.drawQuestRequirementsMenu(parent, questId, index, questData)
                                         local posDescriptions = {}
                                         for j = 1, math.min(config.data.journal.requirements.pathDescriptions + 1, #posDt.positions) do
                                             local p = posDt.positions[j]
+                                            if not p.description then
+                                                p.description = stringLib.getPathDescription(p)
+                                            end
                                             table.insert(posDescriptions, p.description)
                                         end
                                         tooltip:add{name = posDt.name}
@@ -1036,6 +1042,10 @@ function this.drawMapMenu(parent, questId, index, questData, hideMap)
                     if posData.isExitEx then
                         local x = posData.exitPos.x
                         local y = posData.exitPos.y
+
+                        if not posData.description then
+                            posData.description = stringLib.getPathDescription(posData)
+                        end
 
                         table.insert(markersData, { parent = child, x = x, y = y, color = color, objId = objId, objName = dt.name, descr = posData.description })
                     end

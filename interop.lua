@@ -4,7 +4,7 @@ local questLib = include("diject.quest_guider.quest")
 
 local this = {}
 
-this.version = 1 -- can be nil
+this.version = 2 -- can be nil
 
 this.event = {
     dataInitialized = "questGuider:dataInitialized",
@@ -44,9 +44,10 @@ end
 
 
 ---@param requirement questDataGenerator.requirementData
+---@params questId string?
 ---@return table<string, questGuider.quest.getRequirementPositionData.returnData>? ret by object id
-function this.getRequirementPositionData(requirement)
-    return questLib.getRequirementPositionData(requirement, config.default)
+function this.getRequirementPositionData(requirement, questId)
+    return questLib.getRequirementPositionData(requirement, config.default, questId)
 end
 
 

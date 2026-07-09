@@ -30,6 +30,7 @@ end
 ---@class questGuider.tooltipSys.new.params
 ---@field parent tes3uiElement
 ---@field maxWidth integer?
+---@field descrWidthProportional number?
 
 ---@param params questGuider.tooltipSys.new.params
 ---@return questGuider.tooltipSys.tooltip
@@ -80,6 +81,7 @@ function this.new(params)
             block.autoHeight = true
             block.autoWidth = true
             block.maxWidth = luaData.maxWidth or 350
+            block.widthProportional = not rec.name and params.descrWidthProportional or nil
 
             if rec.name then
                 local bl = block:createBlock{id = tooltipMenu.tooltipNameBlock}
@@ -101,7 +103,9 @@ function this.new(params)
             if rec.description then
                 local label = block:createLabel{id = tooltipMenu.tooltipDescription, text = rec.description}
                 label.autoHeight = true
-                label.autoWidth = true
+                label.autoWidth = false
+                label.widthProportional = 1
+                label.borderTop = 4
                 label.maxWidth = luaData.maxWidth or 350
                 label.wrapText = true
                 label.justifyText = tes3.justifyText.left

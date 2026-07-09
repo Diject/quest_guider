@@ -11,6 +11,9 @@ local otherTypes = include("diject.quest_guider.Types.other")
 local randomLib = include("diject.quest_guider.utils.random")
 local tooltips = include("diject.quest_guider.UI.tooltips")
 local requirementChecker = include("diject.quest_guider.requirementChecker")
+local myTypes = include("diject.quest_guider.types")
+local requirementType = include("diject.quest_guider.Types.requirement")
+local requirementOperator = include("diject.quest_guider.Types.operator")
 
 local log = include("diject.quest_guider.utils.log")
 
@@ -19,6 +22,10 @@ local storageLabel = "tracking"
 local this = {}
 
 this.mapMarkerLibVersion = markerLib and (markerLib.version or 1) or -1
+
+this.forbiddenForTracking = {
+    ["DIAO"] = true,
+}
 
 ---@class questGuider.tracking.markerImage
 ---@field path string
@@ -47,6 +54,7 @@ this.zoneImageInfo = { path = "diject\\quest guider\\circleZoneMarker128x128.dds
 ---@class questGuider.tracking.storageData
 ---@field markerByObjectId table<string, questGuider.tracking.objectRecord>?
 ---@field trackedObjectsByQuestId table<string, {objects : table<string, string[]>, color : number[]}>?
+---@field lastObjectColor table<string, table>?
 ---@field colorId integer?
 
 ---@type questGuider.tracking.storageData
@@ -55,8 +63,12 @@ this.storageData = {} -- data of quest map markers
 ---@type table<string, boolean>
 this.scannedCellsForTemporaryMarkers = {}
 
----@type table<string, string> recordId by object id
+---@type table<string, {dIds: table<string, string>, mR: string}> by object id; dIds: table<diaId, quest name>, mR: marker record id
 this.trackedQuestGivers = {}
+
+---@type table<string, table>
+this.lastObjectColor = {}
+
 
 ---@class questGuider.tracking.markerRecord
 ---@field localMarkerId string|nil
@@ -105,9 +117,11 @@ function this.init()
     this.storageData = storage.player[storageLabel]
     this.storageData.markerByObjectId = this.storageData.markerByObjectId or {}
     this.storageData.trackedObjectsByQuestId = this.storageData.trackedObjectsByQuestId or {}
+    this.storageData.lastObjectColor = this.storageData.lastObjectColor or {}
 
     this.markerByObjectId = this.storageData.markerByObjectId
     this.trackedObjectsByQuestId = this.storageData.trackedObjectsByQuestId
+    this.lastObjectColor = this.storageData.lastObjectColor
 
     this.scannedCellsForTemporaryMarkers = {}
     this.trackedQuestGivers = {}
@@ -156,6 +170,8 @@ function this.addMarker(params)
     local approxConfig = config.data.tracking.approx
 
     local objectId = params.objectId
+    local object = tes3.getObject(objectId)
+    if not object then return end
 
     local positionData = params.positionData
 
@@ -163,7 +179,7 @@ function this.addMarker(params)
 
     if not questData or not positionData then return end
 
-    if params.reqData and params.reqData.data.type == "DIAO" then return end
+    if params.reqData and this.forbiddenForTracking[params.reqData.data.type or ""] then return end
 
     local qTrackingInfo
     if this.trackedObjectsByQuestId[params.questId] then
@@ -174,15 +190,51 @@ function this.addMarker(params)
 
     local objectTrackingData = this.markerByObjectId[objectId]
     if not objectTrackingData then
-        local colorId = math.min(this.storageData.colorId, #colors)
+        local lastColor = this.lastObjectColor[objectId]
+        if not lastColor then
+            local colorId = math.min(this.storageData.colorId, #colors)
 
-        objectTrackingData = { markers = {}, color = colors[colorId] } ---@diagnostic disable-line: missing-fields
+            objectTrackingData = { markers = {}, color = colors[colorId] } ---@diagnostic disable-line: missing-fields
 
-        this.storageData.colorId = colorId < #colors and colorId + 1 or 1
+            this.lastObjectColor[objectId] = colors[colorId]
+            this.storageData.colorId = colorId < #colors and colorId + 1 or 1
+        else
+            objectTrackingData = { markers = {}, color = lastColor } ---@diagnostic disable-line: missing-fields
+        end
     end
+
+    ---@param markerData questGuider.tracking.markerData
+    ---@param reqs questDataGenerator.requirementData[]
+    local function addHandledReqsToData(markerData, reqs)
+        if not reqs then return end
+
+        local hash = ""
+        for _, r in pairs(reqs) do
+            hash = hash..r.type..tostring(r.operator)..tostring(r.value)..tostring(r.variable)..tostring(r.object)
+        end
+        if not markerData.handledRequirements then markerData.handledRequirements = {} end
+        markerData.handledRequirements[hash] = reqs
+    end
+
+    ---@param markerData questGuider.tracking.markerData
+    local function addHandledReqs(markerData)
+        if params.reqData and (params.reqData.reqDataForHandling or params.reqData.reqDataForHandlingArr) then
+            addHandledReqsToData(markerData, params.reqData.reqDataForHandling)
+            if params.reqData.reqDataForHandlingArr then
+                for _, reqs in pairs(params.reqData.reqDataForHandlingArr) do
+                    addHandledReqsToData(markerData, reqs)
+                end
+            end
+        elseif params.reqData and params.reqData.data.type == requirementType.CustomActor then
+            if not markerData.handledRequirements then markerData.handledRequirements = {} end
+            markerData.handledRequirements[""] = {}
+        end
+    end
+
 
     if objectTrackingData.markers[params.questId] then
         local oldData = objectTrackingData.markers[params.questId]
+
         if oldData.actorCount or positionData.actorCount then
             oldData.actorCount = math.max(oldData.actorCount or 0, positionData.actorCount or 0)
         end
@@ -192,14 +244,7 @@ function this.addMarker(params)
         if positionData.parentObject then
             oldData.parentObject = positionData.parentObject
         end
-        if params.reqData and params.reqData.reqDataForHandling then
-            local hash = ""
-            for _, r in pairs(params.reqData.reqDataForHandling) do
-                hash = hash..r.type..tostring(r.operator)..tostring(r.value)..tostring(r.variable)..tostring(r.object)
-            end
-            if not oldData.handledRequirements then oldData.handledRequirements = {} end
-            oldData.handledRequirements[hash] = params.reqData.reqDataForHandling
-        end
+        addHandledReqs(oldData)
         return
     end
 
@@ -268,11 +313,16 @@ function this.addMarker(params)
         parentObject = positionData.parentObject,
         handledRequirements = handledReqs,
     }
+    addHandledReqs(objectTrackingData.markers[params.questId])
 
     local allowWorldMarkers = #positionData.positions <= config.data.tracking.maxPositions
 
     local objects = {}
-    objects[objectId] = true
+    if not params.reqData or params.reqData.data.type ~= requirementType.NotActorCell and
+            params.reqData.data.type ~= requirementType.CustomActorCell and
+            params.reqData.data.type ~= requirementType.CustomPCCell then
+        objects[objectId] = true
+    end
 
     local allowToTagNameForLocal = true
 
@@ -640,35 +690,43 @@ function this.createQuestGiverMarkers(cell, withoutCellCheck)
 
         if this.trackedQuestGivers[objectId] then goto continue end
 
-        local objectData = questLib.getObjectData(objectId)
-        if not objectData or not objectData.starts then goto continue end
+        local diaIds, isGiver, byScript = questLib.getGiverQuests(ref)
+        if  not diaIds then goto continue end
+
+        -- local objectData = questLib.getObjectData(objectId)
+        -- if not objectData or not objectData.starts then goto continue end
 
         local questNames = {}
 
-        for _, questId in pairs(objectData.starts) do
-            local questIdLower = questId:lower()
-            local questData = questLib.getQuestData(questIdLower)
-            if not questData or not questData.name then goto continue end
-
-            if config.data.tracking.giver.filter then
-                local firstIndexStr = questLib.getFirstIndex(questData)
-                if not firstIndexStr then goto continue end
-                if not questLib.checkConditionsForQuestGiver(ref.object, questIdLower, firstIndexStr) then
-                    goto continue
-                end
-            end
-
-            local playerData = playerQuests.getQuestData(questId)
-            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
-                goto continue
-            end
-
-            table.insert(questNames, questData.name)
-
-            ::continue::
+        for diaId, qName in pairs(diaIds) do
+            questNames[qName] = true
         end
 
-        if #questNames <= 0 then goto continue end
+        -- for _, questId in pairs(objectData.starts) do
+        --     local questIdLower = questId:lower()
+        --     local questData = questLib.getQuestData(questIdLower)
+        --     if not questData or not questData.name then goto continue end
+
+        --     if config.data.tracking.giver.filter then
+        --         local firstIndexStr = questLib.getFirstIndex(questData)
+        --         if not firstIndexStr then goto continue end
+        --         if not questLib.checkConditionsForQuestGiver(ref.object, questIdLower, firstIndexStr) then
+        --             goto continue
+        --         end
+        --     end
+
+        --     local playerData = playerQuests.getQuestData(questId)
+        --     if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
+        --         goto continue
+        --     end
+
+        --     table.insert(questNames, questData.name)
+
+        --     ::continue::
+        -- end
+
+        if not next(questNames) then goto continue end
+        questNames = table.keys(questNames)
 
         local recordId = markerLib.addRecord{
             path = this.questGiverImageInfo.path,
@@ -684,7 +742,7 @@ function this.createQuestGiverMarkers(cell, withoutCellCheck)
             description = stringLib.getValueEnumString(questNames, config.data.tracking.giver.namesMax,
                 (config.data.main.helpLabels and this.mapMarkerLibVersion >= 3) and "Starts %s. Click for info." or "Starts %s"),
             onClickCallback = function (e)
-                include("diject.quest_guider.UI.questListOfObject").show{ objectId = objectId, showInvolved = false }
+                include("diject.quest_guider.UI.questListOfObject").show{ diaIds = diaIds, objectId = objectId, showInvolved = false }
             end
         }
 
@@ -695,7 +753,7 @@ function this.createQuestGiverMarkers(cell, withoutCellCheck)
             trackOffscreen = true,
         }
 
-        this.trackedQuestGivers[objectId] = recordId
+        this.trackedQuestGivers[objectId] = {dIds = diaIds, mR = recordId}
 
         ::continue::
     end
@@ -703,66 +761,266 @@ end
 
 
 function this.updateQuestGiverMarkers()
-    for objId, recordId in pairs(this.trackedQuestGivers) do
-        local objectData = questLib.getObjectData(objId)
+    for objId, data in pairs(this.trackedQuestGivers) do
+        -- local objectData = questLib.getObjectData(objId)
 
-        local valid = false
+        -- local valid = false
 
-        for _, questId in pairs((objectData or {}).starts or {}) do
-            local questData = questLib.getQuestData(questId)
-            if not questData or not questData.name then goto continue end
+        -- for _, questId in pairs((objectData or {}).starts or {}) do
+        --     local questData = questLib.getQuestData(questId)
+        --     if not questData or not questData.name then goto continue end
 
-            if config.data.tracking.giver.filter then
-                local firstIndexStr = questLib.getFirstIndex(questData)
-                if not firstIndexStr then goto continue end
-                if not questLib.checkConditionsForQuestGiver(tes3.getObject(objId), questId, firstIndexStr) then
-                    goto continue
-                end
+        --     if config.data.tracking.giver.filter then
+        --         local firstIndexStr = questLib.getFirstIndex(questData)
+        --         if not firstIndexStr then goto continue end
+        --         if not questLib.checkConditionsForQuestGiver(tes3.getObject(objId), questId, firstIndexStr) then
+        --             goto continue
+        --         end
+        --     end
+
+        --     local playerData = playerQuests.getQuestData(questId)
+        --     if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
+        --         goto continue
+        --     end
+
+        --     valid = true
+        --     if valid then
+        --         break;
+        --     end
+
+        --     ::continue::
+        -- end
+
+        local isValid = false
+
+        for diaId, _ in pairs(data.dIds) do
+            if playerQuests.getCurrentIndex(diaId) <= 0 then
+                data.dIds[diaId] = nil
+            else
+                isValid = true
             end
-
-            local playerData = playerQuests.getQuestData(questId)
-            if not playerData or (config.data.tracking.giver.hideStarted and playerData.index > 0) then
-                goto continue
-            end
-
-            valid = true
-            if valid then
-                break;
-            end
-
-            ::continue::
         end
 
-        if not valid then
-            markerLib.removeRecord(recordId)
+        if not isValid then
+            markerLib.removeRecord(data.mR)
             this.trackedQuestGivers[objId] = nil
         end
     end
 end
 
 
----@param questId string should be lowercase
----@param e journalEventData
-function this.trackQuestFromCallback(questId, e)
-    local shouldUpdate = false
+---@class questGuider.main.addMarkersForQuestParams
+---@field questData questDataGenerator.questData?
+---@field diaId string
+---@field diaIndex number|string
+---@field objectId string?
+---@field priority number?
+---@field protectedActors table<string, any>?
+---@field checkRequirements boolean?
 
-    if this.removeMarker{ questId = questId } then
-        shouldUpdate = true
-    end
+---@param params questGuider.main.addMarkersForQuestParams
+local function addMarkersForQuest(params)
 
-    local isFinished = e.info and e.info.isQuestFinished or false
+    local questData = params.questData or questLib.getQuestData(params.diaId)
+    if not questData then return end
 
-    local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, e.index, {findCompleted = false, findInLinked = true})
-
-    if isFinished then
-        this.removeMarker{ questId = questId, removeLinked = isFinished }
-        shouldUpdate = true
-    end
+    local indexStr = tostring(params.diaIndex)
+    local indexData = questData[indexStr]
+    if not indexData then return end
 
     local objects = {}
-    if questNextIndexes and (not isFinished or config.data.tracking.quest.finished) then
+
+    local shouldAddObjectMarker = params.objectId and true or false
+
+    local addedHashMap = {}
+
+    for i, reqDataBlock in pairs(indexData.requirements or {}) do
+
+        if params.checkRequirements and not requirementChecker.checkBlock(reqDataBlock, {
+                    threatErrorsAs = true,
+                    ignoredTypes = {
+                        [requirementType.CustomDialogue] = true,
+                        [requirementType.CustomActor] = true,
+                        [requirementType.Item] = true,
+                        [requirementType.Dead] = true,
+                        [requirementType.CustomOnDeath] = true,
+                    }
+                }) then
+            goto continue
+        end
+
+        local requirementData = questLib.getDescriptionDataFromDataBlock(reqDataBlock, params.diaId)
+        if not requirementData then goto continue end
+
+        local hasJournalReq = false
+        for _, requirement in ipairs(requirementData) do
+            if not requirement.positionData then goto continue end
+
+            if not params.objectId and requirement.data.type == requirementType.Dead and
+                    (requirement.data.operator == requirementOperator.value.NotEqual and requirement.data.value == 1 or
+                    requirement.data.operator == requirementOperator.value.Equal and requirement.data.value == 0) then
+                goto continue
+            end
+
+            if not params.objectId and requirement.data.object and (requirement.data.type == requirementType.CustomActor or
+                    requirement.data.type == requirementType.CustomDisposition) and
+                    tes3.getKillCount{actor = requirement.data.object} > 0 then
+                goto continue
+            end
+
+            local reqHash = {}
+            if not params.objectId then
+                for _, reqBl in ipairs(requirement.reqDataForHandlingArr or {}) do
+                    table.insert(reqHash, myTypes.gerRequirementBlockHash(reqBl))
+                end
+                table.insert(reqHash, myTypes.gerRequirementBlockHash(requirement.reqDataForHandling))
+            end
+
+            reqHash = table.concat(reqHash, "_") ---@diagnostic disable-line: cast-local-type, param-type-mismatch
+
+            for objId, posData in pairs(requirement.positionData or {}) do
+                if not params.objectId and not posData.foundValidPos then
+                    goto continue
+                end
+
+                if params.objectId and params.objectId ~= objId or
+                        not params.objectId and (posData.isActorAliveReq or
+                        params.protectedActors and posData.actorCount and posData.actorCount > 0 and
+                        indexData.finished and params.protectedActors[objId]) then
+                    goto continue
+                end
+
+                if not params.objectId then
+                    local hash = string.format("%s_%s_%s_%s_%s_%s", objId, posData.reqType, posData.name, reqHash,
+                        posData.itemCount, posData.actorCount)
+                    if addedHashMap[hash] then
+                        goto continue
+                    end
+                    addedHashMap[hash] = true
+                end
+
+                ---@type questGuider.tracking.addMarker
+                local addMarkerParams = {
+                    questId = params.diaId,
+                    objectId = objId,
+                    objectName = posData.name,
+                    positionData = posData,
+                    questData = questData,
+                    questStage = params.diaIndex,
+                    reqData = requirement,
+                    priority = params.priority,
+                }
+
+                this.addMarker(addMarkerParams)
+
+                shouldAddObjectMarker = false
+                -- objects[objId] = posData.name
+
+                ::continue::
+            end
+
+            ::continue::
+        end
+
+        ::continue::
+    end
+
+    -- Since available objects for tracking are formed differently than in this function,
+    -- for manual markers it is sometimes necessary to create the required data separately.
+    if shouldAddObjectMarker then
+        ---@type questDataGenerator.requirementData
+        local tempReq = {
+            operator = 48,
+            type = "TEMP",
+            object = params.objectId
+        }
+
+        local dt = questLib.getRequirementPositionData(tempReq, nil, params.diaId)
+
+        if dt and dt[params.objectId] then
+            local posData = dt[params.objectId]
+            ---@type questGuider.tracking.addMarker
+            local addMarkerParams = {
+                questId = params.diaId,
+                objectId = params.objectId,
+                objectName = posData.name,
+                positionData = posData,
+                questData = questData,
+                questStage = params.diaIndex,
+                reqData = nil,
+                priority = params.priority,
+            }
+
+            this.addMarker(addMarkerParams)
+        end
+    end
+
+    return objects
+end
+
+
+---@param diaId string should be lowercase
+---@param data journalEventData
+function this.trackQuestFromCallback(diaId, data)
+    local shouldUpdate = false
+
+    if this.removeMarker{ questId = diaId, removeLinked = true } then
+        shouldUpdate = true
+    end
+
+    local isFinished = data.info and data.info.isQuestFinished or false
+
+    local questNextIndexes, linkedIndexData, validLinked = questLib.getNextIndexes(diaId, diaId, data.index, {findCompleted = false, findInLinked = true})
+
+    local objects = {}
+
+    local questData = questLib.getQuestData(diaId)
+    if questData and questNextIndexes and not isFinished then
+        local stageFlags = {}
+
+        -- check if stage has any finished requirements that do not require killing an actor,
+        -- if so, do suppress tracking for requiremnts that require killing an actor
+        local protectedFinActors = {}
+        local deadFinReqActors = {}
+        local aliveFinReqActors = {}
+        for _, index in pairs(questNextIndexes) do
+            local stageData = questData[tostring(index)]
+            if not stageData then goto continue end
+
+            if stageData.finished then
+                for _, reqBlock in pairs(stageData.requirements or {}) do
+                    for _, req in pairs(reqBlock) do
+                        if req.type == myTypes.requirementType.CustomActor then
+                            if req.object then
+                                protectedFinActors[req.object] = true
+                            end
+
+                        elseif req.type == myTypes.requirementType.Dead then
+                            if req.variable then
+                                if myTypes.operator.check(req.value or 0, 1, req.operator or 48) then
+                                    deadFinReqActors[req.variable] = true
+                                else
+                                    aliveFinReqActors[req.variable] = true
+                                end
+                            end
+
+                        end
+                    end
+                end
+            end
+
+            ::continue::
+        end
+
+        for objId, _ in pairs(deadFinReqActors) do
+            if aliveFinReqActors[objId] then
+                protectedFinActors[objId] = true
+            end
+        end
+
         for _, indexStr in pairs(questNextIndexes) do
-            local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+            local objs = addMarkersForQuest{questData = questData, diaId = diaId, diaIndex = indexStr,
+                protectedActors = protectedFinActors}
             table.copy(objs, objects)
         end
         shouldUpdate = true
@@ -770,13 +1028,36 @@ function this.trackQuestFromCallback(questId, e)
 
     if linkedIndexData then
         for qId, dt in pairs(linkedIndexData) do
-            local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
+            if not config.data.tracking.quest.oneEntryDialogues then
+                local indexes = questLib.getIndexes(dt.qData) or {}
+                if #indexes <= 1 then goto continue end
+            end
+
+            -- do not auto track dialogues that have "kill" in their id, as those are likely to be fail state entries
+            if string.sub(qId, -4):lower() == "kill" then
+                goto continue
+            end
+
+            local currentIndex = playerQuests.getCurrentIndex(qId)
+            if currentIndex and currentIndex >= dt.index then goto continue end
+
+            local isValidLinkedToTrack = validLinked and validLinked[qId]
+
+            local objs = addMarkersForQuest{
+                diaId = qId,
+                diaIndex = dt.index,
+                priority = -100,
+                checkRequirements = not (config.data.tracking.quest.sideBranches or isValidLinkedToTrack),
+            }
             table.copy(objs, objects)
+
+            shouldUpdate = true
+
+            ::continue::
         end
-        shouldUpdate = true
     end
 
-    if table.size(objects) > 0 then
+    if next(objects) then
         local names = {}
         for id, _ in pairs(objects) do
             local obj = tes3.getObject(id)
@@ -799,58 +1080,129 @@ function this.trackQuestFromCallback(questId, e)
     end
 end
 
----@param questId string should be lowercase
-function this.trackQuestsbyQuestId(questId)
-    local shouldUpdate = false
 
-    if this.removeMarker{ questId = questId, removeLinked = true } then
-        shouldUpdate = true
-    end
+-- ---@param questId string should be lowercase
+-- ---@param e journalEventData
+-- function this.trackQuestFromCallback(questId, e)
+--     local shouldUpdate = false
 
-    local index = playerQuests.getCurrentIndex(questId)
-    if not index then return end
+--     if this.removeMarker{ questId = questId } then
+--         shouldUpdate = true
+--     end
 
-    local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, index, {findCompleted = false, findInLinked = true})
+--     local isFinished = e.info and e.info.isQuestFinished or false
 
-    local objects = {}
+--     local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, e.index, {findCompleted = false, findInLinked = true})
 
-    if questNextIndexes then
-        for _, indexStr in pairs(questNextIndexes) do
-            local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
-            table.copy(objs, objects)
-        end
-        shouldUpdate = true
-    end
+--     if isFinished then
+--         this.removeMarker{ questId = questId, removeLinked = isFinished }
+--         shouldUpdate = true
+--     end
 
-    if linkedIndexData then
-        for qId, dt in pairs(linkedIndexData) do
-            local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
-            table.copy(objs, objects)
-        end
-        shouldUpdate = true
-    end
+--     local objects = {}
+--     if questNextIndexes and (not isFinished or config.data.tracking.quest.finished) then
+--         for _, indexStr in pairs(questNextIndexes) do
+--             local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+--             table.copy(objs, objects)
+--         end
+--         shouldUpdate = true
+--     end
 
-    if table.size(objects) > 0 then
-        local names = {}
-        for id, _ in pairs(objects) do
-            local obj = tes3.getObject(id)
-            if obj and obj.name then
-                table.insert(names, obj.name)
-            end
-        end
+--     if linkedIndexData then
+--         for qId, dt in pairs(linkedIndexData) do
+--             local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
+--             table.copy(objs, objects)
+--         end
+--         shouldUpdate = true
+--     end
 
-        if #names > 0 then
-            tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
-        end
-    end
+--     if table.size(objects) > 0 then
+--         local names = {}
+--         for id, _ in pairs(objects) do
+--             local obj = tes3.getObject(id)
+--             if obj and obj.name then
+--                 table.insert(names, obj.name)
+--             end
+--         end
 
-    if shouldUpdate then
-        if tes3.player.cell.isInterior then
-            this.addMarkersForInteriorCell(tes3.player.cell)
-        end
+--         if #names > 0 then
+--             tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+--         end
+--     end
 
-        this.updateMarkers(true)
-    end
+--     if shouldUpdate then
+--         if tes3.player.cell.isInterior then
+--             this.addMarkersForInteriorCell(tes3.player.cell)
+--         end
+
+--         this.updateMarkers(true)
+--     end
+-- end
+
+---@param diaId string should be lowercase
+function this.trackQuestsbyQuestId(diaId)
+    local dialogue, index = playerQuests.getQuestDialogue(diaId)
+    if not dialogue then return end
+
+    local info = dialogue:getJournalInfo(index)
+    if not info then return end
+
+    local data = {
+        info = info,
+        index = index,
+    }
+    this.trackQuestFromCallback(diaId, data)
+
+    -- local shouldUpdate = false
+
+    -- if this.removeMarker{ questId = questId, removeLinked = true } then
+    --     shouldUpdate = true
+    -- end
+
+    -- local index = playerQuests.getCurrentIndex(questId)
+    -- if not index then return end
+
+    -- local questNextIndexes, linkedIndexData = questLib.getNextIndexes(questId, questId, index, {findCompleted = false, findInLinked = true})
+
+    -- local objects = {}
+
+    -- if questNextIndexes then
+    --     for _, indexStr in pairs(questNextIndexes) do
+    --         local objs = this.addMarkersForQuest{ questId = questId, questIndex = indexStr }
+    --         table.copy(objs, objects)
+    --     end
+    --     shouldUpdate = true
+    -- end
+
+    -- if linkedIndexData then
+    --     for qId, dt in pairs(linkedIndexData) do
+    --         local objs = this.addMarkersForQuest{ questId = qId, questIndex = dt.index }
+    --         table.copy(objs, objects)
+    --     end
+    --     shouldUpdate = true
+    -- end
+
+    -- if table.size(objects) > 0 then
+    --     local names = {}
+    --     for id, _ in pairs(objects) do
+    --         local obj = tes3.getObject(id)
+    --         if obj and obj.name then
+    --             table.insert(names, obj.name)
+    --         end
+    --     end
+
+    --     if #names > 0 then
+    --         tes3ui.showNotifyMenu(stringLib.getValueEnumString(names, config.data.journal.requirements.pathDescriptions, "Started tracking %s."))
+    --     end
+    -- end
+
+    -- if shouldUpdate then
+    --     if tes3.player.cell.isInterior then
+    --         this.addMarkersForInteriorCell(tes3.player.cell)
+    --     end
+
+    --     this.updateMarkers(true)
+    -- end
 end
 
 

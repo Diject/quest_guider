@@ -115,4 +115,15 @@ function this.getCurrentIndex(quest)
     return tes3.getJournalIndex{ id = quest }
 end
 
+
+---@param diaId string
+---@return tes3dialogue?
+---@return integer? index
+function this.getQuestDialogue(diaId)
+    local data = this.questData[diaId]
+    if data then
+        return data.record, data.index
+    end
+end
+
 return this

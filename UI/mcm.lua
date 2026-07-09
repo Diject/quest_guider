@@ -418,7 +418,7 @@ function this.registerModConfig()
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "enabled"},
             label = "Mark quest givers on the map (the mod doesn't check if you can take these quests)"}
         createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "hideStarted"}, label = "Hide markers for quests that have already been started/finished"}
-        createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "filter"}, label = "Try to hide some of those quests that the player can't take yet"}
+        -- createYesNo{self = giverGroup, config = {path = "tracking.giver", name = "filter"}, label = "Try to hide some of those quests that the player can't take yet"}
         createNumberEdit{self = giverGroup, config = {path = "tracking.giver", name = "namesMax"},
             label = "Maximum number of quest names in the tooltip for a marker", limits = {min = 1, max = 10}, int = true}
     end
@@ -452,7 +452,7 @@ function this.registerModConfig()
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "maxPositions"},
             label = "Don't show info about quest items that have more copies in the world than the value", limits = {min = 1, max = 10000}, int = true}
         createNumberEdit{self = tooltipsPage, config = {path = "tooltip.tracking", name = "minChance"},
-            label = "Don't show quest item information for containers that have a chance of getting this quest item below this value. 1 is 100%", limits = {min = 0, max = 1}, incStep = 0.05}
+            label = "Don't show quest item information for containers that have a chance of getting this quest item below this value. 1 is 100%", limits = {min = 0.5, max = 1}, incStep = 0.05}
     end
 
     do
