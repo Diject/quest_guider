@@ -1220,7 +1220,7 @@ end
 function this.drawQuestsMenu(parent)
     if not parent then return end
 
-    local playerQuestData = questLib.getPlayerQuestData()
+    local playerQuestData = questLib.getPlayerQuestData(true)
 
     if not playerQuestData then return end
 
@@ -1245,29 +1245,45 @@ function this.drawQuestsMenu(parent)
     local filterBtn = filterBlock:createButton{ id = "qGuider_quests_filterBtn", text = "Search" }
 
     local filterByName = true
-    local filterTypeBtn = filterBlock:createButton{ id = "qGuider_quests_filterTypeBtn", text = "by name" }
+    local filterTypeBtn = filterBlock:createButton{ id = "qGuider_quests_filterTypeBtn", text = "Type: by name" }
     filterTypeBtn:register(tes3.uiEvent.mouseClick, function (e)
         filterByName = not filterByName
         if filterByName then
-            e.source.text = "by name"
+            e.source.text = "Type: by name"
         else
-            e.source.text = "by id"
+            e.source.text = "Type: by id"
         end
     end)
 
-    local showFinished = true
-    local displayFinishedBtn = filterBlock:createButton{ id = "qGuider_quests_displayFinishedBtn", text = "display finished quests" }
-    displayFinishedBtn.borderLeft = 20
+    local showFinished = false
+    local displayFinishedBtn = filterBlock:createButton{ id = "qGuider_quests_displayFinishedBtn", text = "Finished quests: Hidden" }
+    displayFinishedBtn.borderLeft = 10
     displayFinishedBtn:register(tes3.uiEvent.mouseClick, function (e)
         showFinished = not showFinished
         if showFinished then
-            e.source.text = "display finished quests"
+            e.source.text = "Finished quests: Shown"
         else
-            e.source.text = "don't display finished quests"
+            e.source.text = "Finished quests: Hidden"
         end
 
         filterBtn:triggerEvent(tes3.uiEvent.mouseClick)
     end)
+
+    local showNearby = true
+    local nearbyBtn = filterBlock:createButton{ id = "qGuider_quests_nearbyBtn", text = "Mode: nearby" }
+    nearbyBtn.borderLeft = 10
+    nearbyBtn:register(tes3.uiEvent.mouseClick, function (e)
+        showNearby = not showNearby
+        if showNearby then
+            e.source.text = "Mode: nearby"
+        else
+            e.source.text = "Mode: all"
+        end
+
+        playerQuestData = questLib.getPlayerQuestData(showNearby)
+        filterBtn:triggerEvent(tes3.uiEvent.mouseClick)
+    end)
+
 
     local mainSubBlock = mainBlock:createBlock{ id = "qGuider_quests_subBlock" }
     mainSubBlock.flowDirection = tes3.flowDirection.leftToRight
@@ -1294,7 +1310,7 @@ function this.drawQuestsMenu(parent)
         return (a.name or ("_"..a.id)) < (b.name or ("_"..b.id))
     end)
 
-    filterBtn:register(tes3.uiEvent.mouseClick, function (e)
+    local filterEvent = function (e)
         questPaneContent:destroyChildren()
         infoBlock:destroyChildren()
 
@@ -1329,6 +1345,11 @@ function this.drawQuestsMenu(parent)
         end
 
         updateContainerMenu(mainSubBlock, questScroll)
+    end
+
+    filterBtn:register(tes3.uiEvent.mouseClick, filterEvent)
+    filterTextInput:register(tes3.uiEvent.keyEnter, function (e)
+        filterEvent()
     end)
 
     updateContainerMenu(mainSubBlock, questScroll, mainSubBlock)

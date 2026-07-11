@@ -71,6 +71,17 @@ local topicTestScripts = {
     ["t_sctest_topicstr4"] = true,
 }
 
+local supportedGiverTypes = {
+    tes3.objectType.npc,
+    tes3.objectType.creature,
+    tes3.objectType.book,
+    tes3.objectType.miscItem,
+    tes3.objectType.weapon,
+    tes3.objectType.activator,
+    tes3.objectType.clothing,
+    tes3.objectType.armor,
+}
+
 
 
 ---@param questId string
@@ -986,6 +997,59 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
 end
 
 
+local function getQDialogueNearby()
+    local objectIds = {}
+    ---@param c tes3cell
+    local function processCell(c, depth)
+        depth = depth - 1
+
+        for ref in c:iterateReferences(supportedGiverTypes) do
+            objectIds[ref.baseObject.id] = true
+            if ref.baseObject.script then
+                objectIds[ref.baseObject.script.id] = true
+            end
+        end
+
+        if depth <= 0 then return end
+        for door in c:iterateReferences(tes3.objectType.door) do
+            if not door.destination or door.deleted or door.disabled then goto continue end
+
+            if door.destination.cell then
+                processCell(door.destination.cell, depth)
+            end
+
+            ::continue::
+        end
+    end
+
+    local plCell = tes3.player.cell
+    if not plCell.isInterior then
+        for i = -1, 1 do
+            for j = -1, 1 do
+                local c = tes3.getCell{x = plCell.gridX + i, y = plCell.gridY + j}
+                if c then
+                    processCell(c, 2)
+                end
+            end
+        end
+    else
+        processCell(plCell, 2)
+    end
+
+    local diaIds = {}
+    for objId, _ in pairs(objectIds) do
+        local dt = this.getObjectData(objId)
+        if dt and dt.starts then
+            for _, diaId in pairs(dt.starts) do
+                diaIds[diaId] = true
+            end
+        end
+    end
+
+    return diaIds
+end
+
+
 ---@class questGuider.quest.getPlayerQuestData.returnArr
 ---@field id string
 ---@field name string|nil
@@ -995,16 +1059,23 @@ end
 
 ---@alias questGuider.quest.getPlayerQuestData.return questGuider.quest.getPlayerQuestData.returnArr[]
 
+---@param nearbyMode boolean?
 ---@return questGuider.quest.getPlayerQuestData.return
-function this.getPlayerQuestData()
+function this.getPlayerQuestData(nearbyMode)
     local out = {}
 
     local dialogueData = tes3.dataHandler.nonDynamicData.dialogues
+    local dialogueIdsNearby = nearbyMode and getQDialogueNearby() or {}
+
+    local function isValid(dialogueId)
+        return not nearbyMode or dialogueIdsNearby[dialogueId]
+    end
 
     for _, dialogue in pairs(dialogueData) do
         if dialogue.type ~= tes3.dialogueType.journal then goto continue end
 
         local dialogueId = dialogue.id:lower()
+        if not isValid(dialogueId) then goto continue end
         local storageData = dataHandler.quests[dialogueId]
 
         if not storageData then goto continue end
