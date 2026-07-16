@@ -136,7 +136,9 @@ local function createNumberEdit(params)
                 end
             end
 
-            label.elements.label:getTopLevelMenu():updateLayout()
+            if label.elements.label then
+                label.elements.label:getTopLevelMenu():updateLayout()
+            end
         end
     end
 

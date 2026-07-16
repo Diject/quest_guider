@@ -83,6 +83,12 @@ local supportedGiverTypes = {
 }
 
 
+local forbiddenLocalVars = {
+    ["killonce"] = true,
+    ["journalonce"] = true,
+}
+
+
 
 ---@param questId string
 ---@return questDataGenerator.questData|nil
@@ -903,9 +909,9 @@ function this.getDescriptionDataFromDataBlock(reqBlock, questId, customConfig)
                 local foundScripts = {}
                 local varData = this.getObjectData(requirement.variable)
                 -- TODO: dehardcode limit
-                if varData and varData.links and (varData.total or 0) <= 10 then
+                if varData and varData.links and (varData.total or 0) <= 6 then
                     local linkCount = #varData.links
-                    if linkCount < 10 then
+                    if linkCount <= 6 then
                         for _, dt in ipairs(varData.links) do
                             if dt[2] ~= nil then break end
 
@@ -1122,13 +1128,16 @@ local function addPosData(arr, objData, ownerId, configData, object, cellRestric
 
     local foundValidPos = false
 
-    local isDoActorChecks = object and (object.servicesOffered ~= nil and objData.total and objData.total < 5)
+    local isDoActorChecks = object and (object.objectType == tes3.objectType.npc or object.type == tes3.objectType.creature) and
+        objData.total and objData.total < 5
+
+    ---@param cell tes3cell
     local function getNotFoundFlag(cell)
         if not isDoActorChecks then return end
 
-        for _, ref in pairs(cell:getAll(object.isMale ~= nil and types.NPC or types.Creature)) do
-            if ref.recordId == object.id then
-                if ref.enabled then
+        for ref in cell:iterateReferences(object.objectType) do
+            if ref.baseObject.id == object.id then
+                if not ref.disabled then
                     return nil
                 end
             end
@@ -1456,7 +1465,7 @@ function this.getRequirementPositionData(requirement, customConfig, questId, par
 
         if scrData and scrData[tableName] then
             for _, linkDt in pairs(scrData[tableName]) do
-                if linkDt[2] ~= nil and linkDt[2] >= configData.tracking.minChance * 0.01 then
+                -- if linkDt[2] ~= nil and linkDt[2] >= configData.tracking.minChance * 0.01 then
                     local objData = dataHandler.questObjects[linkDt[1]]
                     if objData and objData.type <= 2 then
                         local obj = tes3.getObject(linkDt[1])
@@ -1464,7 +1473,7 @@ function this.getRequirementPositionData(requirement, customConfig, questId, par
                             objects[linkDt[1]] = obj
                         end
                     end
-                end
+                -- end
             end
         end
     end
@@ -1515,7 +1524,7 @@ function this.getRequirementPositionData(requirement, customConfig, questId, par
         local varData = this.getObjectData(requirement.variable)
 
         -- TODO: dehardcode limit
-        if varData and varData.links and (varData.total or 0) <= 10 and #varData.links <= 10 then
+        if varData and varData.links and (varData.total or 0) <= 6 and #varData.links <= 6 then
             for _, dt in ipairs(varData.links) do
                 if dt[2] ~= nil then break end
 
@@ -1550,6 +1559,32 @@ function this.getRequirementPositionData(requirement, customConfig, questId, par
 
                     foundValid = true
                     break
+                end
+            end
+        end
+
+    elseif requirement.type == types.requirementType.CustomLocal then
+        if requirement.object then
+            local obj = tes3.getObject(requirement.object)
+            if obj then
+                objects[requirement.object] = obj
+            end
+        end
+
+        if requirement.script then
+            fillDataForScriptByTableName(requirement.script, "links")
+        end
+
+        if requirement.variable and not forbiddenLocalVars[requirement.variable] then
+            local varData = this.getObjectData(requirement.variable)
+            if varData and varData.type == 5 and varData.links and (varData.total or 0) <= 6 and #varData.links <= 6 then
+                for _, linkDt in ipairs(varData.links) do
+                    if linkDt[2] ~= nil then break end
+
+                    local objDt = this.getObjectData(linkDt[1])
+                    if objDt and objDt.type == 4 then
+                        fillDataForScriptByTableName(linkDt[1], "links")
+                    end
                 end
             end
         end
@@ -1702,6 +1737,61 @@ function this.getRequirementPositionData(requirement, customConfig, questId, par
             ::continue::
         end
     end
+
+    local approxConfig = trackingConfig.approx
+    if not approxConfig.enabled then return out end
+
+    local function changePosition(pos, radius)
+        radius = radius * 0.8
+
+        randomLib.changeVectorPosByRandomInRadius(pos, radius)
+    end
+
+    for id, data in pairs(out) do
+        randomLib.setSeedByStringHash(id)
+
+        for i, posData in ipairs(data.positions or {}) do
+
+            posData.doorPath = nil
+
+            if posData.position then
+                if posData.id then
+                    changePosition(posData.position, approxConfig.interior.radius)
+                    if posData.exitPos then
+                        changePosition(posData.exitPos, approxConfig.worldMap.radius)
+                    end
+                else
+                    changePosition(posData.position, approxConfig.worldMap.radius)
+                end
+            end
+
+            local descr
+            if posData.cellPath then
+
+                if #posData.cellPath > 0 and posData.isExitEx then
+                    local lastIndex = #posData.cellPath
+                    if #posData.cellPath > 1 then
+                        local regionName = posData.cellPath[lastIndex].displayName
+                        regionName = regionName == "" and "???" or regionName
+                        descr = string.format("\"%s\"", regionName)
+                        descr = descr .. string.format(" => \"%s\"", posData.cellPath[lastIndex - 1].displayName)
+                    else
+                        descr = string.format("\"%s\"", posData.cellPath[1].displayName)
+                    end
+                end
+
+            elseif posData.isExitEx then
+                local cell = tes3.getCell{position = posData.position}
+                if cell then
+                    descr = string.format("\"%s\"", cell.displayName)
+                end
+
+            end
+
+            posData.description = descr
+        end
+    end
+    randomLib.resetRandomSeed()
 
     -- cacheLib.set("requirementPosData", reqHash, {out, linkedQuests})
 

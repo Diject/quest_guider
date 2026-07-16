@@ -264,6 +264,7 @@ function this.addMarker(params)
         alpha = alpha,
         name = positionData.name,
         description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        descriptionColor = tes3ui.getPalette(tes3.palette.normalColor),
         userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
     local worldImageInfo = approxConfig.enabled and this.zoneImageInfo or this.worldMarkerImageInfo
@@ -276,6 +277,7 @@ function this.addMarker(params)
         alpha = alpha,
         name = positionData.name,
         description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        descriptionColor = tes3ui.getPalette(tes3.palette.normalColor),
         userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
     local doorImageInfo = this.localDoorMarkerImageInfo
@@ -290,6 +292,7 @@ function this.addMarker(params)
         alpha = config.data.tracking.marker.alpha,
         name = positionData.name,
         description = {string.format("Quest: \"%s\"", questData.name or ""), ""},
+        descriptionColor = tes3ui.getPalette(tes3.palette.normalColor),
         userData = {questId = params.questId, index = params.questStage, action = "jText"},
     }
 
@@ -327,6 +330,13 @@ function this.addMarker(params)
     local allowToTagNameForLocal = true
 
     for _, data in pairs(positionData.positions or {}) do
+
+        if positionData.foundValidPos and data.notFound then
+            if data.rawData and data.rawData.id then
+                objects[data.rawData.id] = true
+            end
+            goto continue
+        end
 
         if objectMarkerData.localMarkerId then
 
@@ -408,6 +418,8 @@ function this.addMarker(params)
                 objectTrackingData.targetCells[cell.editorName] = cell.editorName
             end
         end
+
+        ::continue::
     end
 
     if objectMarkerData.localMarkerId then
@@ -463,15 +475,19 @@ function this.addMarker(params)
 
     this.trackedObjectsByQuestId[params.questId] = qTrackingInfo
 
-    if positionData.itemCount then
-        this.handlePlayerInventory(true)
-    end
-    if positionData.actorCount then
-        this.handleDeath(objectId)
-    end
+    -- if positionData.itemCount then
+    --     this.handlePlayerInventory(true)
+    -- end
+    -- if positionData.actorCount then
+    --     this.handleDeath(objectId)
+    -- end
 
     if this.disabledQuests[params.questId] then
         this.setDisableMarkerState{ questId = params.questId, value = true }
+    end
+
+    if this.handleObjectRequirements(objectId) then
+        this.updateMarkers()
     end
 
     return objectTrackingData
@@ -794,7 +810,7 @@ function this.updateQuestGiverMarkers()
         local isValid = false
 
         for diaId, _ in pairs(data.dIds) do
-            if playerQuests.getCurrentIndex(diaId) <= 0 then
+            if config.data.tracking.giver.hideStarted and playerQuests.getCurrentIndex(diaId) > 0 then
                 data.dIds[diaId] = nil
             else
                 isValid = true
@@ -1349,6 +1365,7 @@ end
 ---@field temporary boolean?
 
 ---@param params questGuider.tracking.disableMarker
+---@return boolean?
 function this.setDisableMarkerState(params)
     if not (params.isUserDisabled or params.temporary) and
         params.questId and this.disabledQuests[params.questId] then
@@ -1356,6 +1373,7 @@ function this.setDisableMarkerState(params)
     end
 
     local markerDataHashTable = {}
+    local changed = false
 
     for objId, objData in pairs(this.markerByObjectId) do
         if params.objectId and objId ~= params.objectId then goto continue end
@@ -1374,6 +1392,7 @@ function this.setDisableMarkerState(params)
     ---@param markerData questGuider.tracking.markerRecord
     local function setDisabledState(markerData)
         local disabledState = params.toggle == true and not markerData.disabled or params.value
+        local oldState = markerData.disabled
 
         if params.temporary then
             markerData.disabled = disabledState
@@ -1393,6 +1412,9 @@ function this.setDisableMarkerState(params)
             markerData.disabled = disabledState
         end
 
+        if oldState ~= markerData.disabled then
+            changed = true
+        end
 
         if this.mapMarkerLibVersion >= 3 then
             local localDoorMarkerRec = markerLib.record.get(markerData.localDoorMarkerId)
@@ -1408,6 +1430,8 @@ function this.setDisableMarkerState(params)
     for markerData, _ in pairs(markerDataHashTable) do
         setDisabledState(markerData)
     end
+
+    return changed
 end
 
 
@@ -1458,7 +1482,7 @@ end
 
 
 ---@param markerData questGuider.tracking.markerData
-local function checkHandledRequirements(objectId, markerData, protectedState)
+local function checkHandledRequirements(objectId, markerData, objectData, protectedState)
     if not protectedState then protectedState = false end
     local changed = false
     if not markerData.handledRequirements then return end
@@ -1472,14 +1496,12 @@ local function checkHandledRequirements(objectId, markerData, protectedState)
 
     if res == false then
         if markerData.data.disabled ~= true and not protectedState then
-            this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
-            changed = true
+            changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
         end
     elseif res == true then
         protectedState = true
         if markerData.data.disabled ~= false then
-            this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false }
-            changed = true
+            changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false }
         end
     end
 
@@ -1619,6 +1641,82 @@ function this.handleTrackingRequirements()
     end
 
     return changed
+end
+
+
+---@return boolean?
+function this.handleObjectRequirements(objectId, withoutUpdate)
+    if not initialized then return end
+    if not objectId then return end
+
+    local objData = this.markerByObjectId[objectId]
+    if not objData then return end
+
+    local changed = false
+
+    local protected = false
+    for _, markerData in pairs(objData.markers) do
+        if markerData.handledRequirements and not protected then
+            local hChanged, hProtected = checkHandledRequirements(objectId, markerData, objData, protected)
+            changed = changed or hChanged
+            -- protected = protected or hProtected
+        end
+
+        if markerData.actorCount and config.data.tracking.hideKilled then
+            local killCount = tes3.getKillCount{ actor = markerData.parentObject or objectId }
+
+            if killCount >= markerData.actorCount then
+                if markerData.data.disabled ~= true and not protected then
+                    changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true }
+                end
+            else
+                protected = true
+                if markerData.data.disabled ~= false then
+                    changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false }
+                end
+            end
+        end
+
+        if markerData.itemCount and config.data.tracking.hideObtained then
+            local item = tes3.getObject(markerData.parentObject or objectId)
+            if not item then
+                if markerData.data.disabled ~= true then
+                    changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true } or changed
+                end
+            elseif markerData.itemCount <= tes3.getItemCount{ reference = tes3.mobilePlayer, item = markerData.parentObject or objectId } then
+                if markerData.data.disabled ~= true and not protected then
+                    changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = true } or changed
+                end
+            else
+                protected = true
+                if markerData.data.disabled ~= false then
+                    changed = this.setDisableMarkerState{ objectId = objectId, questId = markerData.id, value = false } or changed
+                end
+            end
+        end
+    end
+
+    if not withoutUpdate and changed and tes3.player.cell.isInterior then
+        this.addMarkersForInteriorCell(tes3.player.cell)
+    end
+
+    return changed
+end
+
+
+local handledTrackingStepId = nil
+function this.handleTrackedRequirementsStep()
+    if not initialized then return end
+
+    if handledTrackingStepId and not this.markerByObjectId[handledTrackingStepId] then
+        handledTrackingStepId = nil
+    end
+
+    local objId, trData = next(this.markerByObjectId, handledTrackingStepId)
+    handledTrackingStepId = objId
+    if not objId then return end
+
+    return this.handleObjectRequirements(objId)
 end
 
 

@@ -128,6 +128,12 @@ local function loadedCallback(e)
     tracking.isInit()
     playerQuests.init()
 
+    timer.start{type = timer.simulate, duration = 0.86, iterations = -1, callback = function (e)
+        if tracking.handleTrackedRequirementsStep() then
+            tracking.updateMarkers()
+        end
+    end}
+
     if cellBeforeLoad then
         local cells
         if tes3.player.cell.isInterior then

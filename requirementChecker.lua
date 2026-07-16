@@ -1,7 +1,9 @@
+local log = require("diject.quest_guider.utils.log")
 local playerQuests = include("diject.quest_guider.playerQuests")
 local stringLib = include("diject.quest_guider.utils.string")
 local types = include("diject.quest_guider.types")
 local operator = types.operator
+local dataHandler = include("diject.quest_guider.dataHandler")
 
 local this = {}
 
@@ -108,16 +110,6 @@ local dataFuncs = {
         if not val then return true end
 
         return false
-    end,
-
-    [types.requirementType.CustomActor] = function (req, obj, mobile, ref)
-        if not req.object or not req.variable or not req.value or not ref then return end
-        local dialogue = tes3.findDialogue{ topic = stringLib.convertDialogueName(req.variable) }
-        if not dialogue then return end
-        local dialogueInfo = tes3.getDialogueInfo{ dialogue = dialogue, id = req.value }
-        if not dialogueInfo then return end
-
-        return dialogueInfo:filter(ref.object, ref, 0, dialogue)
     end,
 
     [types.requirementType.CustomDialogue] = function (req)
@@ -479,7 +471,86 @@ local dataFuncs = {
         if not object then return end
 
         return operator.check(object.race.id:lower(), req.variable, req.operator)
-    end
+    end,
+
+    -- [types.requirementType.CustomActor] = function (req, obj, mobile, ref)
+    --     if not req.object or not req.variable or not req.value or not ref then return end
+    --     local dialogue = tes3.findDialogue{ topic = stringLib.convertDialogueName(req.variable) }
+    --     if not dialogue then return end
+    --     local dialogueInfo = tes3.getDialogueInfo{ dialogue = dialogue, id = req.value }
+    --     if not dialogueInfo then return end
+
+    --     return dialogueInfo:filter(ref.object, ref, 0, dialogue)
+    -- end,
+
+    -- In the current version, only checks the availability of the current dialogue topic or topics that unlock the current one
+    [types.requirementType.CustomActor] = function (req, obj, mobile, ref)
+        if not req.variable or not req.object or not (mobile or ref) then return end
+
+        local object = ref and ref.baseObject or mobile and mobile.reference.baseObject or obj
+        if not object then return end
+        mobile = mobile or ref and ref.mobile
+
+        if ref and req.object ~= object.id then
+            return false
+        end
+
+        if req.variable:find("greeting", 1, true) then
+            return true
+        end
+
+        local diaObjectDt = dataHandler.questObjects[req.variable]
+        if not diaObjectDt then return true end
+
+        if not diaObjectDt.links or not next(diaObjectDt.links) then
+            return true
+        end
+
+        local playerTopics = {}
+        for _, dia in pairs(tes3.mobilePlayer.dialogueList) do
+            playerTopics[dia.id:lower()] = dia
+        end
+
+        local dialogueId = stringLib.convertDialogueName(req.variable)
+        if playerTopics[dialogueId] then
+            return true
+        end
+
+        local checkedObjects = {}
+
+        for _, link in pairs(diaObjectDt.links) do
+            local id = link[1]
+            if checkedObjects[id] then goto continue end
+            checkedObjects[id] = true
+
+            local linkDt = dataHandler.questObjects[id]
+            if not linkDt or linkDt.type ~= 6 or not linkDt.links or not next(linkDt.links) then goto continue end
+
+            for _, l in pairs(linkDt.links) do
+                local lId = l[1]
+                if checkedObjects[lId] then goto continue end
+                checkedObjects[lId] = true
+
+                local lDt = dataHandler.questObjects[lId]
+                if not lDt or lDt.type ~= 3 then goto continue end
+
+                local dId = stringLib.convertDialogueName(lId)
+                if dId:find("greeting", 1, true) then return true end
+
+                local plDia = playerTopics[dId]
+                if plDia then
+                    local info =  plDia:getInfo{ actor = mobile }
+                    if info then return true end
+                end
+
+                ::continue::
+            end
+
+            ::continue::
+        end
+
+        return false
+    end,
 }
 
 
