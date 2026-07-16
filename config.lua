@@ -3,7 +3,7 @@ local log = include("diject.quest_guider.utils.log")
 
 local storageName = "Quest_Guider_Config"
 
-local version = 3
+local version = 4
 
 local this = {}
 
@@ -61,7 +61,7 @@ this.default = {
             npcNames = 3,
         },
         tracking = {
-            maxPositions = 100,
+            maxPositions = 20,
             minChance = 0.1,
         }
     },
@@ -129,12 +129,19 @@ this.protected = {
 ---@class questGuider.config
 this.data = mwse.loadConfig(storageName)
 
+
+function this.save()
+    this.data.version = version
+    mwse.saveConfig(storageName, this.data)
+end
+
+
 if this.data then
     if not this.data.version then -- for old versions
         if this.data.journal.map.enabled then
             this.data.journal.requirements.enabled = true
         end
-        mwse.saveConfig(storageName, this.data)
+        this.save()
 
     elseif this.data.version == 3 then
         if this.data.tracking.minChance < 0.5 then
@@ -143,6 +150,11 @@ if this.data then
         if this.data.data.maxPos > 20 then
             this.data.data.maxPos = 20
         end
+        if this.data.tooltip.tracking.maxPositions > 20 then
+            this.data.tooltip.tracking.maxPositions = 20
+        end
+
+        this.save()
     end
 
     tableLib.addMissing(this.data, this.default)
@@ -152,11 +164,6 @@ else
     mwse.saveConfig(storageName, this.data)
 end
 
-
-function this.save()
-    this.data.version = version
-    mwse.saveConfig(storageName, this.data)
-end
 
 ---@param path string
 ---@return any
