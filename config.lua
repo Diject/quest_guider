@@ -3,7 +3,7 @@ local log = include("diject.quest_guider.utils.log")
 
 local storageName = "Quest_Guider_Config"
 
-local version = 4
+local version = 5
 
 local this = {}
 
@@ -142,8 +142,9 @@ if this.data then
             this.data.journal.requirements.enabled = true
         end
         this.save()
+    end
 
-    elseif this.data.version == 3 then
+    if this.data.version <= 4 then
         if this.data.tracking.minChance < 0.5 then
             this.data.tracking.minChance = 0.5
         end
