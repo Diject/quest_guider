@@ -77,7 +77,7 @@ function this.createMenu(params)
     end
 
     local warningLabel = menu:createLabel{ id = menuId.label2 }
-    warningLabel.text = "The generation process usually takes 10-30 seconds. The game will be frozen until it is completed. If there are any problems during this process, visit the mod page on nexusmods.com and read the \"Troubleshooting\" section."
+    warningLabel.text = "The generation process usually takes 15-45 seconds. The game will be frozen until it is completed. If there are any problems during this process, visit the mod page on nexusmods.com and read the \"Troubleshooting\" section."
     warningLabel.wrapText = true
     warningLabel.borderBottom = 10
 
